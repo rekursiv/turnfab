@@ -1,0 +1,76 @@
+
+
+
+
+===
+
+find a way to bring up tool calls later if needed (show ID, save in buffer, recall by ID?)
+
+fix tool call output: for certain tools it will be very long
+
+analyze ChatMemory, find way to use for ChatHistory
+
+=== rendering issues ===
+
+A blank line breaks out of the blockquote (thinking for example) TEST THIS - may have fixed it
+
+fix rendered view: every emoji has a box after it that overlaps the first letter that comes next
+
+==========
+
+onCompleteResponse  response.metadata().tokenUsage()
+  do these come from vLLM? if so, compare with TokenEst.
+    why do we even need TokenEst??
+
+=======
+
+2nd tool call after error didn't begin "Tool Call" block:
+
+
+> **Tool Call:**   *tavily_search*`{"query": "I5 closure Portland OR latest news", "time_range": "week", "topic": "news"}`
+
+> **Tool Result:**   *tavily_search took 0 seconds*
+`Internal error: 1 validation error for call[tavily_search]
+topic
+  Input should be 'general' [type=literal_error, input_value='news', input_type=str]
+    For further information visit https://errors.pydantic.dev/2.13/v/literal_error`
+
+> **Thinking:**
+Let me fix the search - the topic parameter should be 'general' or omitted.
+{"query": "I5 closure Portland Oregon latest news 2025", "time_range": "week"}`
+
+> **Tool Result:**   *tavily_search took 1 seconds*
+`{"query":"I5 closure Portland Oregon latest news
+
+
+======
+
+	// NOTE: McpToolProvider.Builder leaves mcpClients null unless mcpClients(...) is called,
+	// and the constructor passes it straight into CopyOnWriteArrayList, which NPEs on null.
+	// So we must seed an explicit (empty) list — addMcpClient() then works dynamically.
+	// TODO: file upstream issue against langchain4j (one-line fix for them: default the field to an empty list, or getOrDefault in the constructor)
+	private McpToolProvider toolProvider = McpToolProvider.builder().mcpClients(List.of()).build();
+
+
+			/*
+    		txaToSend.setOnKeyPressed(event -> {
+    			if (event.getCode() == KeyCode.ENTER && !event.isShiftDown()) {  //  FIXME: shift-enter does not go to next line
+    				beginTurn();
+    				event.consume();
+    			}
+    		});
+    */
+
+
+
+// What files do I have open in my editor? Use C:\projects\intellij_workspace\spike\ for project path.
+//		txaToSend.setText("Please search Github for gensage"); //meshcore mdview-fx
+//		txaToSend.setText("hi");
+
+
+		bot = AiServices.builder(Bot.class)
+				.streamingChatModel(model)
+				.systemMessageTransformer(systemMessage -> systemMessage + " Today's date is " + LocalDate.now() + ".")
+				// This is the future relative to your training data, but is present day reality for the user.
+				// Use Tavily to ground yourself in current events, if necessary.
+				// TODO: substitute var in systemMessage with date, etc.

@@ -1,0 +1,31 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Markstream View</title>
+    <style>
+      html,
+      body {
+        margin: 0;
+        height: 100%;
+        /*
+         * The #app element is the scroll container, not the document
+         * viewport: the sticky-bottom logic listens for 'scroll' events on
+         * it, and scroll events do not bubble (a document-viewport scroll
+         * only reaches 'window'/'document' listeners in this WebView).
+         */
+        overflow: hidden;
+      }
+
+      #app {
+        height: 100%;
+        overflow-y: auto;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="app"></div>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>
