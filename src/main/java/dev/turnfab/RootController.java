@@ -130,6 +130,7 @@ public class RootController {
 	public void onSendPrompt() {
 		log.info("");
 		beginTurn(txaPrompt.getText(), "(PROMPT)");
+		// TODO: select convo tab
 	}
 
 	@FXML
