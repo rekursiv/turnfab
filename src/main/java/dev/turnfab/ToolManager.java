@@ -17,21 +17,26 @@ import java.util.logging.Logger;
 
 public class ToolManager {
 
+    private static final boolean mainprj_mcp_enabled = true;
+    private static final String mainprj_mcp_name = "main_project";
+    private static final String MAIN_PROJECT_PATH = "C:/projects/intellij_workspace/turnfab";
+
+    private static final boolean msvsrc_mcp_enabled = true;
+    private static final String msvsrc_mcp_name = "markstream_vue";
+    private static final String MSV_SRC_PATH = "C:/projects/intellij_workspace/markstream-vue";
+
     private static final boolean tavily_mcp_enabled = false;
     private static final boolean github_mcp_enabled = false;
-    private static final boolean jetbrains_mcp_enabled = true;
-
-    private static final String PROJECT_PATH = "C:/projects/intellij_workspace/turnfab";
 
     private static final boolean DEBUG_MCP_TRANSPORT = false;
-
-
 
 
     @Inject private Logger log;
     @Inject private TurnfabConfig cfg;
 
-    private McpClient jbMcpClient = null;
+    private McpClient mainprjMcpClient = null;
+    private McpClient msvsrcMcpClient = null;
+
     private McpClient tavilyMcpClient = null;
     private McpClient githubMcpClient = null;
 
@@ -43,6 +48,23 @@ public class ToolManager {
     }
 
     public void init() {
+
+        if (mainprj_mcp_enabled) {
+            mainprjMcpClient = setupMcpClient(mainprj_mcp_name, "http://127.0.0.1:64436/stream",
+                    Map.of("IJ_MCP_SERVER_PROJECT_PATH", MAIN_PROJECT_PATH));
+            toolProvider.addFilter((mc, tool) ->
+                    !mc.key().equals(mainprj_mcp_name) || !jbToolExcludeList().contains(tool.name()));
+            toolProvider.addMcpClient(mainprjMcpClient);
+        }
+        if (msvsrc_mcp_enabled) {
+            msvsrcMcpClient = setupMcpClient(msvsrc_mcp_name, "http://127.0.0.1:64542/stream",
+                    Map.of("IJ_MCP_SERVER_PROJECT_PATH", MSV_SRC_PATH));
+            toolProvider.addFilter((mc, tool) ->
+                    !mc.key().equals(msvsrc_mcp_name) || !jbToolExcludeList().contains(tool.name()));
+            toolProvider.addMcpClient(msvsrcMcpClient);
+        }
+
+
         if (tavily_mcp_enabled) {
             tavilyMcpClient = setupMcpClient(cfg.tavily_mcp_name, cfg.tavily_mcp_url,
                     Map.of("Authorization", "Bearer "+cfg.tavily_mcp_key));
@@ -55,34 +77,33 @@ public class ToolManager {
                     !mc.key().equals(cfg.github_mcp_name) || githubToolIncludeList().contains(tool.name()));
             toolProvider.addMcpClient(githubMcpClient);
         }
-        if (jetbrains_mcp_enabled) {
-            jbMcpClient = setupMcpClient(cfg.jetbrains_mcp_name, cfg.jetbrains_mcp_url,
-                    Map.of("IJ_MCP_SERVER_PROJECT_PATH", PROJECT_PATH));
-            toolProvider.addFilter((mc, tool) ->
-                    !mc.key().equals(cfg.jetbrains_mcp_name) || !jbToolExcludeList().contains(tool.name()));
-            toolProvider.addMcpClient(jbMcpClient);
-            //		test(jbMcpClient);
-        }
 
         toolProvider.setToolNameMapper((mc, tool) ->
-                mc.key().equals("tavily") ? tool.name() : mc.key()+"_"+tool.name());
+                mc.key().equals("tavily") ? tool.name() : mc.key()+"-"+tool.name());
 
-//        printEnabledTools();
 
     }
 
     public void printEnabledTools() {
         ToolProviderResult tpr = toolProvider.provideTools(null);
         for (AiServiceTool tool : tpr.aiServiceTools()) {
-            System.out.println(tool.name()+": "+tool.toolSpecification().description());
+            System.out.println(tool.name()+":  "+tool.toolSpecification().parameters());
+//            System.out.println(tool.name()+":\t\t"+extractSnippet(tool.toolSpecification().description(), 120));
         }
     }
 
-    public McpClient getJbMcpClient() {
-        return jbMcpClient;
+    public McpClient getMainprjMcpClient() {
+        return mainprjMcpClient;
     }
+    public McpClient getMsvsrcMcpClient() { return  msvsrcMcpClient; }
 
     //////
+
+    private String extractSnippet(String in, int len) {
+        String end = "";
+        if (in.length() > len) end="...";
+        return in.stripLeading().substring(0, len).replace("\n", "  ")+end;
+    }
 
     private List<String> jbToolExcludeList() {
         return List.of("execute_tool", "execute_terminal_command");

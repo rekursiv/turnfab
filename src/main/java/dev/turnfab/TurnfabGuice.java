@@ -18,7 +18,7 @@ import com.google.inject.spi.TypeListener;
 public class TurnfabGuice extends AbstractModule {
 
 	protected final EventBus eventBus = new EventBus();
-	protected final ConfigManager<TurnfabConfig> cfgMgr = new ConfigManager<TurnfabConfig>(TurnfabConfig.class, "ModelTestConfig.json");
+	protected final ConfigManager<TurnfabConfig> cfgMgr = new ConfigManager<TurnfabConfig>(TurnfabConfig.class, "../config/TurnfabConfig.json");
 	protected TurnfabConfig config;
 	
 	@Override

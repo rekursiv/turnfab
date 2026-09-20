@@ -7,21 +7,12 @@ import java.time.Duration;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.List;
-import java.util.Map;
 import java.util.logging.Logger;
 
 import com.cathive.fx.guice.FXMLController;
 import com.cathive.fx.guice.GuiceFXMLLoader;
 import com.google.inject.Inject;
-import dev.langchain4j.agent.tool.ToolExecutionRequest;
-import dev.langchain4j.agent.tool.ToolSpecification;
 import dev.langchain4j.http.client.jdk.JdkHttpClientBuilder;
-import dev.langchain4j.mcp.McpToolProvider;
-import dev.langchain4j.mcp.client.DefaultMcpClient;
-import dev.langchain4j.mcp.client.McpClient;
-import dev.langchain4j.mcp.client.transport.McpTransport;
-import dev.langchain4j.mcp.client.transport.http.StreamableHttpMcpTransport;
 import dev.langchain4j.memory.chat.TokenWindowChatMemory;
 import dev.langchain4j.model.TokenCountEstimator;
 import dev.langchain4j.model.chat.response.PartialResponse;
@@ -33,9 +24,6 @@ import dev.langchain4j.model.openai.OpenAiStreamingChatModel;
 import dev.langchain4j.model.openai.OpenAiTokenCountEstimator;
 import dev.langchain4j.service.AiServices;
 import dev.langchain4j.service.TokenStream;
-import dev.langchain4j.service.tool.AiServiceTool;
-import dev.langchain4j.service.tool.ToolExecutionResult;
-import dev.langchain4j.service.tool.ToolProviderResult;
 import javafx.application.Platform;
 import javafx.fxml.FXML;
 import javafx.scene.Scene;
@@ -67,7 +55,7 @@ public class RootController {
 
 	private MarkstreamView msView = new MarkstreamView();
 
-	private Bot bot = null;
+	private Coder bot;
 	private boolean firstThinkChunk = true;
 	private String firstRespChunk = null;
 	private boolean firstToolCallChunk = true;
@@ -85,9 +73,9 @@ public class RootController {
 
 	private void initBot() {
 		OpenAiStreamingChatModel model = OpenAiStreamingChatModel.builder()
-				.baseUrl("http://venus.local:8000/v1")
-				.apiKey("key")
-				.modelName("Qwen/Qwen3.8-27B")
+				.modelName(cfg.model_name)
+				.baseUrl(cfg.model_base_url)
+				.apiKey(cfg.model_key)
 				.httpClientBuilder(new JdkHttpClientBuilder()
 						.httpClientBuilder(java.net.http.HttpClient.newBuilder()
 								.version(java.net.http.HttpClient.Version.HTTP_1_1)))
@@ -99,7 +87,7 @@ public class RootController {
 				.build();
 
 
-		bot = AiServices.builder(Bot.class)
+		bot = AiServices.builder(Coder.class)
 				.streamingChatModel(model)
 				.systemMessageTransformer(systemMessage -> systemMessage + " Today's date is " + LocalDate.now() + ".")
 				.toolProvider(toolManager.getProvider())
@@ -126,18 +114,35 @@ public class RootController {
 	}
 
 	@FXML
-	public void onTest() {
+	public void onBuildPrompt() {
 		log.info("");
-		txaPrompt.setText(promptManager.buildPrompt(toolManager.getJbMcpClient()));
+		txaPrompt.clear();
+		txaPrompt.appendText("Documentation for markstream-vue:");
+		txaPrompt.appendText(promptManager.msvDocs(toolManager.getMsvsrcMcpClient()));
+		txaPrompt.appendText("Location of files I am working with:");
+		txaPrompt.appendText(promptManager.mspLoc(toolManager.getMainprjMcpClient()));
+		txaPrompt.appendText("How do I put a margin around my rendered markdown? I tried the obvious in markstream-view.html line 10 ");
+		txaPrompt.appendText("and changed margin: 0 to margin: 1em - this almost worked but it didn't put a margin between the right ");
+		txaPrompt.appendText("side of the rendered text. The scroll bar actually covers up part of the text and makes it hard to read.");
 	}
 
+	@FXML
+	public void onSendPrompt() {
+		log.info("");
+		beginTurn(txaPrompt.getText(), "(PROMPT)");
+	}
+
+	@FXML
+	public void onTest() {
+		log.info("");
+	}
 
 	//////////////////////////////////////////////////////////
 
 	@FXML
 	public void onSend() {
-		armCancel = false;
-		beginTurn();
+		beginTurn(txaToSend.getText(), null);
+		txaToSend.clear();
 	}
 
 	@FXML
@@ -171,22 +176,22 @@ public class RootController {
 	}
 
 
-	private void beginTurn() {
+	private void beginTurn(String toSend, String summary) {
 		if (bot==null) {
 			log.warning("Bot has not been initialized!");
 			return;
 		}
+		armCancel = false;
 		++turnNumber;
 		btnSend.setDisable(true);
 		firstThinkChunk = true;
 		firstRespChunk = null;
 		firstToolCallChunk = true;
 
-		String toSend = txaToSend.getText();
 		appendMd("\n\n## ==Turn "+turnNumber+"==\n");
 		appendMd("> ");
-		appendMd(toSend);
-		txaToSend.clear();
+		if (summary==null) appendMd(toSend);
+		else appendMd(summary);
 
 		TokenStream stream = bot.chat(toSend,
 				OpenAiChatRequestParameters.builder()
