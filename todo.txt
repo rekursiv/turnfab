@@ -1,6 +1,6 @@
 
 
-
+get rid of blockquotes, add "Thinking" indicator via FX
 
 ===
 
@@ -23,6 +23,10 @@ onCompleteResponse  response.metadata().tokenUsage()
     why do we even need TokenEst??
 
 =======
+
+Update all packages to latest: pnpm update --latest (or pnpm up --latest)
+
+======
 
 2nd tool call after error didn't begin "Tool Call" block:
 
@@ -74,3 +78,5 @@ Let me fix the search - the topic parameter should be 'general' or omitted.
 				// This is the future relative to your training data, but is present day reality for the user.
 				// Use Tavily to ground yourself in current events, if necessary.
 				// TODO: substitute var in systemMessage with date, etc.
+
+
