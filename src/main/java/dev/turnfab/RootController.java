@@ -71,7 +71,7 @@ public class RootController {
 	@FXML
 	private void initialize() {
 		stpRenderedConvo.getChildren().add(msView.getView());
-		tabPane.getSelectionModel().select(1);
+//		tabPane.getSelectionModel().select(1);
 	}
 
 	private void initBot() {
@@ -122,11 +122,11 @@ public class RootController {
 		txaPrompt.clear();
 		txaPrompt.appendText("Documentation for markstream-vue:");
 		txaPrompt.appendText(promptManager.msvDocs(toolManager.getMsvsrcMcpClient()));
-		txaPrompt.appendText("Location of files I am working with:");
+		txaPrompt.appendText("Location of files that render markdown in my app (main_project):");
 		txaPrompt.appendText(promptManager.mspLoc(toolManager.getMainprjMcpClient()));
-		txaPrompt.appendText("How do I put a margin around my rendered markdown? I tried the obvious in markstream-view.html line 10 ");
-		txaPrompt.appendText("and changed margin: 0 to margin: 1em - this almost worked but it didn't put a margin between the right ");
-		txaPrompt.appendText("side of the rendered text. The scroll bar actually covers up part of the text and makes it hard to read.");
+//		txaPrompt.appendText("How do I put a margin around my rendered markdown? I tried the obvious in markstream-view.html line 10 ");
+//		txaPrompt.appendText("and changed margin: 0 to margin: 1em - this almost worked but it didn't put a margin between the right ");
+//		txaPrompt.appendText("side of the rendered text. The scroll bar actually covers up part of the text and makes it hard to read.");
 	}
 
 	@FXML
