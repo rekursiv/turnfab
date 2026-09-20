@@ -28,6 +28,7 @@ import javafx.application.Platform;
 import javafx.fxml.FXML;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
+import javafx.scene.control.TabPane;
 import javafx.scene.control.TextArea;
 import javafx.scene.layout.StackPane;
 import javafx.stage.FileChooser;
@@ -46,6 +47,7 @@ public class RootController {
 	@Inject private ToolManager toolManager;
 	@Inject private PromptManager promptManager;
 
+	@FXML private TabPane tabPane;
 	@FXML private StackPane stpRenderedConvo;
 	@FXML private TextArea txaPrompt;
 	@FXML private TextArea txaToSend;
@@ -69,6 +71,7 @@ public class RootController {
 	@FXML
 	private void initialize() {
 		stpRenderedConvo.getChildren().add(msView.getView());
+		tabPane.getSelectionModel().select(1);
 	}
 
 	private void initBot() {
@@ -130,7 +133,7 @@ public class RootController {
 	public void onSendPrompt() {
 		log.info("");
 		beginTurn(txaPrompt.getText(), "(PROMPT)");
-		// TODO: select convo tab
+		tabPane.getSelectionModel().select(1);
 	}
 
 	@FXML
