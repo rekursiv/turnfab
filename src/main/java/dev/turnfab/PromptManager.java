@@ -57,6 +57,26 @@ public class PromptManager {
     }
 
 
+    public String rootCtlr(McpClient mcpClient) {
+        if (mcpClient == null) {
+            return "MCP Client is null";
+        }
+        StringBuilder prompt = new StringBuilder();
+        ToolExecutionRequest request = ToolExecutionRequest.builder()
+                .name("read_file")
+                .arguments("{\"file_path\": \"src/main/java/dev/turnfab/RootController.java\"}")
+                .build();
+        ToolExecutionResult res = mcpClient.executeTool(request);
+        prompt.append("\n```"+res.resultText()+"\n```\n\n");
+
+        prompt.append("\n");
+
+        return prompt.toString();
+    }
+
+
+    ////////
+
     public String buildPrompt(McpClient mcpClient) {
 
         if (mcpClient==null) {

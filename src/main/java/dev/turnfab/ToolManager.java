@@ -105,8 +105,13 @@ public class ToolManager {
         return in.stripLeading().substring(0, len).replace("\n", "  ")+end;
     }
 
+    private List<String> jbToolExcludeList_rw() {
+        return List.of("execute_tool", "execute_terminal_command", "get_all_open_file_paths", "open_file_in_editor");
+    }
+
     private List<String> jbToolExcludeList() {
-        return List.of("execute_tool", "execute_terminal_command");
+        return List.of("execute_tool", "execute_terminal_command", "build_project", "create_new_file",
+                "get_all_open_file_paths", "open_file_in_editor", "apply_patch", "rename_refactoring");
     }
 
     private List<String> githubToolIncludeList() {

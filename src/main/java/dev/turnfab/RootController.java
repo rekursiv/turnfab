@@ -124,9 +124,8 @@ public class RootController {
 		txaPrompt.appendText(promptManager.msvDocs(toolManager.getMsvsrcMcpClient()));
 		txaPrompt.appendText("Location of files that render markdown in my app (main_project):");
 		txaPrompt.appendText(promptManager.mspLoc(toolManager.getMainprjMcpClient()));
-//		txaPrompt.appendText("How do I put a margin around my rendered markdown? I tried the obvious in markstream-view.html line 10 ");
-//		txaPrompt.appendText("and changed margin: 0 to margin: 1em - this almost worked but it didn't put a margin between the right ");
-//		txaPrompt.appendText("side of the rendered text. The scroll bar actually covers up part of the text and makes it hard to read.");
+		txaPrompt.appendText("main_project-read_file: file_path = src/main/java/dev/turnfab/RootController.java");
+		txaPrompt.appendText(promptManager.rootCtlr(toolManager.getMainprjMcpClient()));
 	}
 
 	@FXML
@@ -209,7 +208,7 @@ public class RootController {
 						firstRespChunk = partialResponse.text();
 					} else if (!firstRespChunk.isEmpty()) {
 						msView.complete();
-						appendMd("\n\n");
+						appendMd("\n\n==Response:==\n");
 						// and then on the next call append the stored first chunk
 						appendMd(firstRespChunk.stripLeading());
 						firstRespChunk = "";
@@ -220,7 +219,7 @@ public class RootController {
 					}
 					if (armCancel) {
                         context.streamingHandle().cancel();
-						appendMd("\n\n**CANCELLED**\n\n");
+						appendMd("\n\n-==CANCELLED==\n\n");
 						endTurn();
 					}
 				})
@@ -228,12 +227,12 @@ public class RootController {
 					if (firstThinkChunk) {
 						firstThinkChunk = false;
 						msView.complete();
-						appendMd("\n\n> *Thinking:*  \n");
+						appendMd("\n\n==Thinking:==\n");
 					}
-					appendMd(partialThinking.text().replace("\n", "\n> "));
+					appendMd(partialThinking.text());
 					if (armCancel) {
 						context.streamingHandle().cancel();
-						appendMd("\n\n**CANCELLED**\n\n");
+						appendMd("\n\n==CANCELLED==\n\n");
 						endTurn();
 					}
 				})
@@ -242,13 +241,13 @@ public class RootController {
 						firstToolCallChunk = false;
 						firstThinkChunk = true;
 						firstRespChunk = null;  //???
-						appendMd("\n\n> **Tool Call:**   *"+partialToolCall.id()+" : "+partialToolCall.name()+"*`  \n");
+						appendMd("\n\n==Tool Call:==   *"+partialToolCall.id()+" : "+partialToolCall.name()+"*`  \n");
 					}
 					appendMd(partialToolCall.partialArguments());
 				})
 				.onToolExecuted(execution -> {
 					msView.complete();
-					appendMd("`\n> **Tool Result:**   *"+execution.request().id()+" : "+execution.request().name()+"    took "+execution.duration().toSeconds()+" seconds*  \n");
+					appendMd("`\n==Tool Result:==   *"+execution.request().id()+" : "+execution.request().name()+"    took "+execution.duration().toSeconds()+" seconds*  \n");
 					if (execution.hasFailed()) appendMd("`"+execution.result()+"`");
 					msView.complete();
 				})

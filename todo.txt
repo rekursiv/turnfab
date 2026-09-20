@@ -1,18 +1,20 @@
 
 
-get rid of blockquotes, add "Thinking" indicator via FX
+debug convo chunk state machine
+
+Copy MD btn puts on clipboard
+
+add "Thinking" indicator via FX?
 
 ===
 
 find a way to bring up tool calls later if needed (show ID, save in buffer, recall by ID?)
 
-fix tool call output: for certain tools it will be very long
+fix tool call output: summary for when it's very long?
 
 analyze ChatMemory, find way to use for ChatHistory
 
 === rendering issues ===
-
-A blank line breaks out of the blockquote (thinking for example) TEST THIS - may have fixed it
 
 fix rendered view: every emoji has a box after it that overlaps the first letter that comes next
 
@@ -24,7 +26,7 @@ onCompleteResponse  response.metadata().tokenUsage()
 
 =======
 
-Update all packages to latest: pnpm update --latest (or pnpm up --latest)
+markstream-page: to udate all packages to latest: pnpm update --latest (or pnpm up --latest)
 
 ======
 
