@@ -58,13 +58,14 @@ public class RootController {
 	private MarkstreamView msView = new MarkstreamView();
 
 	private Coder bot;
-	private boolean firstThinkChunk = true;
-	private String firstRespChunk = null;
-	private boolean firstToolCallChunk = true;
+	private Section currentSection = Section.NONE;
+	private int currentToolIndex = -1;
 	private int turnNumber = 0;
 	private StringBuilder mdRaw = new StringBuilder();
 
 	private boolean armCancel = false;
+
+	private enum Section { NONE, THINKING, RESPONSE, TOOL_CALL }
 
 	private TokenCountEstimator tcEst = new OpenAiTokenCountEstimator("o200K_BASE"); // hack to trigger this.encoding = ENCODING_REGISTRY.getEncoding(O200K_BASE);
 
@@ -199,9 +200,8 @@ public class RootController {
 		armCancel = false;
 		++turnNumber;
 		btnSend.setDisable(true);
-		firstThinkChunk = true;
-		firstRespChunk = null;
-		firstToolCallChunk = true;
+		currentSection = Section.NONE;
+		currentToolIndex = -1;
 
 		appendMd("\n\n## ==Turn "+turnNumber+"==\n");
 		appendMd("> ");
@@ -214,32 +214,11 @@ public class RootController {
 						.build());
 
 		stream
-				.onPartialResponseWithContext((PartialResponse partialResponse, PartialResponseContext context) -> {
-					if (firstRespChunk==null) {
-						// the first response chunk is streamed BEFORE the last thinking chunk, so store it here
-						firstRespChunk = partialResponse.text();
-					} else if (!firstRespChunk.isEmpty()) {
-						msView.complete();
-						appendMd("\n\n==Response:==\n");
-						// and then on the next call append the stored first chunk
-						appendMd(firstRespChunk.stripLeading());
-						firstRespChunk = "";
-						// and then the current chunk
-						appendMd(partialResponse.text());
-					} else {
-						appendMd(partialResponse.text());
-					}
-					if (armCancel) {
-                        context.streamingHandle().cancel();
-						appendMd("\n\n-==CANCELLED==\n\n");
-						endTurn();
-					}
-				})
 				.onPartialThinkingWithContext((PartialThinking partialThinking, PartialThinkingContext context) -> {
-					if (firstThinkChunk) {
-						firstThinkChunk = false;
-						msView.complete();
+					if (currentSection != Section.THINKING) {
+						closeSection();
 						appendMd("\n\n==Thinking:==\n");
+						currentSection = Section.THINKING;
 					}
 					appendMd(partialThinking.text());
 					if (armCancel) {
@@ -248,14 +227,36 @@ public class RootController {
 						endTurn();
 					}
 				})
+				.onPartialResponseWithContext((PartialResponse partialResponse, PartialResponseContext context) -> {
+					if (currentSection != Section.RESPONSE) {
+						closeSection();
+						appendMd("\n\n==Response:==\n");
+						currentSection = Section.RESPONSE;
+					}
+					appendMd(partialResponse.text());
+					if (armCancel) {
+						context.streamingHandle().cancel();
+						appendMd("\n\n==CANCELLED==\n\n");
+						endTurn();
+					}
+				})
 				.onPartialToolCall(partialToolCall -> {
-					if (firstToolCallChunk) {
-						firstToolCallChunk = false;
-						firstThinkChunk = true;
-						firstRespChunk = null;  //???
+					if (currentSection != Section.TOOL_CALL
+							|| partialToolCall.index() != currentToolIndex) {
+						closeSection();
 						appendMd("\n\n==Tool Call:==   *"+partialToolCall.id()+" : "+partialToolCall.name()+"*`  \n");
+						currentSection = Section.TOOL_CALL;
+						currentToolIndex = partialToolCall.index();
 					}
 					appendMd(partialToolCall.partialArguments());
+				})
+				.onIntermediateResponse(chatResponse -> {
+					// The model finished streaming this tool-calling round: every partial
+					// callback for it has already been delivered. Reset so the next round
+					// opens fresh sections instead of continuing stale ones.
+					closeSection();
+					currentSection = Section.NONE;
+					currentToolIndex = -1;
 				})
 				.onToolExecuted(execution -> {
 					msView.complete();
@@ -264,6 +265,8 @@ public class RootController {
 					msView.complete();
 				})
 				.onCompleteResponse(response -> {
+					currentSection = Section.NONE;
+					currentToolIndex = -1;
 //					log.info("'"+response.aiMessage().text()+"'");
 //					log.info("finishReason="+response.metadata().finishReason()+",  "+response.metadata().tokenUsage());
 					appendMd("\n\n- Turn complete. Tokens In: "+response.metadata().tokenUsage().inputTokenCount()+
@@ -272,10 +275,23 @@ public class RootController {
 					endTurn();
 				})
 				.onError(error -> {
+					currentSection = Section.NONE;
+					currentToolIndex = -1;
 					error.printStackTrace();
 					endTurn();
 				})
 				.start();
+	}
+
+	/**
+	 * Closes the currently open section, if any: finalizes the in-progress markdown
+	 * so the next section's header doesn't get absorbed into it.
+	 */
+	private void closeSection() {
+		if (currentSection != Section.NONE) {
+			msView.complete();
+			appendMd("\n");
+		}
 	}
 
 	private void endTurn() {
