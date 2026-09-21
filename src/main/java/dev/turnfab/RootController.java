@@ -57,7 +57,7 @@ public class RootController {
 
 	private MarkstreamView msView = new MarkstreamView();
 
-	private Coder bot;
+	private Bot bot;
 	private Section currentSection = Section.NONE;
 	private int currentToolIndex = -1;
 	private int turnNumber = 0;
@@ -91,8 +91,8 @@ public class RootController {
 				.build();
 
 
-		bot = AiServices.builder(Coder.class)
-				.streamingChatModel(model)
+		bot = AiServices.builder(Bot.class)
+				.streamingChatModel(new ThinkingFirstStreamingModel(model))
 				.systemMessageTransformer(systemMessage -> systemMessage + " Today's date is " + LocalDate.now() + ".")
 				.toolProvider(toolManager.getProvider())
 				.chatMemory(TokenWindowChatMemory.withMaxTokens(200000, tcEst))

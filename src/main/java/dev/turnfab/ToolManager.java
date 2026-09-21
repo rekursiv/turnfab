@@ -59,21 +59,21 @@ public class ToolManager {
             mainprjMcpClient = setupMcpClient(mainprj_mcp_name, "http://127.0.0.1:64436/stream",
                     Map.of("IJ_MCP_SERVER_PROJECT_PATH", MAIN_PROJECT_PATH));
             toolProvider.addFilter((mc, tool) ->
-                    !mc.key().equals(mainprj_mcp_name) || !jbToolExcludeList().contains(tool.name()));
+                    !mc.key().equals(mainprj_mcp_name) || !jbToolExcludeList_RW().contains(tool.name()));
             toolProvider.addMcpClient(mainprjMcpClient);
         }
         if (lc4j_mcp_enabled) {
             lc4jClient = setupMcpClient(lc4j_mcp_name, "http://127.0.0.1:64436/stream",
                     Map.of("IJ_MCP_SERVER_PROJECT_PATH", LC4J_PROJECT_PATH));
             toolProvider.addFilter((mc, tool) ->
-                    !mc.key().equals(lc4j_mcp_name) || !jbToolExcludeList().contains(tool.name()));
+                    !mc.key().equals(lc4j_mcp_name) || !jbToolExcludeList_RO().contains(tool.name()));
             toolProvider.addMcpClient(lc4jClient);
         }
         if (msvsrc_mcp_enabled) {
             msvsrcMcpClient = setupMcpClient(msvsrc_mcp_name, "http://127.0.0.1:64542/stream",
                     Map.of("IJ_MCP_SERVER_PROJECT_PATH", MSV_SRC_PATH));
             toolProvider.addFilter((mc, tool) ->
-                    !mc.key().equals(msvsrc_mcp_name) || !jbToolExcludeList().contains(tool.name()));
+                    !mc.key().equals(msvsrc_mcp_name) || !jbToolExcludeList_RO().contains(tool.name()));
             toolProvider.addMcpClient(msvsrcMcpClient);
         }
 
@@ -119,11 +119,11 @@ public class ToolManager {
         return in.stripLeading().substring(0, len).replace("\n", "  ")+end;
     }
 
-    private List<String> jbToolExcludeList_rw() {
+    private List<String> jbToolExcludeList_RW() {
         return List.of("execute_tool", "execute_terminal_command", "get_all_open_file_paths", "open_file_in_editor");
     }
 
-    private List<String> jbToolExcludeList() {
+    private List<String> jbToolExcludeList_RO() {
         return List.of("execute_tool", "execute_terminal_command", "build_project", "create_new_file",
                 "get_all_open_file_paths", "open_file_in_editor", "apply_patch", "rename_refactoring");
     }

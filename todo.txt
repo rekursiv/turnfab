@@ -1,18 +1,21 @@
 
 
-debug convo chunk state machine
 
-add "Thinking" indicator via FX?
+file LC4J GitHub issue
 
-===
-
-find a way to bring up tool calls later if needed (show ID, save in buffer, recall by ID?)
+rewrite tool params
 
 fix tool call output: summary for when it's very long?
 
-analyze ChatMemory, find way to use for ChatHistory
+=======
 
-Copy MD btn puts on clipboard
+add "Thinking" indicator via FX?
+
+find a way to bring up tool calls later if needed (show ID, save in buffer, recall by ID?)
+
+analyze ChatMemory, find way to use for ChatHistory?
+
+Copy MD btn: puts on clipboard
 
 === rendering issues ===
 
@@ -27,27 +30,6 @@ onCompleteResponse  response.metadata().tokenUsage()
 =======
 
 markstream-page: to udate all packages to latest: pnpm update --latest (or pnpm up --latest)
-
-======
-
-2nd tool call after error didn't begin "Tool Call" block:
-
-
-> **Tool Call:**   *tavily_search*`{"query": "I5 closure Portland OR latest news", "time_range": "week", "topic": "news"}`
-
-> **Tool Result:**   *tavily_search took 0 seconds*
-`Internal error: 1 validation error for call[tavily_search]
-topic
-  Input should be 'general' [type=literal_error, input_value='news', input_type=str]
-    For further information visit https://errors.pydantic.dev/2.13/v/literal_error`
-
-> **Thinking:**
-Let me fix the search - the topic parameter should be 'general' or omitted.
-{"query": "I5 closure Portland Oregon latest news 2025", "time_range": "week"}`
-
-> **Tool Result:**   *tavily_search took 1 seconds*
-`{"query":"I5 closure Portland Oregon latest news
-
 
 ======
 
