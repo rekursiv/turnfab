@@ -2,8 +2,6 @@
 
 debug convo chunk state machine
 
-Copy MD btn puts on clipboard
-
 add "Thinking" indicator via FX?
 
 ===
@@ -13,6 +11,8 @@ find a way to bring up tool calls later if needed (show ID, save in buffer, reca
 fix tool call output: summary for when it's very long?
 
 analyze ChatMemory, find way to use for ChatHistory
+
+Copy MD btn puts on clipboard
 
 === rendering issues ===
 

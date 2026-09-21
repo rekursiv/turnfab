@@ -118,7 +118,19 @@ public class RootController {
 
 	@FXML
 	public void onBuildPrompt() {
-		log.info("");
+		buildLc4jPrompt();
+	}
+
+	private void buildLc4jPrompt() {
+		txaPrompt.clear();
+		txaPrompt.appendText("Full searchable source code for LangChain4j is available with langchain4j_src-* tools.\n\n");
+		txaPrompt.appendText("LangChain4j documentation:");
+		txaPrompt.appendText(promptManager.lc4jDocs(toolManager.getLc4jMcpClient()));
+		txaPrompt.appendText("main_project-read_file: file_path = src/main/java/dev/turnfab/RootController.java");
+		txaPrompt.appendText(promptManager.rootCtlr(toolManager.getMainprjMcpClient()));
+	}
+
+	private void buildMsPrompt() {
 		txaPrompt.clear();
 		txaPrompt.appendText("Documentation for markstream-vue:");
 		txaPrompt.appendText(promptManager.msvDocs(toolManager.getMsvsrcMcpClient()));

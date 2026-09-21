@@ -21,12 +21,16 @@ public class ToolManager {
     private static final String mainprj_mcp_name = "main_project";
     private static final String MAIN_PROJECT_PATH = "C:/projects/intellij_workspace/turnfab";
 
-    private static final boolean msvsrc_mcp_enabled = true;
+    private static final boolean lc4j_mcp_enabled = true;
+    private static final String lc4j_mcp_name = "langchain4j_src";
+    private static final String LC4J_PROJECT_PATH = "C:/projects/intellij_workspace/langchain4j";
+
+    private static final boolean msvsrc_mcp_enabled = false;
     private static final String msvsrc_mcp_name = "markstream_vue";
     private static final String MSV_SRC_PATH = "C:/projects/intellij_workspace/markstream-vue";
 
-    private static final boolean tavily_mcp_enabled = true;
-    private static final boolean github_mcp_enabled = true;
+    private static final boolean tavily_mcp_enabled = false;
+    private static final boolean github_mcp_enabled = false;
 
     private static final boolean DEBUG_MCP_TRANSPORT = false;
 
@@ -35,7 +39,9 @@ public class ToolManager {
     @Inject private TurnfabConfig cfg;
 
     private McpClient mainprjMcpClient = null;
+    private McpClient lc4jClient = null;
     private McpClient msvsrcMcpClient = null;
+
 
     private McpClient tavilyMcpClient = null;
     private McpClient githubMcpClient = null;
@@ -55,6 +61,13 @@ public class ToolManager {
             toolProvider.addFilter((mc, tool) ->
                     !mc.key().equals(mainprj_mcp_name) || !jbToolExcludeList().contains(tool.name()));
             toolProvider.addMcpClient(mainprjMcpClient);
+        }
+        if (lc4j_mcp_enabled) {
+            lc4jClient = setupMcpClient(lc4j_mcp_name, "http://127.0.0.1:64436/stream",
+                    Map.of("IJ_MCP_SERVER_PROJECT_PATH", LC4J_PROJECT_PATH));
+            toolProvider.addFilter((mc, tool) ->
+                    !mc.key().equals(lc4j_mcp_name) || !jbToolExcludeList().contains(tool.name()));
+            toolProvider.addMcpClient(lc4jClient);
         }
         if (msvsrc_mcp_enabled) {
             msvsrcMcpClient = setupMcpClient(msvsrc_mcp_name, "http://127.0.0.1:64542/stream",
@@ -87,14 +100,13 @@ public class ToolManager {
     public void printEnabledTools() {
         ToolProviderResult tpr = toolProvider.provideTools(null);
         for (AiServiceTool tool : tpr.aiServiceTools()) {
-            System.out.println(tool.name()+":  "+tool.toolSpecification().parameters());
-//            System.out.println(tool.name()+":\t\t"+extractSnippet(tool.toolSpecification().description(), 120));
+//            System.out.println(tool.name()+":  "+tool.toolSpecification().parameters());
+            System.out.println(tool.name()+":\t\t"+extractSnippet(tool.toolSpecification().description(), 120));
         }
     }
 
-    public McpClient getMainprjMcpClient() {
-        return mainprjMcpClient;
-    }
+    public McpClient getMainprjMcpClient() { return mainprjMcpClient; }
+    public McpClient getLc4jMcpClient() { return lc4jClient; }
     public McpClient getMsvsrcMcpClient() { return  msvsrcMcpClient; }
 
     //////
