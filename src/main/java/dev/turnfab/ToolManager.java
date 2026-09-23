@@ -29,8 +29,8 @@ public class ToolManager {
     private static final String msvsrc_mcp_name = "markstream_vue";
     private static final String MSV_SRC_PATH = "C:/projects/intellij_workspace/markstream-vue";
 
-    private static final boolean tavily_mcp_enabled = true;
-    private static final boolean github_mcp_enabled = true;
+    private static final boolean tavily_mcp_enabled = false;
+    private static final boolean github_mcp_enabled = false;
 
     private static final boolean DEBUG_MCP_TRANSPORT = false;
 

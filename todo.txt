@@ -1,5 +1,4 @@
 
-pull system prompt from PromptManager
 
 rewrite tool params
 

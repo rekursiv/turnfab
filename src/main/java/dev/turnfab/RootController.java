@@ -42,6 +42,8 @@ public class RootController {
 
 	private static final boolean DEBUG_CHAT_MODEL = false;
 
+	private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("EEEE, MMMM d, yyyy");
+
 	@Inject private Logger log;
 	@Inject private TurnfabConfig cfg;
 	@Inject private GuiceFXMLLoader fxmlLoader;
@@ -121,7 +123,7 @@ public class RootController {
 	private String buildSystemPrompt() {
 		if (systemPrompt.isEmpty()) {
 			systemPrompt.append(readResource("system_prompts/coder.md"));
-			systemPrompt.append("\nToday's date is " + LocalDate.now() + ".");
+			systemPrompt.append("\nToday's date is " + LocalDate.now().format(DATE_FORMATTER) + ".");
 		}
 		return systemPrompt.toString();
 	}
@@ -134,20 +136,21 @@ public class RootController {
 	private void buildLc4jPrompt() {
 		txaPrompt.clear();
 		txaPrompt.appendText("Full searchable source code for LangChain4j is available with langchain4j_src-* tools.\n\n");
-		txaPrompt.appendText("LangChain4j documentation:");
-		txaPrompt.appendText(promptManager.lc4jDocs(toolManager.getLc4jMcpClient()));
-		txaPrompt.appendText("main_project-read_file: file_path = src/main/java/dev/turnfab/RootController.java");
-		txaPrompt.appendText(promptManager.rootCtlr(toolManager.getMainprjMcpClient()));
+		txaPrompt.appendText("LangChain4j documentation: ");
+		txaPrompt.appendText(promptManager.listDirTree(toolManager.getLc4jMcpClient(), "docs/docs", 3));
+		txaPrompt.appendText(promptManager.readFile(toolManager.getMainprjMcpClient(),
+//				"src/main/java/dev/turnfab/RootController.java"));
+				"src/main/java/dev/turnfab/PromptManager.java"));
 	}
 
 	private void buildMsPrompt() {
 		txaPrompt.clear();
-		txaPrompt.appendText("Documentation for markstream-vue:");
-		txaPrompt.appendText(promptManager.msvDocs(toolManager.getMsvsrcMcpClient()));
-		txaPrompt.appendText("Location of files that render markdown in my app (main_project):");
-		txaPrompt.appendText(promptManager.mspLoc(toolManager.getMainprjMcpClient()));
+		txaPrompt.appendText("Documentation for markstream-vue:");  // dirPath: docs, depth: 2
+//		txaPrompt.appendText(promptManager.msvDocs(toolManager.getMsvsrcMcpClient()));
+		txaPrompt.appendText("Location of files that render markdown in my app (main_project):");  // dirPath markstream-page, depth: 2
+//		txaPrompt.appendText(promptManager.mspLoc(toolManager.getMainprjMcpClient()));
 		txaPrompt.appendText("main_project-read_file: file_path = src/main/java/dev/turnfab/RootController.java");
-		txaPrompt.appendText(promptManager.rootCtlr(toolManager.getMainprjMcpClient()));
+//		txaPrompt.appendText(promptManager.rootCtlr(toolManager.getMainprjMcpClient()));
 	}
 
 	@FXML
@@ -158,7 +161,8 @@ public class RootController {
 
 	@FXML
 	public void onTest() {
-		buildSystemPrompt();
+		txaPrompt.clear();
+		txaPrompt.appendText(promptManager.getTabs(toolManager.getMainprjMcpClient()));
 	}
 
 	//////////////////////////////////////////////////////////
@@ -220,7 +224,7 @@ public class RootController {
 
 		appendMd("\n\n## ==Turn "+turnNumber+"==\n");
 //		appendMd("> ");
-		if (toSend.length()>500) appendMd("(PROMPT)");
+		if (toSend.length()>900) appendMd("..."+toSend.substring(toSend.length()-900, toSend.length()));
 		else appendMd(toSend);
 
 		TokenStream stream = bot.chat(toSend,
