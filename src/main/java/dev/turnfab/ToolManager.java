@@ -91,9 +91,10 @@ public class ToolManager {
             toolProvider.addMcpClient(githubMcpClient);
         }
 
-        toolProvider.setToolNameMapper((mc, tool) ->
-                mc.key().equals("tavily") ? tool.name() : mc.key()+"-"+tool.name());
+//        toolProvider.setToolNameMapper((mc, tool) ->
+//                mc.key().equals("tavily") ? tool.name() : mc.key()+"-"+tool.name());
 
+        toolProvider.setToolSpecificationMapper(new TurnfabToolSpecMapper());
 
     }
 

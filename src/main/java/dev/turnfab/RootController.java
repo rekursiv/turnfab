@@ -140,7 +140,8 @@ public class RootController {
 		txaPrompt.appendText(promptManager.listDirTree(toolManager.getLc4jMcpClient(), "docs/docs", 3));
 		txaPrompt.appendText(promptManager.readFile(toolManager.getMainprjMcpClient(),
 //				"src/main/java/dev/turnfab/RootController.java"));
-				"src/main/java/dev/turnfab/PromptManager.java"));
+//				"src/main/java/dev/turnfab/PromptManager.java"));
+				"src/main/java/dev/turnfab/ToolManager.java"));
 	}
 
 	private void buildMsPrompt() {
