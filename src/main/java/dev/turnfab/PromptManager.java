@@ -52,6 +52,7 @@ public class PromptManager {
         ToolExecutionResult res = mcpClient.executeTool(request);
         prompt.append("\n");
 
+        @SuppressWarnings("unchecked")
         Map<String, String> rmap = (Map<String, String>) res.result();
         prompt.append(rmap.get("tree"));
         prompt.append("\n\n");
@@ -70,21 +71,17 @@ public class PromptManager {
                 .name("get_all_open_file_paths")
                 .build();
         ToolExecutionResult res = mcpClient.executeTool(request);
-
-        Map<String, String> rmap = (Map<String, String>) res.result();
-        prompt.append(rmap.get("activeFilePath").replace("\\", "/"));
-
-        // FIXME: need list of open files
-/*
+        @SuppressWarnings("unchecked")
+        Map<String, Object> rmap = (Map<String, Object>) res.result();
+        String activeFile = (String) rmap.get("activeFilePath");
         List<?> openFiles = (List<?>) rmap.get("openFiles");
         if (openFiles != null) {
             for (Object file : openFiles) {
-                prompt.append(file).append('\n');
+                prompt.append(file.toString().replace("\\", "/"));
+                if (file.toString().equals(activeFile)) prompt.append("   <<<");
+                prompt.append('\n');
             }
         }
-*/
-        prompt.append("\n"+res.toString()+"\n");
-//ToolExecutionResult {isError = false, result = {activeFilePath=src\main\java\dev\turnfab\PromptManager.java, openFiles=[todo.txt, src\main\java\dev\turnfab\RootController.java, src\main\java\dev\turnfab\ToolManager.java, src\main\java\dev\turnfab\PromptManager.java]}, resultContents = [TextContent { text = "{"activeFilePath":"src\\main\\java\\dev\\turnfab\\PromptManager.java","openFiles":["todo.txt","src\\main\\java\\dev\\turnfab\\RootController.java","src\\main\\java\\dev\\turnfab\\ToolManager.java","src\\main\\java\\dev\\turnfab\\PromptManager.java"]}" }], attributes = {}}
 
         return prompt.toString();
 
