@@ -156,7 +156,7 @@ public class RootController {
 
 	@FXML
 	public void onSendPrompt() {
-		beginSession(txaPrompt.getText());
+		beginTurn(txaPrompt.getText());
 		tabPane.getSelectionModel().select(1);
 	}
 
@@ -170,7 +170,7 @@ public class RootController {
 
 	@FXML
 	public void onSend() {
-		beginSession(txaToSend.getText());
+		beginTurn(txaToSend.getText());
 		txaToSend.clear();
 	}
 
@@ -204,14 +204,6 @@ public class RootController {
 		armCancel = true;
 	}
 
-
-	private void beginSession(String initialPrompt) {
-		buildSystemPrompt();
-		appendMd("### ==System Prompt:==\n");
-		appendMd(systemPrompt.toString());
-		beginTurn(initialPrompt);
-	}
-
 	private void beginTurn(String toSend) {
 		if (bot==null) {
 			log.warning("Bot has not been initialized!");
@@ -223,9 +215,15 @@ public class RootController {
 		currentSection = Section.NONE;
 		currentToolIndex = -1;
 
+		if (turnNumber==1) {
+			buildSystemPrompt();
+			appendMd("### ==System Prompt:==\n");
+			appendMd(systemPrompt.toString());
+		}
+
 		appendMd("\n\n## ==Turn "+turnNumber+"==\n");
 //		appendMd("> ");
-		if (toSend.length()>900) appendMd("..."+toSend.substring(toSend.length()-900, toSend.length()));
+		if (toSend.length()>900) appendMd("..."+toSend.substring(toSend.length()-900));
 		else appendMd(toSend);
 
 		TokenStream stream = bot.chat(toSend,
