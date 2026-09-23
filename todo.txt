@@ -1,7 +1,5 @@
 
-
-
-file LC4J GitHub issue
+pull system prompt from PromptManager
 
 rewrite tool params
 

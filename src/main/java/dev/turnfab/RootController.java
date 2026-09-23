@@ -2,6 +2,8 @@ package dev.turnfab;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.time.Duration;
 import java.time.LocalDate;
@@ -57,6 +59,7 @@ public class RootController {
 
 	private MarkstreamView msView = new MarkstreamView();
 
+	private StringBuilder systemPrompt = new StringBuilder();
 	private Bot bot;
 	private Section currentSection = Section.NONE;
 	private int currentToolIndex = -1;
@@ -93,7 +96,7 @@ public class RootController {
 
 		bot = AiServices.builder(Bot.class)
 				.streamingChatModel(new ThinkingFirstStreamingModel(model))
-				.systemMessageTransformer(systemMessage -> systemMessage + " Today's date is " + LocalDate.now() + ".")
+				.systemMessageTransformer(systemMessage -> buildSystemPrompt())
 				.toolProvider(toolManager.getProvider())
 				.chatMemory(TokenWindowChatMemory.withMaxTokens(200000, tcEst))
 				.build();
@@ -106,15 +109,21 @@ public class RootController {
 
 	@FXML
 	public void onInitBot() {
-		log.info("");
 		initBot();
 	}
 
 	@FXML
 	public void onInitMcp() {
-		log.info("");
 		toolManager.init();
 		toolManager.printEnabledTools();
+	}
+
+	private String buildSystemPrompt() {
+		if (systemPrompt.isEmpty()) {
+			systemPrompt.append(readResource("system_prompts/coder.md"));
+			systemPrompt.append("\nToday's date is " + LocalDate.now() + ".");
+		}
+		return systemPrompt.toString();
 	}
 
 	@FXML
@@ -143,21 +152,20 @@ public class RootController {
 
 	@FXML
 	public void onSendPrompt() {
-		log.info("");
-		beginTurn(txaPrompt.getText(), "(PROMPT)");
+		beginSession(txaPrompt.getText());
 		tabPane.getSelectionModel().select(1);
 	}
 
 	@FXML
 	public void onTest() {
-		log.info("");
+		buildSystemPrompt();
 	}
 
 	//////////////////////////////////////////////////////////
 
 	@FXML
 	public void onSend() {
-		beginTurn(txaToSend.getText(), null);
+		beginSession(txaToSend.getText());
 		txaToSend.clear();
 	}
 
@@ -192,7 +200,14 @@ public class RootController {
 	}
 
 
-	private void beginTurn(String toSend, String summary) {
+	private void beginSession(String initialPrompt) {
+		buildSystemPrompt();
+		appendMd("### ==System Prompt:==\n");
+		appendMd(systemPrompt.toString());
+		beginTurn(initialPrompt);
+	}
+
+	private void beginTurn(String toSend) {
 		if (bot==null) {
 			log.warning("Bot has not been initialized!");
 			return;
@@ -204,9 +219,9 @@ public class RootController {
 		currentToolIndex = -1;
 
 		appendMd("\n\n## ==Turn "+turnNumber+"==\n");
-		appendMd("> ");
-		if (summary==null) appendMd(toSend);
-		else appendMd(summary);
+//		appendMd("> ");
+		if (toSend.length()>500) appendMd("(PROMPT)");
+		else appendMd(toSend);
 
 		TokenStream stream = bot.chat(toSend,
 				OpenAiChatRequestParameters.builder()
@@ -332,6 +347,17 @@ public class RootController {
 		stage.setTitle("Raw Markdown View");
 		stage.setScene(scene);
 		stage.show();
+	}
+
+	private String readResource(String name) {
+		try (InputStream in = getClass().getResourceAsStream(name)) {
+			if (in == null) {
+				throw new IllegalArgumentException("Missing resource: " + name);
+			}
+			return new String(in.readAllBytes(), StandardCharsets.UTF_8);
+		} catch (IOException e) {
+			throw new RuntimeException(e);
+		}
 	}
 
 }
