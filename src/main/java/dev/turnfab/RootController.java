@@ -226,7 +226,7 @@ public class RootController {
 
 		appendMd("\n\n## ==Turn "+turnNumber+"==\n");
 //		appendMd("> ");
-		if (toSend.length()>900) appendMd("..."+toSend.substring(toSend.length()-900));
+		if (toSend.length()>900) appendMd("..."+toSend.substring(toSend.length()-900).replace("```", ""));
 		else appendMd(toSend);
 
 		TokenStream stream = bot.chat(toSend,
