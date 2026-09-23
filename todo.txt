@@ -1,9 +1,9 @@
 
 
-rewrite tool params
-
 fix tool call output: summary for when it's very long?
+  after n number of chars just start outputting . . . every few calls
 
+  
 =======
 
 add "Thinking" indicator via FX?
