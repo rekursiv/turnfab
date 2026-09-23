@@ -1,6 +1,5 @@
 
 
-fix tool call output: summary for when it's very long? DONE! but have not tested...
 
 =======
 
@@ -12,15 +11,11 @@ analyze ChatMemory, find way to use for ChatHistory?
 
 Copy MD btn: puts on clipboard
 
+calc an average tok/sec for a turn, display it at turn's end
+
 === rendering issues ===
 
 fix rendered view: every emoji has a box after it that overlaps the first letter that comes next
-
-==========
-
-onCompleteResponse  response.metadata().tokenUsage()
-  do these come from vLLM? if so, compare with TokenEst.
-    why do we even need TokenEst??
 
 =======
 

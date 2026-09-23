@@ -30,6 +30,7 @@ import javafx.application.Platform;
 import javafx.fxml.FXML;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
+import javafx.scene.control.Label;
 import javafx.scene.control.TabPane;
 import javafx.scene.control.TextArea;
 import javafx.scene.layout.StackPane;
@@ -59,6 +60,8 @@ public class RootController {
 	@FXML private TextArea txaToSend;
 	@FXML private Button btnSend;
 
+	@FXML private Label lblCtxUsage;
+	@FXML private Label lblTokPerSec;
 
 
 	private MarkstreamView msView = new MarkstreamView();
@@ -72,6 +75,14 @@ public class RootController {
 	private StringBuilder mdRaw = new StringBuilder();
 
 	private boolean armCancel = false;
+
+	private TokenWindowChatMemory chatMemory;
+
+	// streaming stats
+	private long streamStartNanos;
+	private int outputTokens;
+	private int inputTokens;
+	private long lastLabelUpdateNanos;
 
 	private enum Section { NONE, THINKING, RESPONSE, TOOL_CALL }
 
@@ -103,7 +114,7 @@ public class RootController {
 				.streamingChatModel(new ThinkingFirstStreamingModel(model))
 				.systemMessageTransformer(systemMessage -> buildSystemPrompt())
 				.toolProvider(toolManager.getProvider())
-				.chatMemory(TokenWindowChatMemory.withMaxTokens(200000, tcEst))
+				.chatMemory(chatMemory = TokenWindowChatMemory.withMaxTokens(200000, tcEst))
 				.build();
 
 	}
@@ -229,6 +240,12 @@ public class RootController {
 		if (toSend.length()>900) appendMd("..."+toSend.substring(toSend.length()-900).replace("```", ""));
 		else appendMd(toSend);
 
+		// reset streaming stats
+		inputTokens = tcEst.estimateTokenCountInMessages(chatMemory.messages());
+		outputTokens = 0;
+		streamStartNanos = System.nanoTime();
+		lastLabelUpdateNanos = 0;
+
 		TokenStream stream = bot.chat(toSend,
 				OpenAiChatRequestParameters.builder()
 						.reasoningEffort("medium")
@@ -242,6 +259,8 @@ public class RootController {
 						currentSection = Section.THINKING;
 					}
 					appendMd(partialThinking.text());
+					outputTokens += tcEst.estimateTokenCountInText(partialThinking.text());
+					updateStatsLabels();
 					if (armCancel) {
 						context.streamingHandle().cancel();
 						appendMd("\n\n==CANCELLED==\n\n");
@@ -255,6 +274,8 @@ public class RootController {
 						currentSection = Section.RESPONSE;
 					}
 					appendMd(partialResponse.text());
+					outputTokens += tcEst.estimateTokenCountInText(partialResponse.text());
+					updateStatsLabels();
 					if (armCancel) {
 						context.streamingHandle().cancel();
 						appendMd("\n\n==CANCELLED==\n\n");
@@ -284,6 +305,11 @@ public class RootController {
 					closeSection();
 					currentSection = Section.NONE;
 					currentToolIndex = -1;
+					// new round: re-read input (now includes tool results), reset output
+					inputTokens = tcEst.estimateTokenCountInMessages(chatMemory.messages());
+					outputTokens = 0;
+					streamStartNanos = System.nanoTime();
+					lastLabelUpdateNanos = 0;
 				})
 				.onToolExecuted(execution -> {
 					msView.complete();
@@ -329,6 +355,29 @@ public class RootController {
 	private void appendMd(String md) {
 		mdRaw.append(md);
 		msView.append(md);
+	}
+
+	/**
+	 * Updates the token/s and context-usage labels, throttled to at most every 200 ms.
+	 * Called from streaming callbacks (non-FX thread).
+	 */
+	private void updateStatsLabels() {
+		long now = System.nanoTime();
+		if (now - lastLabelUpdateNanos < 200_000_000L) return; // 200 ms throttle
+		lastLabelUpdateNanos = now;
+
+		double elapsedSec = (now - streamStartNanos) / 1_000_000_000.0;
+		double tokPerSec = elapsedSec > 0.2 ? outputTokens / elapsedSec : 0;
+		int totalTokens = inputTokens + outputTokens;
+		double pct = 100.0 * totalTokens / cfg.model_length;
+
+		String ctxText = String.format("%d/%d (%.1f%%)", totalTokens, cfg.model_length, pct);
+		String tpsText = String.format("%.1f tok/s", tokPerSec);
+
+		Platform.runLater(() -> {
+			lblCtxUsage.setText(ctxText);
+			lblTokPerSec.setText(tpsText);
+		});
 	}
 
 	private File askUserWhereToSave() {

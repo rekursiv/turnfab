@@ -13,6 +13,7 @@ public class TurnfabConfig extends ConfigBase {
 	public String model_name = "Qwen/Qwen3.8-27B";
 	public String model_base_url = "http://venus.local:8000/v1";
 	public String model_key = "secret";
+	public int model_length = 262144;
 
 	public String github_mcp_name = "github";
 	public String github_mcp_url = "https://api.githubcopilot.com/mcp";
