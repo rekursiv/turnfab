@@ -1,8 +1,6 @@
 
 
-fix tool call output: summary for when it's very long?
-  after n number of chars just start outputting . . . every few calls
-
+fix tool call output: summary for when it's very long? DONE! but have not tested...
 
 =======
 

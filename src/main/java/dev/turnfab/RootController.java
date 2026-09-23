@@ -42,6 +42,8 @@ public class RootController {
 
 	private static final boolean DEBUG_CHAT_MODEL = false;
 
+	private static final int MAX_TOOL_CALL_DETAIL_CHUNKS = 20;
+
 	private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("EEEE, MMMM d, yyyy");
 
 	@Inject private Logger log;
@@ -65,6 +67,7 @@ public class RootController {
 	private Bot bot;
 	private Section currentSection = Section.NONE;
 	private int currentToolIndex = -1;
+	private int toolCallChunks = 0;
 	private int turnNumber = 0;
 	private StringBuilder mdRaw = new StringBuilder();
 
@@ -139,9 +142,9 @@ public class RootController {
 		txaPrompt.appendText("LangChain4j documentation: ");
 		txaPrompt.appendText(promptManager.listDirTree(toolManager.getLc4jMcpClient(), "docs/docs", 3));
 		txaPrompt.appendText(promptManager.readFile(toolManager.getMainprjMcpClient(),
-//				"src/main/java/dev/turnfab/RootController.java"));
+				"src/main/java/dev/turnfab/RootController.java"));
 //				"src/main/java/dev/turnfab/PromptManager.java"));
-				"src/main/java/dev/turnfab/ToolManager.java"));
+//				"src/main/java/dev/turnfab/ToolManager.java"));
 	}
 
 	private void buildMsPrompt() {
@@ -265,8 +268,14 @@ public class RootController {
 						appendMd("\n\n==Tool Call:==   *"+partialToolCall.id()+" : "+partialToolCall.name()+"*`  \n");
 						currentSection = Section.TOOL_CALL;
 						currentToolIndex = partialToolCall.index();
+						toolCallChunks = 0;
 					}
-					appendMd(partialToolCall.partialArguments());
+					if (toolCallChunks < MAX_TOOL_CALL_DETAIL_CHUNKS) {
+						appendMd(partialToolCall.partialArguments());
+					} else {
+						appendMd(". ");
+					}
+					toolCallChunks++;
 				})
 				.onIntermediateResponse(chatResponse -> {
 					// The model finished streaming this tool-calling round: every partial
