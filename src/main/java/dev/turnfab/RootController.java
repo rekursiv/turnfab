@@ -144,7 +144,13 @@ public class RootController {
 
 	@FXML
 	public void onBuildPrompt() {
-		buildLc4jPrompt();
+//		buildLc4jPrompt();
+		buildPromptFromTabFiles();
+	}
+
+	private void buildPromptFromTabFiles() {
+		txaPrompt.clear();
+		txaPrompt.appendText(promptManager.readAllTabs(toolManager.getMainprjMcpClient()));
 	}
 
 	private void buildLc4jPrompt() {
@@ -152,10 +158,12 @@ public class RootController {
 		txaPrompt.appendText("Full searchable source code for LangChain4j is available with langchain4j_src-* tools.\n\n");
 		txaPrompt.appendText("LangChain4j documentation: ");
 		txaPrompt.appendText(promptManager.listDirTree(toolManager.getLc4jMcpClient(), "docs/docs", 3));
-		txaPrompt.appendText(promptManager.readFile(toolManager.getMainprjMcpClient(),
-				"src/main/java/dev/turnfab/RootController.java"));
+//		txaPrompt.appendText(promptManager.readFile(toolManager.getMainprjMcpClient(),
+//				"src/main/java/dev/turnfab/RootController.java"));
 //				"src/main/java/dev/turnfab/PromptManager.java"));
 //				"src/main/java/dev/turnfab/ToolManager.java"));
+		txaPrompt.appendText(promptManager.readActiveTab(toolManager.getMainprjMcpClient()));
+
 	}
 
 	private void buildMsPrompt() {
@@ -177,7 +185,7 @@ public class RootController {
 	@FXML
 	public void onTest() {
 		txaPrompt.clear();
-		txaPrompt.appendText(promptManager.getTabs(toolManager.getMainprjMcpClient()));
+		txaPrompt.appendText(promptManager.getAllTabPaths(toolManager.getMainprjMcpClient()));
 	}
 
 	//////////////////////////////////////////////////////////

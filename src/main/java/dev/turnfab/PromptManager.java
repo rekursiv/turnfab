@@ -5,7 +5,6 @@ import dev.langchain4j.agent.tool.ToolExecutionRequest;
 import dev.langchain4j.mcp.client.McpClient;
 import dev.langchain4j.service.tool.ToolExecutionResult;
 
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.logging.Logger;
@@ -15,25 +14,6 @@ public class PromptManager {
     @Inject
     private Logger log;
 
-    public String readFile(McpClient mcpClient, String filePath) {
-        if (mcpClient == null) {
-            return "MCP Client is null";
-        }
-        StringBuilder prompt = new StringBuilder();
-        prompt.append(mcpClient.key());
-        prompt.append("-read_file: file_path = ");
-        prompt.append(filePath);
-        ToolExecutionRequest request = ToolExecutionRequest.builder()
-                .name("read_file")
-                .arguments("{\"file_path\": \""+filePath+"\"}")
-                .build();
-        ToolExecutionResult res = mcpClient.executeTool(request);
-        prompt.append("\n```\n");
-        prompt.append(res.resultText());
-        prompt.append("\n```\n\n");
-
-        return prompt.toString();
-    }
 
     public String listDirTree(McpClient mcpClient, String dirPath, int maxDepth) {
         if (mcpClient == null) {
@@ -60,7 +40,72 @@ public class PromptManager {
         return prompt.toString();
     }
 
-    public String getTabs(McpClient mcpClient) {
+    public String readFile(McpClient mcpClient, String filePath) {
+        if (mcpClient == null) {
+            return "MCP Client is null";
+        }
+        StringBuilder prompt = new StringBuilder();
+        prompt.append(mcpClient.key());
+        prompt.append("-read_file: file_path = ");
+        prompt.append(filePath);
+        ToolExecutionRequest request = ToolExecutionRequest.builder()
+                .name("read_file")
+                .arguments("{\"file_path\": \""+filePath+"\"}")
+                .build();
+        ToolExecutionResult res = mcpClient.executeTool(request);
+        prompt.append("\n```\n");
+        prompt.append(res.resultText());
+        prompt.append("\n```\n\n");
+
+        return prompt.toString();
+    }
+
+    public String readAllTabs(McpClient mcpClient) {
+        if (mcpClient == null) {
+            return "MCP Client is null";
+        }
+
+        StringBuilder prompt = new StringBuilder();
+
+        ToolExecutionRequest request = ToolExecutionRequest.builder()
+                .name("get_all_open_file_paths")
+                .build();
+        ToolExecutionResult res = mcpClient.executeTool(request);
+        @SuppressWarnings("unchecked")
+        Map<String, Object> rmap = (Map<String, Object>) res.result();
+        List<?> openFiles = (List<?>) rmap.get("openFiles");
+        if (openFiles != null) {
+            for (Object file : openFiles) {
+                prompt.append(readFile(mcpClient, file.toString().replace("\\", "/")));
+                prompt.append('\n');
+            }
+        }
+
+        return prompt.toString();
+
+    }
+
+    public String readActiveTab(McpClient mcpClient) {
+        if (mcpClient == null) {
+            return "MCP Client is null";
+        }
+        String activeFile = getActiveTabPath(mcpClient);
+        System.out.println(">>>>  activeFile: " + activeFile);
+        return readFile(mcpClient, activeFile);
+    }
+
+    public String getActiveTabPath(McpClient mcpClient) {
+        ToolExecutionRequest request = ToolExecutionRequest.builder()
+                .name("get_all_open_file_paths")
+                .build();
+        ToolExecutionResult res = mcpClient.executeTool(request);
+        @SuppressWarnings("unchecked")
+        Map<String, Object> rmap = (Map<String, Object>) res.result();
+        return (String) rmap.get("activeFilePath").toString().replace("\\", "/");
+    }
+
+
+    public String getAllTabPaths(McpClient mcpClient) {
         if (mcpClient==null) {
             return "MCP Client is null";
         }

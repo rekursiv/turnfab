@@ -21,7 +21,7 @@ public class ToolManager {
     private static final String mainprj_mcp_name = "main_project";
     private static final String MAIN_PROJECT_PATH = "C:/projects/intellij_workspace/turnfab";
 
-    private static final boolean lc4j_mcp_enabled = true;
+    private static final boolean lc4j_mcp_enabled = false;
     private static final String lc4j_mcp_name = "langchain4j_src";
     private static final String LC4J_PROJECT_PATH = "C:/projects/intellij_workspace/langchain4j";
 
