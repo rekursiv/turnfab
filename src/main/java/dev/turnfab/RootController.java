@@ -262,6 +262,7 @@ public class RootController {
 
 		stream
 				.onPartialThinkingWithContext((PartialThinking partialThinking, PartialThinkingContext context) -> {
+					if (partialThinking.text() == null || partialThinking.text().isEmpty()) return;
 					if (currentSection != Section.THINKING) {
 						closeSection();
 						appendMd("\n\n==Thinking:==\n");
@@ -277,6 +278,7 @@ public class RootController {
 					}
 				})
 				.onPartialResponseWithContext((PartialResponse partialResponse, PartialResponseContext context) -> {
+					if (partialResponse.text() == null || partialResponse.text().isEmpty()) return;
 					if (currentSection != Section.RESPONSE) {
 						closeSection();
 						appendMd("\n\n==Response:==\n");
@@ -311,6 +313,9 @@ public class RootController {
 					// The model finished streaming this tool-calling round: every partial
 					// callback for it has already been delivered. Reset so the next round
 					// opens fresh sections instead of continuing stale ones.
+					if (currentSection == Section.TOOL_CALL) {
+						appendMd("`");
+					}
 					closeSection();
 					currentSection = Section.NONE;
 					currentToolIndex = -1;
@@ -322,7 +327,9 @@ public class RootController {
 				})
 				.onToolExecuted(execution -> {
 					msView.complete();
-					appendMd("`\n==Tool Result:==   *"+execution.request().id()+" : "+execution.request().name()+"    took "+execution.duration().toSeconds()+" seconds*  \n");
+					appendMd("`\n==Tool Result:==   *"+execution.request().id()+" : "+execution.request().name());
+					if (execution.duration().toSeconds()>1)	appendMd("    took "+execution.duration().toSeconds()+" seconds*  \n");
+					else appendMd("*\n");
 					if (execution.hasFailed()) appendMd("`"+execution.result()+"`");
 					msView.complete();
 				})
