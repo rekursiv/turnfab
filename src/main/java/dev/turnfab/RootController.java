@@ -9,6 +9,7 @@ import java.time.Duration;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.List;
 import java.util.logging.Logger;
 
 import com.cathive.fx.guice.FXMLController;
@@ -42,10 +43,9 @@ import javafx.stage.Stage;
 public class RootController {
 
 	private static final boolean DEBUG_CHAT_MODEL = false;
-
 	private static final int MAX_TOOL_CALL_DETAIL_CHUNKS = 20;
-
 	private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("EEEE, MMMM d, yyyy");
+    private static final int MAX_TOKENS = 180000;  // model length is 262144, leave headroom for long replies
 
 	@Inject private Logger log;
 	@Inject private TurnfabConfig cfg;
@@ -76,7 +76,9 @@ public class RootController {
 
 	private boolean armCancel = false;
 
-	private TokenWindowChatMemory chatMemory;
+	// The window is what the model sees; JournalingChatMemory also keeps the full session
+	// trajectory, including whatever the MAX_TOKENS window has already evicted.
+	private JournalingChatMemory chatMemory;
 
 	// streaming stats
 	private long streamStartNanos;
@@ -119,9 +121,11 @@ public class RootController {
 				.streamingChatModel(new ThinkingFirstStreamingModel(model))
 				.systemMessageTransformer(systemMessage -> buildSystemPrompt())
 				.toolProvider(toolManager.getProvider())
-				.chatMemory(chatMemory = TokenWindowChatMemory.withMaxTokens(200000, tcEst))
+				.chatMemory(chatMemory = new JournalingChatMemory(
+						TokenWindowChatMemory.withMaxTokens(MAX_TOKENS, tcEst), () -> turnNumber))
 				.build();
 
+		log.info("Model and AI Service Ready.");
 	}
 
 
@@ -185,8 +189,12 @@ public class RootController {
 
 	@FXML
 	public void onTest() {
-		txaPrompt.clear();
-		txaPrompt.appendText(toolManager.getMcpInst());
+		List<JournalingChatMemory.Entry> journal = chatMemory.journal();
+		for (JournalingChatMemory.Entry entry : journal) {
+			System.out.println(entry.toString());
+		}
+//		txaPrompt.clear();
+//		txaPrompt.appendText(toolManager.getMcpInst());
 //		txaPrompt.appendText(promptManager.getAllTabPaths(toolManager.getMainprjMcpClient()));
 	}
 

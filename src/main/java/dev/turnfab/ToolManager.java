@@ -17,12 +17,12 @@ import java.util.logging.Logger;
 
 public class ToolManager {
 
-    private static final boolean mainprj_mcp_enabled = true;
+    private static final boolean mainprj_mcp_enabled = false;
     private static final String mainprj_mcp_name = "main_project";
     private static final String MAIN_PROJECT_PATH = "C:/projects/intellij_workspace/turnfab";
 //    private static final String MAIN_PROJECT_PATH = "C:/projects/intellij_workspace/protoplant/protoplant_java";
 
-    private static final boolean lc4j_mcp_enabled = true;
+    private static final boolean lc4j_mcp_enabled = false;
     private static final String lc4j_mcp_name = "langchain4j_src";
     private static final String LC4J_PROJECT_PATH = "C:/projects/intellij_workspace/langchain4j";
 
@@ -30,7 +30,7 @@ public class ToolManager {
     private static final String msvsrc_mcp_name = "markstream_vue";
     private static final String MSV_SRC_PATH = "C:/projects/intellij_workspace/markstream-vue";
 
-    private static final boolean tavily_mcp_enabled = false;
+    private static final boolean tavily_mcp_enabled = true;
     private static final boolean github_mcp_enabled = false;
 
     private static final boolean DEBUG_MCP_TRANSPORT = false;
