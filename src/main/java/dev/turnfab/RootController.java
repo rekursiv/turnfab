@@ -297,8 +297,11 @@ public class RootController {
 				.onPartialToolCall(partialToolCall -> {
 					if (currentSection != Section.TOOL_CALL
 							|| partialToolCall.index() != currentToolIndex) {
+						if (currentSection == Section.TOOL_CALL) {
+							appendMd("\n```\n"); // close the previous call's fenced block
+						}
 						closeSection();
-						appendMd("\n\n==Tool Call:==   *"+partialToolCall.id()+" : "+partialToolCall.name()+"*  `");
+						appendMd("\n\n==Tool Call:==   *"+partialToolCall.id()+" : "+partialToolCall.name()+"*\n```json\n");
 						currentSection = Section.TOOL_CALL;
 						currentToolIndex = partialToolCall.index();
 						toolCallChunks = 0;
@@ -315,7 +318,7 @@ public class RootController {
 					// callback for it has already been delivered. Reset so the next round
 					// opens fresh sections instead of continuing stale ones.
 					if (currentSection == Section.TOOL_CALL) {
-						appendMd("`");
+						appendMd("\n```\n"); // close the last call's fenced block
 					}
 					closeSection();
 					currentSection = Section.NONE;
@@ -328,10 +331,10 @@ public class RootController {
 				})
 				.onToolExecuted(execution -> {
 					msView.complete();
-					appendMd("`\n==Tool Result:==   *"+execution.request().id()+" : "+execution.request().name());
+					appendMd("\n==Tool Result:==   *"+execution.request().id()+" : "+execution.request().name());
 					if (execution.duration().toSeconds()>1)	appendMd("    took "+execution.duration().toSeconds()+" seconds*  \n");
 					else appendMd("*\n");
-					if (execution.hasFailed()) appendMd("`"+execution.result()+"`");
+					if (execution.hasFailed()) appendMd("`"+execution.result()+"`\n");
 					msView.complete();
 				})
 				.onCompleteResponse(response -> {

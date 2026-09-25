@@ -1,14 +1,6 @@
 
 
 
-
-===
-
-debug tool call / tool response:
-  seems to only happen when model calls multiple tools at once (unconfirmed)
-  the closing ` marker gets lost, or shows up in tool result instead (similar to think/response bug before fix)
-  sometimes a response: block is triggered in between multi-tool calls
-
 =======
 
 add "Thinking" indicator via FX?
@@ -24,9 +16,12 @@ calc an average tok/sec for a turn, display it at turn's end
 
 === rendering issues ===
 
-when model is thinking about code, it can output something like "curTask==null" and the "==" activates hiliting
-
 WebView: every emoji has a box after it that overlaps the first letter that comes next (JavaFX upgrade??)
+
+tool call/response: maybe change fenced blocks to inline code blocks?
+
+rendering thinking in markdown can really screw up the parser, any way to render that section plaintext?
+  when model is thinking about code, it can output something like "curTask==null" and the "==" activates hiliting
 
 =======
 
