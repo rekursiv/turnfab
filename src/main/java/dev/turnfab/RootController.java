@@ -279,6 +279,7 @@ public class RootController {
 				})
 				.onPartialResponseWithContext((PartialResponse partialResponse, PartialResponseContext context) -> {
 					if (partialResponse.text() == null || partialResponse.text().isEmpty()) return;
+					if (currentSection == Section.TOOL_CALL) return; // don't steal section mid tool-call streaming
 					if (currentSection != Section.RESPONSE) {
 						closeSection();
 						appendMd("\n\n==Response:==\n");
