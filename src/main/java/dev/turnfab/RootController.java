@@ -144,8 +144,8 @@ public class RootController {
 
 	@FXML
 	public void onBuildPrompt() {
-//		buildLc4jPrompt();
-		buildPromptFromTabFiles();
+		buildLc4jPrompt();
+//		buildPromptFromTabFiles();
 	}
 
 	private void buildPromptFromTabFiles() {
@@ -158,12 +158,8 @@ public class RootController {
 		txaPrompt.appendText("Full searchable source code for LangChain4j is available with langchain4j_src-* tools.\n\n");
 		txaPrompt.appendText("LangChain4j documentation: ");
 		txaPrompt.appendText(promptManager.listDirTree(toolManager.getLc4jMcpClient(), "docs/docs", 3));
-//		txaPrompt.appendText(promptManager.readFile(toolManager.getMainprjMcpClient(),
-//				"src/main/java/dev/turnfab/RootController.java"));
-//				"src/main/java/dev/turnfab/PromptManager.java"));
-//				"src/main/java/dev/turnfab/ToolManager.java"));
+//		txaPrompt.appendText(promptManager.readFile(toolManager.getMainprjMcpClient(), "src/main/java/dev/turnfab/RootController.java"));
 		txaPrompt.appendText(promptManager.readActiveTab(toolManager.getMainprjMcpClient()));
-
 	}
 
 	private void buildMsPrompt() {
@@ -185,7 +181,13 @@ public class RootController {
 	@FXML
 	public void onTest() {
 		txaPrompt.clear();
-		txaPrompt.appendText(promptManager.getAllTabPaths(toolManager.getMainprjMcpClient()));
+		txaPrompt.appendText(toolManager.getMcpInst());
+//		txaPrompt.appendText(promptManager.getAllTabPaths(toolManager.getMainprjMcpClient()));
+	}
+
+	@FXML
+	public void onClearPrompt() {
+		txaPrompt.clear();
 	}
 
 	//////////////////////////////////////////////////////////
@@ -244,7 +246,6 @@ public class RootController {
 		}
 
 		appendMd("\n\n## ==Turn "+turnNumber+"==\n");
-//		appendMd("> ");
 		if (toSend.length()>900) appendMd("..."+toSend.substring(toSend.length()-900).replace("```", ""));
 		else appendMd(toSend);
 
@@ -294,7 +295,7 @@ public class RootController {
 					if (currentSection != Section.TOOL_CALL
 							|| partialToolCall.index() != currentToolIndex) {
 						closeSection();
-						appendMd("\n\n==Tool Call:==   *"+partialToolCall.id()+" : "+partialToolCall.name()+"*`  \n");
+						appendMd("\n\n==Tool Call:==   *"+partialToolCall.id()+" : "+partialToolCall.name()+"*  `");
 						currentSection = Section.TOOL_CALL;
 						currentToolIndex = partialToolCall.index();
 						toolCallChunks = 0;

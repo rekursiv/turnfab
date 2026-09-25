@@ -20,8 +20,9 @@ public class ToolManager {
     private static final boolean mainprj_mcp_enabled = true;
     private static final String mainprj_mcp_name = "main_project";
     private static final String MAIN_PROJECT_PATH = "C:/projects/intellij_workspace/turnfab";
+//    private static final String MAIN_PROJECT_PATH = "C:/projects/intellij_workspace/protoplant/protoplant_java";
 
-    private static final boolean lc4j_mcp_enabled = false;
+    private static final boolean lc4j_mcp_enabled = true;
     private static final String lc4j_mcp_name = "langchain4j_src";
     private static final String LC4J_PROJECT_PATH = "C:/projects/intellij_workspace/langchain4j";
 
@@ -40,7 +41,7 @@ public class ToolManager {
 
     private McpClient mainprjMcpClient = null;
     private McpClient lc4jClient = null;
-    private McpClient msvsrcMcpClient = null;
+    private McpClient msvMcpClient = null;
 
 
     private McpClient tavilyMcpClient = null;
@@ -70,11 +71,11 @@ public class ToolManager {
             toolProvider.addMcpClient(lc4jClient);
         }
         if (msvsrc_mcp_enabled) {
-            msvsrcMcpClient = setupMcpClient(msvsrc_mcp_name, "http://127.0.0.1:64542/stream",
+            msvMcpClient = setupMcpClient(msvsrc_mcp_name, "http://127.0.0.1:64542/stream",
                     Map.of("IJ_MCP_SERVER_PROJECT_PATH", MSV_SRC_PATH));
             toolProvider.addFilter((mc, tool) ->
                     !mc.key().equals(msvsrc_mcp_name) || !jbToolExcludeList_RO().contains(tool.name()));
-            toolProvider.addMcpClient(msvsrcMcpClient);
+            toolProvider.addMcpClient(msvMcpClient);
         }
 
 
@@ -91,9 +92,6 @@ public class ToolManager {
             toolProvider.addMcpClient(githubMcpClient);
         }
 
-//        toolProvider.setToolNameMapper((mc, tool) ->
-//                mc.key().equals("tavily") ? tool.name() : mc.key()+"-"+tool.name());
-
         toolProvider.setToolSpecificationMapper(new TurnfabToolSpecMapper());
 
     }
@@ -108,7 +106,22 @@ public class ToolManager {
 
     public McpClient getMainprjMcpClient() { return mainprjMcpClient; }
     public McpClient getLc4jMcpClient() { return lc4jClient; }
-    public McpClient getMsvsrcMcpClient() { return  msvsrcMcpClient; }
+    public McpClient getMsvMcpClient() { return  msvMcpClient; }
+
+    public String getMcpInst() {
+        return getMcpInst(githubMcpClient);
+    }
+
+    private String getMcpInst(McpClient mcpClient) {
+        if (mcpClient == null) {
+            return "MCP client not ready.";
+        } else if (mcpClient.instructions() == null) {
+            return "No instructions for MCP client " + mcpClient.key();
+        } else {
+            return "MCP client " + mcpClient.key() + " instructions:\n\n" + mcpClient.instructions();
+        }
+    }
+
 
     //////
 
@@ -154,14 +167,7 @@ public class ToolManager {
                 .build();
     }
 
-    private void test(McpClient mcpClient) {
-
-        if (mcpClient.instructions() == null) {
-            System.out.println("No instructions for MCP client " + mcpClient.key());
-        } else {
-            System.out.println("MCP client " + mcpClient.key() + " instructions:\n\n" + mcpClient.instructions());
-        }
-
+    private void listTools(McpClient mcpClient) {
         for (ToolSpecification ts : mcpClient.listTools()) {
             System.out.println(ts.toString());
         }

@@ -45,6 +45,11 @@
                                                 <Insets bottom="4.0" left="80.0" right="4.0" top="4.0" />
                                              </HBox.margin>
                                           </Button>
+                                          <Button mnemonicParsing="false" onAction="#onClearPrompt" text="Clear Prompt">
+                                             <HBox.margin>
+                                                <Insets bottom="4.0" left="40.0" right="4.0" top="4.0" />
+                                             </HBox.margin>
+                                          </Button>
                                        </children>
                                     </HBox>
                                  </children>

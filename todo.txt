@@ -1,13 +1,22 @@
 
 
 
+
+===
+
+debug tool call / tool response:
+  seems to only happen when model calls multiple tools at once (unconfirmed)
+  the closing ` marker gets lost, or shows up in tool result instead (similar to think/response bug before fix)
+  sometimes a response: block is triggered in between multi-tool calls
+
 =======
 
 add "Thinking" indicator via FX?
 
 find a way to bring up tool calls later if needed (show ID, save in buffer, recall by ID?)
 
-analyze ChatMemory, find way to use for ChatHistory?
+ChatMemory: explore writing MyTokenWindowChatMemory and MySingleSlotChatMemoryStore that mark messages
+  as evicted rather than actually deleting them, preserving full trajectory of a session
 
 Copy MD btn: puts on clipboard
 
@@ -15,11 +24,32 @@ calc an average tok/sec for a turn, display it at turn's end
 
 === rendering issues ===
 
-fix rendered view: every emoji has a box after it that overlaps the first letter that comes next
+when model is thinking about code, it can output something like "curTask==null" and the "==" activates hiliting
+
+WebView: every emoji has a box after it that overlaps the first letter that comes next (JavaFX upgrade??)
 
 =======
 
 markstream-page: to udate all packages to latest: pnpm update --latest (or pnpm up --latest)
+
+======
+
+dynamically add MCP instructions to system prompt if the MCP server is used. GitHub example:
+## Tool usage notes
+### GitHub
+- Use list_* for broad retrieval, search_* for targeted queries.
+- Paginate in small batches (5–10).
+- Use `fields` to limit output when you don't need full records.
+
+(or more complete)
+
+## GitHub
+- Use list_* tools for broad retrieval (all issues, all PRs, all branches) with basic filters; use search_* tools for targeted queries by keywords, text, or specific criteria.
+- Paginate with small batches (5–10 items).
+- Use the `fields` parameter to limit response size when you don't need all data.
+- For search_* tools: use the dedicated `sort` and `order` parameters for sorting. Keep query strings to search criteria only (e.g. "org:google language:python").
+- For issues: use issue_read to get a single issue's details, comments, labels, or parent/child relationships.
+- For PRs: use pull_request_read to get details, diffs, files, commits, reviews, or check runs.
 
 ======
 
