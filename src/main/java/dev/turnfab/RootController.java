@@ -84,6 +84,11 @@ public class RootController {
 	private int inputTokens;
 	private long lastLabelUpdateNanos;
 
+	// When true, the stats recompute is deferred until the first streaming callback of the
+	// next round: tool results are only persisted to chat memory after every onToolExecuted
+	// has fired, so reading the memory any earlier would miss them.
+	private volatile boolean statsRecomputePending = false;
+
 	private enum Section { NONE, THINKING, RESPONSE, TOOL_CALL }
 
 	private TokenCountEstimator tcEst = new OpenAiTokenCountEstimator("o200K_BASE"); // hack to trigger this.encoding = ENCODING_REGISTRY.getEncoding(O200K_BASE);
@@ -254,6 +259,7 @@ public class RootController {
 		outputTokens = 0;
 		streamStartNanos = System.nanoTime();
 		lastLabelUpdateNanos = 0;
+		statsRecomputePending = false;
 
 		TokenStream stream = bot.chat(toSend,
 				OpenAiChatRequestParameters.builder()
@@ -263,6 +269,7 @@ public class RootController {
 		stream
 				.onPartialThinkingWithContext((PartialThinking partialThinking, PartialThinkingContext context) -> {
 					if (partialThinking.text() == null || partialThinking.text().isEmpty()) return;
+					recomputeStatsIfPending();
 					if (currentSection != Section.THINKING) {
 						closeSection();
 						appendMd("\n\n==Thinking:==\n");
@@ -279,6 +286,7 @@ public class RootController {
 				})
 				.onPartialResponseWithContext((PartialResponse partialResponse, PartialResponseContext context) -> {
 					if (partialResponse.text() == null || partialResponse.text().isEmpty()) return;
+					recomputeStatsIfPending();
 					if (currentSection == Section.TOOL_CALL) return; // don't steal section mid tool-call streaming
 					if (currentSection != Section.RESPONSE) {
 						closeSection();
@@ -295,6 +303,7 @@ public class RootController {
 					}
 				})
 				.onPartialToolCall(partialToolCall -> {
+					recomputeStatsIfPending();
 					if (currentSection != Section.TOOL_CALL
 							|| partialToolCall.index() != currentToolIndex) {
 						if (currentSection == Section.TOOL_CALL) {
@@ -323,11 +332,9 @@ public class RootController {
 					closeSection();
 					currentSection = Section.NONE;
 					currentToolIndex = -1;
-					// new round: re-read input (now includes tool results), reset output
-					inputTokens = tcEst.estimateTokenCountInMessages(chatMemory.messages());
-					outputTokens = 0;
-					streamStartNanos = System.nanoTime();
-					lastLabelUpdateNanos = 0;
+					// Stats recompute is deferred: tool results only land in chat memory after
+					// every onToolExecuted has fired. recomputeStatsIfPending() picks it up at
+					// the start of the next round.
 				})
 				.onToolExecuted(execution -> {
 					msView.complete();
@@ -336,6 +343,7 @@ public class RootController {
 					else appendMd("*\n");
 					if (execution.hasFailed()) appendMd("`"+execution.result()+"`\n");
 					msView.complete();
+					statsRecomputePending = true;
 				})
 				.onCompleteResponse(response -> {
 					currentSection = Section.NONE;
@@ -354,6 +362,20 @@ public class RootController {
 					endTurn();
 				})
 				.start();
+	}
+
+	/**
+	 * Recomputes streaming stats at the first streaming callback of a new round, once the
+	 * previous round's tool results are actually in chat memory. No-op unless a tool round
+	 * happened (see statsRecomputePending).
+	 */
+	private void recomputeStatsIfPending() {
+		if (!statsRecomputePending) return;
+		statsRecomputePending = false;
+		inputTokens = tcEst.estimateTokenCountInMessages(chatMemory.messages());
+		outputTokens = 0;
+		streamStartNanos = System.nanoTime();
+		lastLabelUpdateNanos = 0;
 	}
 
 	/**
