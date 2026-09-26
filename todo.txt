@@ -1,6 +1,8 @@
 
 
 
+List<Integer> values = new ArrayList<>(tm.values());
+
 =======
 
 add "Thinking" indicator via FX?

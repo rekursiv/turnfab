@@ -113,7 +113,6 @@ public class RootController {
 				.logResponses(DEBUG_CHAT_MODEL)
 				.returnThinking(true)
 				.sendThinking(true, "reasoning")
-				.timeout(Duration.ofSeconds(30))
 				.build();
 
 
@@ -153,13 +152,14 @@ public class RootController {
 
 	@FXML
 	public void onBuildPrompt() {
-		buildLc4jPrompt();
-//		buildPromptFromTabFiles();
+//		buildLc4jPrompt();
+		buildPromptFromTabFiles();
 	}
 
 	private void buildPromptFromTabFiles() {
 		txaPrompt.clear();
 		txaPrompt.appendText(promptManager.readAllTabs(toolManager.getMainprjMcpClient()));
+		txaPrompt.appendText(promptManager.readAllTabs(toolManager.getLc4jMcpClient()));
 	}
 
 	private void buildLc4jPrompt() {
