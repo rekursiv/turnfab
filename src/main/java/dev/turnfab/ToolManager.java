@@ -61,8 +61,7 @@ public class ToolManager {
 
     @Inject private Logger log;
     @Inject private TurnfabConfig cfg;
-
-    private final DynamicMcpToolProvider toolProvider = new DynamicMcpToolProvider();
+    @Inject private DynamicMcpToolProvider toolProvider;
 
     public DynamicMcpToolProvider getProvider() {
         return toolProvider;

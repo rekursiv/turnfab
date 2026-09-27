@@ -10,6 +10,7 @@ import java.util.logging.LogManager;
 import com.google.common.eventbus.EventBus;
 import com.google.inject.AbstractModule;
 import com.google.inject.TypeLiteral;
+import com.google.inject.Singleton;
 import com.google.inject.matcher.Matchers;
 import com.google.inject.spi.InjectionListener;
 import com.google.inject.spi.TypeEncounter;
@@ -25,7 +26,18 @@ public class TurnfabGuice extends AbstractModule {
 	protected void configure() {
 		setupConfig();
 		setupLogging();
+		setupTooling();
 		setupEventBus();
+	}
+
+	/**
+	 * The MCP registry and its config loader are scoped singletons so that every injection
+	 * site (ToolManager, controllers, whatever comes next) shares one set of live MCP
+	 * connections and one enabled/disabled state instead of each getting a fresh instance.
+	 */
+	protected void setupTooling() {
+		bind(DynamicMcpToolProvider.class).in(Singleton.class);
+		bind(ToolManager.class).in(Singleton.class);
 	}
 	
 	protected void setupConfig() {

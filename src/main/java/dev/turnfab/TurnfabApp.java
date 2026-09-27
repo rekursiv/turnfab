@@ -19,7 +19,8 @@ import javafx.stage.WindowEvent;
 public class TurnfabApp extends GuiceApplication {
 
     @Inject private GuiceFXMLLoader fxmlLoader;
-	
+    @Inject private DynamicMcpToolProvider toolProvider;
+
     @Override
     public void init(List<Module> modules) throws Exception {
         modules.add(new TurnfabGuice());
@@ -39,7 +40,13 @@ public class TurnfabApp extends GuiceApplication {
 			e.printStackTrace();
 		}
 	}
-	
+
+	/** Runs when the platform shuts down; release all MCP connections cleanly. */
+	@Override
+	public void stop() {
+		toolProvider.closeAll();
+	}
+
 	public static void main(String[] args) {
 
 		// fixes WebKit rendering on unscaled screens (scaled to 100%)
