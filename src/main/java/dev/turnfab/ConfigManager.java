@@ -2,6 +2,7 @@ package dev.turnfab;
 
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -25,6 +26,16 @@ public class ConfigManager<T> {
 		this.modelType = modelType;
 		this.defaultFileName = defaultFileName;
 		errorStack= new Stack<Exception>();
+	}
+
+	public ConfigManager(Class<T> modelType, String defaultFileName, ObjectMapper mapper) {
+		this(modelType, defaultFileName);
+		this.mapper = mapper;
+	}
+
+	/** Factory for the same load/save cycle, driven by YAML instead of JSON. */
+	public static <T> ConfigManager<T> yaml(Class<T> modelType, String defaultFileName) {
+		return new ConfigManager<T>(modelType, defaultFileName, new ObjectMapper(new YAMLFactory()));
 	}
 	
 	public boolean hasErrors() {

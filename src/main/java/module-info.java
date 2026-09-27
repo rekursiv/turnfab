@@ -26,6 +26,7 @@ module dev.turnfab {
 	requires langchain4j.http.client.jdk;
 	requires java.net.http;
 	requires com.fasterxml.jackson.databind;
+	requires com.fasterxml.jackson.dataformat.yaml;
 
 
 }

@@ -7,37 +7,35 @@ import dev.langchain4j.service.tool.ToolProviderResult;
 
 import java.util.Map;
 import java.util.Set;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- * Loads the turnfab MCP servers into a {@link DynamicMcpToolProvider}, which doubles as the
- * client registry: servers are registered via {@code addServer(...)} together with their tool
- * policy, and looked up by key through the provider. The former shadow {@code McpClient} fields
- * and per-server {@code addFilter} lambdas are gone: enable/disable is {@code setServerEnabled}
- * and tool visibility is data in the {@code _LIST}s below.
- *
- * <p>Eventually the {@code ServerConfig} objects will come from config files instead of these
- * constants; the shape is already identical, so only the loading changes.
+ * Loads the MCP servers into the shared {@link DynamicMcpToolProvider}. The server list comes
+ * from {@code ../config/McpConfig.yaml} (see {@link McpConfig}); what is left here are the
+ * first-run seed defaults (used only until the YAML file exists) and the lookups/debug helpers
+ * that will move to the ConfigController/GUI as that is built.
  */
 public class ToolManager {
 
-    private static final String IJ_MCP_URL = "http://127.0.0.1:64506/stream";
-    private static final String MSV_MCP_URL = "http://127.0.0.1:64542/stream";
-
+    // Seed-only constants: copied into McpConfig.yaml on first run, after which the YAML
+    // is the source of truth and these stop mattering. (Edit ../config/McpConfig.yaml instead.)
     private static final String MAINPRJ_MCP_NAME = "main_project";
     private static final String MAIN_PROJECT_PATH = "C:/projects/intellij_workspace/turnfab";
 //    private static final String MAIN_PROJECT_PATH = "C:/projects/intellij_workspace/protoplant/protoplant_java";
-    private static final Set<String> JB_EXCLUDE_RW = Set.of(
-            "execute_tool", "execute_terminal_command", "get_all_open_file_paths", "open_file_in_editor");
-
     private static final String LC4J_MCP_NAME = "langchain4j_src";
     private static final String LC4J_PROJECT_PATH = "C:/projects/intellij_workspace/langchain4j";
+
+    private static final String IJ_MCP_URL = "http://127.0.0.1:64506/stream";
+    private static final String MSV_MCP_URL = "http://127.0.0.1:64542/stream";
+    private static final String MSV_MCP_NAME = "markstream_vue";
+    private static final String MSV_SRC_PATH = "C:/projects/intellij_workspace/markstream-vue";
+
+    private static final Set<String> JB_EXCLUDE_RW = Set.of(
+            "execute_tool", "execute_terminal_command", "get_all_open_file_paths", "open_file_in_editor");
     private static final Set<String> JB_EXCLUDE_RO = Set.of(
             "execute_tool", "execute_terminal_command", "build_project", "create_new_file",
             "get_all_open_file_paths", "open_file_in_editor", "apply_patch", "rename_refactoring");
-
-    private static final String MSV_MCP_NAME = "markstream_vue";
-    private static final String MSV_SRC_PATH = "C:/projects/intellij_workspace/markstream-vue";
 
     // GitHub is read-only: offer only this allow-list, everything else stays hidden.
     private static final Set<String> GITHUB_INCLUDE = Set.of(
@@ -48,60 +46,88 @@ public class ToolManager {
             "pull_request_read", "search_code", "search_commits", "search_issues", "search_pull_requests",
             "search_repositories", "search_users");
 
-    // Formerly per-boolean constants deciding which servers connect; now just data here,
-    // a config file would carry the same per entry, or use setServerEnabled at runtime.
-    private static final boolean mainprj_mcp_enabled = true;
-    private static final boolean lc4j_mcp_enabled = true;
-    private static final boolean msvsrc_mcp_enabled = false;
-    private static final boolean tavily_mcp_enabled = true;
-    private static final boolean github_mcp_enabled = true;
-
-    private static final boolean DEBUG_MCP_TRANSPORT = false;
-
-
     @Inject private Logger log;
     @Inject private TurnfabConfig cfg;
     @Inject private DynamicMcpToolProvider toolProvider;
+
+    private final ConfigManager<McpConfig> mcpCfgMgr = ConfigManager.yaml(McpConfig.class, "../config/McpConfig.yaml");
 
     public DynamicMcpToolProvider getProvider() {
         return toolProvider;
     }
 
+    /**
+     * Registers every enabled server from McpConfig.yaml. Called by the "Init MCP" button:
+     * the IDE-embedded servers are only reachable once the owning IntelliJ instance is up,
+     * so connecting is an explicit user action, not app startup.
+     */
     public void init() {
+        McpConfig config = mcpCfgMgr.load();
 
-        if (mainprj_mcp_enabled) {
-            addServer(MAINPRJ_MCP_NAME, IJ_MCP_URL, Map.of("IJ_MCP_SERVER_PROJECT_PATH", MAIN_PROJECT_PATH),
-                    JB_EXCLUDE_RW, Set.of());
-        }
-        if (lc4j_mcp_enabled) {
-            addServer(LC4J_MCP_NAME, IJ_MCP_URL, Map.of("IJ_MCP_SERVER_PROJECT_PATH", LC4J_PROJECT_PATH),
-                    JB_EXCLUDE_RO, Set.of());
-        }
-        if (msvsrc_mcp_enabled) {
-            addServer(MSV_MCP_NAME, MSV_MCP_URL, Map.of("IJ_MCP_SERVER_PROJECT_PATH", MSV_SRC_PATH),
-                    JB_EXCLUDE_RO, Set.of());
+        if (config.servers.isEmpty()) {
+            seedDefaults(config);
+            if (!config.cfgUseDefaults) {
+                try {
+                    mcpCfgMgr.save(config);
+                    log.info("Wrote seed MCP config to " + mcpCfgMgr.buildPath(mcpCfgMgr.defaultFileName));
+                } catch (Exception e) {
+                    log.log(Level.WARNING, "Could not write seed MCP config", e);
+                }
+            }
         }
 
-        if (tavily_mcp_enabled) {
-            addServer(cfg.tavily_mcp_name, cfg.tavily_mcp_url, bearer(cfg.tavily_mcp_key),
-                    Set.of(), Set.of());
-        }
-        if (github_mcp_enabled) {
-            addServer(cfg.github_mcp_name, cfg.github_mcp_url, bearer(cfg.github_mcp_key),
-                    Set.of(), GITHUB_INCLUDE);
+        for (McpConfig.Server server : config.servers) {
+            if (!server.enabled) {
+                log.info("MCP server '" + server.name + "' disabled in config, skipping.");
+                continue;
+            }
+            try {
+                toolProvider.addServer(new DynamicMcpToolProvider.ServerConfig(
+                        server.name, server.url, server.headers, server.protocolVersion,
+                        toSet(server.excludeTools), toSet(server.includeTools),
+                        server.debugTransport));
+            } catch (RuntimeException e) {
+                // one unreachable server should not block the others
+                log.log(Level.WARNING, "MCP server '" + server.name + "' not connected: " + e.getMessage(), e);
+            }
         }
 
         toolProvider.setToolSpecificationMapper(new TurnfabToolSpecMapper());
     }
 
-    private McpClient addServer(String key, String url, Map<String, String> headers,
-                                Set<String> excludeTools, Set<String> includeTools) {
-        return toolProvider.addServer(new DynamicMcpToolProvider.ServerConfig(
-                key, url, headers, null, excludeTools, includeTools, DEBUG_MCP_TRANSPORT));
+    /** First-run contents of McpConfig.yaml, using TurnfabConfig for the two API-key servers. */
+    private void seedDefaults(McpConfig config) {
+        config.servers.add(seedServer(MAINPRJ_MCP_NAME, IJ_MCP_URL,
+                Map.of("IJ_MCP_SERVER_PROJECT_PATH", MAIN_PROJECT_PATH), JB_EXCLUDE_RW, Set.of(), true));
+        config.servers.add(seedServer(LC4J_MCP_NAME, IJ_MCP_URL,
+                Map.of("IJ_MCP_SERVER_PROJECT_PATH", LC4J_PROJECT_PATH), JB_EXCLUDE_RO, Set.of(), true));
+        config.servers.add(seedServer(MSV_MCP_NAME, MSV_MCP_URL,
+                Map.of("IJ_MCP_SERVER_PROJECT_PATH", MSV_SRC_PATH), JB_EXCLUDE_RO, Set.of(), false));
+        config.servers.add(seedServer(cfg.tavily_mcp_name, cfg.tavily_mcp_url,
+                bearer(cfg.tavily_mcp_key), Set.of(), Set.of(), true));
+        config.servers.add(seedServer(cfg.github_mcp_name, cfg.github_mcp_url,
+                bearer(cfg.github_mcp_key), Set.of(), GITHUB_INCLUDE, true));
+    }
+
+    private static McpConfig.Server seedServer(String name, String url, Map<String, String> headers,
+                                               Set<String> excludeTools, Set<String> includeTools, boolean enabled) {
+        McpConfig.Server server = new McpConfig.Server();
+        server.name = name;
+        server.url = url;
+        server.headers.putAll(headers);
+        server.excludeTools.addAll(excludeTools);
+        server.includeTools.addAll(includeTools);
+        server.enabled = enabled;
+        return server;
     }
 
     private static Map<String, String> bearer(String apiKey) {
         return Map.of("Authorization", "Bearer " + apiKey);
+    }
+
+    /** Hand-edited YAML can carry an explicit null where a tool list was expected. */
+    private static Set<String> toSet(java.util.List<String> list) {
+        return (list == null) ? Set.of() : Set.copyOf(list);
     }
 
     public void printEnabledTools() {
