@@ -5,7 +5,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
-import java.time.Duration;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -15,7 +14,7 @@ import java.util.logging.Logger;
 import com.cathive.fx.guice.FXMLController;
 import com.cathive.fx.guice.GuiceFXMLLoader;
 import com.google.inject.Inject;
-import dev.langchain4j.data.message.UserMessage;
+import dev.langchain4j.data.message.TextContent;
 import dev.langchain4j.http.client.jdk.JdkHttpClientBuilder;
 import dev.langchain4j.memory.chat.TokenWindowChatMemory;
 import dev.langchain4j.model.TokenCountEstimator;
@@ -154,7 +153,7 @@ public class RootController {
 
 	@FXML
 	public void onBuildPrompt() {
-		buildLc4jPrompt();
+//		buildLc4jPrompt();
 //		buildPromptFromTabFiles();
 	}
 
@@ -271,8 +270,7 @@ public class RootController {
 		statsRecomputePending = false;
 
 		TokenStream stream = bot.chat(
-				toSend,
-//				UserMessage.from(toSend),
+				TextContent.from(toSend),
 				OpenAiChatRequestParameters.builder()
 						.reasoningEffort("medium")
 						.build());
