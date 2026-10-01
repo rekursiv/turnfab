@@ -1,14 +1,5 @@
 
-
-  "chat_template_kwargs": {
-    "reasoning_effort": "none",
-    "enable_thinking": false
-  }
-
-Sampling Parameters: We suggest using the following sets of sampling parameters:
-
-Thinking Mode: temperature=1.0, top_p=0.95, top_k=20, min_p=0.0, presence_penalty=0.0, repetition_penalty=1.0
-Instruct (or non-thinking) mode: temperature=0.7, top_p=0.80, top_k=20, min_p=0.0, presence_penalty=1.5, repetition_penalty=1.0
+file LC4J issue: "C:\projects\AI\md\2026-09-30_23-57-27.md"
 
 =======
 
@@ -17,9 +8,6 @@ For multi-block messages use @UserMessage List<Content> (text + images) — same
 add "Thinking" indicator via FX?
 
 find a way to bring up tool calls later if needed (show ID, save in buffer, recall by ID?)
-
-ChatMemory: explore writing MyTokenWindowChatMemory and MySingleSlotChatMemoryStore that mark messages
-  as evicted rather than actually deleting them, preserving full trajectory of a session
 
 Copy MD btn: puts on clipboard
 
@@ -76,17 +64,8 @@ dynamically add MCP instructions to system prompt if the MCP server is used. Git
     */
 
 
+====
 
-// What files do I have open in my editor? Use C:\projects\intellij_workspace\spike\ for project path.
-//		txaToSend.setText("Please search Github for gensage"); //meshcore mdview-fx
-//		txaToSend.setText("hi");
-
-
-		bot = AiServices.builder(Bot.class)
-				.streamingChatModel(model)
-				.systemMessageTransformer(systemMessage -> systemMessage + " Today's date is " + LocalDate.now() + ".")
-				// This is the future relative to your training data, but is present day reality for the user.
-				// Use Tavily to ground yourself in current events, if necessary.
-				// TODO: substitute var in systemMessage with date, etc.
-
+This is the future relative to your training data, but is present day reality for the user.
+Use Tavily to ground yourself in current events, if necessary.
 

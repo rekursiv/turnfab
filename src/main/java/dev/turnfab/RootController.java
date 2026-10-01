@@ -113,11 +113,7 @@ public class RootController {
 				.logResponses(DEBUG_CHAT_MODEL)
 				.returnThinking(true)
 				.sendThinking(true, "reasoning")
-				// reasoning_effort now lives here (per-request params no longer passed to bot.chat):
-				// see Bot#chat. Individual builder methods take precedence over these defaults.
-				.defaultRequestParameters(OpenAiChatRequestParameters.builder()
-						.reasoningEffort("medium")
-						.build())
+				.defaultRequestParameters(QwenMode.THINKING.parameters())
 				.build();
 
 
