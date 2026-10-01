@@ -15,6 +15,7 @@ import java.util.logging.Logger;
 import com.cathive.fx.guice.FXMLController;
 import com.cathive.fx.guice.GuiceFXMLLoader;
 import com.google.inject.Inject;
+import dev.langchain4j.data.message.UserMessage;
 import dev.langchain4j.http.client.jdk.JdkHttpClientBuilder;
 import dev.langchain4j.memory.chat.TokenWindowChatMemory;
 import dev.langchain4j.model.TokenCountEstimator;
@@ -145,6 +146,7 @@ public class RootController {
 	private String buildSystemPrompt() {
 		if (systemPrompt.isEmpty()) {
 			systemPrompt.append(readResource("system_prompts/coder.md"));
+//			systemPrompt.append(readResource("system_prompts/chatbot.md"));
 			systemPrompt.append("\nToday's date is " + LocalDate.now().format(DATE_FORMATTER) + ".");
 		}
 		return systemPrompt.toString();
@@ -152,14 +154,14 @@ public class RootController {
 
 	@FXML
 	public void onBuildPrompt() {
-//		buildLc4jPrompt();
-		buildPromptFromTabFiles();
+		buildLc4jPrompt();
+//		buildPromptFromTabFiles();
 	}
 
 	private void buildPromptFromTabFiles() {
 		txaPrompt.clear();
 		txaPrompt.appendText(promptManager.readAllTabs(toolManager.getMainprjMcpClient()));
-		txaPrompt.appendText(promptManager.readAllTabs(toolManager.getLc4jMcpClient()));
+//		txaPrompt.appendText(promptManager.readAllTabs(toolManager.getLc4jMcpClient()));
 	}
 
 	private void buildLc4jPrompt() {
@@ -167,8 +169,7 @@ public class RootController {
 		txaPrompt.appendText("Full searchable source code for LangChain4j is available with langchain4j_src-* tools.\n\n");
 		txaPrompt.appendText("LangChain4j documentation: ");
 		txaPrompt.appendText(promptManager.listDirTree(toolManager.getLc4jMcpClient(), "docs/docs", 3));
-//		txaPrompt.appendText(promptManager.readFile(toolManager.getMainprjMcpClient(), "src/main/java/dev/turnfab/RootController.java"));
-		txaPrompt.appendText(promptManager.readActiveTab(toolManager.getMainprjMcpClient()));
+		txaPrompt.appendText(promptManager.readAllTabs(toolManager.getMainprjMcpClient()));
 	}
 
 	private void buildMsPrompt() {
@@ -269,7 +270,9 @@ public class RootController {
 		lastLabelUpdateNanos = 0;
 		statsRecomputePending = false;
 
-		TokenStream stream = bot.chat(toSend,
+		TokenStream stream = bot.chat(
+				toSend,
+//				UserMessage.from(toSend),
 				OpenAiChatRequestParameters.builder()
 						.reasoningEffort("medium")
 						.build());
