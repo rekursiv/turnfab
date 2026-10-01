@@ -42,7 +42,7 @@ import javafx.stage.Stage;
 @FXMLController
 public class RootController {
 
-	private static final boolean DEBUG_CHAT_MODEL = false;
+	private static final boolean DEBUG_CHAT_MODEL = true;
 	private static final int MAX_TOOL_CALL_DETAIL_CHUNKS = 20;
 	private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("EEEE, MMMM d, yyyy");
     private static final int MAX_TOKENS = 180000;  // model length is 262144, leave headroom for long replies
@@ -113,6 +113,11 @@ public class RootController {
 				.logResponses(DEBUG_CHAT_MODEL)
 				.returnThinking(true)
 				.sendThinking(true, "reasoning")
+				// reasoning_effort now lives here (per-request params no longer passed to bot.chat):
+				// see Bot#chat. Individual builder methods take precedence over these defaults.
+				.defaultRequestParameters(OpenAiChatRequestParameters.builder()
+						.reasoningEffort("medium")
+						.build())
 				.build();
 
 
@@ -153,7 +158,7 @@ public class RootController {
 
 	@FXML
 	public void onBuildPrompt() {
-//		buildLc4jPrompt();
+		buildLc4jPrompt();
 //		buildPromptFromTabFiles();
 	}
 
@@ -269,11 +274,9 @@ public class RootController {
 		lastLabelUpdateNanos = 0;
 		statsRecomputePending = false;
 
-		TokenStream stream = bot.chat(
-				TextContent.from(toSend),
-				OpenAiChatRequestParameters.builder()
-						.reasoningEffort("medium")
-						.build());
+		// TextContent without @UserMessage: sent verbatim as a single content part,
+		// no {{...}} template processing (see Bot#chat); reasoning_effort is a model default now.
+		TokenStream stream = bot.chat(TextContent.from(toSend));
 
 		stream
 				.onPartialThinkingWithContext((PartialThinking partialThinking, PartialThinkingContext context) -> {
