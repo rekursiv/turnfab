@@ -2,7 +2,6 @@ package dev.turnfab;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import javafx.application.Platform;
 import javafx.concurrent.Worker.State;
 import javafx.scene.Node;
 import javafx.scene.layout.BorderPane;
@@ -24,6 +23,9 @@ import javafx.scene.web.WebView;
    * spike.webkit/src/main/resources/markstream}. Until that is done, a placeholder page explaining
    * the steps is
   * shown instead.
+  *
+  * <p>All methods must be called from the JavaFX application thread. This class no longer does any
+  * thread hopping of its own, and {@link WebEngine#executeScript} is only safe on the FX thread.
   */
 public class MarkstreamView {
 
@@ -97,14 +99,11 @@ public class MarkstreamView {
 
   /** Clears the rendered content, preparing for a new stream. */
   public void reset() {
-    runOnJavaFx(
-        () -> {
-          if (!ready) {
-               System.out.println("Markstream page not loaded yet, cannot reset");
-            return;
-          }
-          engine.executeScript("msReset();");
-        });
+    if (!ready) {
+      System.out.println("Markstream page not loaded yet, cannot reset");
+      return;
+    }
+    engine.executeScript("msReset();");
   }
 
   /**
@@ -119,25 +118,19 @@ public class MarkstreamView {
     if (chunk == null || chunk.isEmpty()) {
       return;
     }
-    runOnJavaFx(
-        () -> {
-          if (!ready) {
-            System.out.println("Markstream page not loaded yet, content chunk dropped");
-            return;
-          }
-          engine.executeScript("msAppend(" + jsStringLiteral(chunk) + ");");
-        });
+    if (!ready) {
+      System.out.println("Markstream page not loaded yet, content chunk dropped");
+      return;
+    }
+    engine.executeScript("msAppend(" + jsStringLiteral(chunk) + ");");
   }
 
   /** Marks the current stream as complete. */
   public void complete() {
-    runOnJavaFx(
-        () -> {
-          if (!ready) {
-            return;
-          }
-          engine.executeScript("msComplete();");
-        });
+    if (!ready) {
+      return;
+    }
+    engine.executeScript("msComplete();");
   }
 
   /**
@@ -152,14 +145,11 @@ public class MarkstreamView {
     if (fullText == null) {
       return;
     }
-    runOnJavaFx(
-        () -> {
-          if (!ready) {
-            System.out.println("Markstream page not loaded yet, cannot load content");
-            return;
-          }
-          engine.executeScript("msLoad(" + jsStringLiteral(fullText) + ");");
-        });
+    if (!ready) {
+      System.out.println("Markstream page not loaded yet, cannot load content");
+      return;
+    }
+    engine.executeScript("msLoad(" + jsStringLiteral(fullText) + ");");
   }
 
   /**
@@ -175,11 +165,4 @@ public class MarkstreamView {
     }
   }
 
-  private void runOnJavaFx(Runnable action) {
-    if (Platform.isFxApplicationThread()) {
-      action.run();
-    } else {
-      Platform.runLater(action);
-    }
-  }
 }

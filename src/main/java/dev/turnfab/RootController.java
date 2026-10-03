@@ -84,8 +84,8 @@ public class RootController {
 
 	@FXML
 	public void onBuildPrompt() {
-		buildLc4jPrompt();
-//		buildPromptFromTabFiles();
+//		buildLc4jPrompt();
+		buildPromptFromTabFiles();
 	}
 
 	private void buildPromptFromTabFiles() {
