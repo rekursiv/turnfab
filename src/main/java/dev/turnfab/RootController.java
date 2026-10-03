@@ -22,7 +22,6 @@ import dev.langchain4j.model.chat.response.PartialResponse;
 import dev.langchain4j.model.chat.response.PartialResponseContext;
 import dev.langchain4j.model.chat.response.PartialThinking;
 import dev.langchain4j.model.chat.response.PartialThinkingContext;
-import dev.langchain4j.model.openai.OpenAiChatRequestParameters;
 import dev.langchain4j.model.openai.OpenAiStreamingChatModel;
 import dev.langchain4j.model.openai.OpenAiTokenCountEstimator;
 import dev.langchain4j.service.AiServices;
@@ -42,7 +41,7 @@ import javafx.stage.Stage;
 @FXMLController
 public class RootController {
 
-	private static final boolean DEBUG_CHAT_MODEL = true;
+	private static final boolean DEBUG_CHAT_MODEL = false;
 	private static final int MAX_TOOL_CALL_DETAIL_CHUNKS = 20;
 	private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("EEEE, MMMM d, yyyy");
 
@@ -63,9 +62,11 @@ public class RootController {
 	@FXML private Label lblCtxUsage;
 	@FXML private Label lblTokPerSec;
 
+	private QwenMode qwenMode = QwenMode.INSTRUCT;
 
 	private MarkstreamView msView = new MarkstreamView();
 
+	private String systemPromptMainText = "";
 	private StringBuilder systemPrompt = new StringBuilder();
 	private Bot bot;
 	private Section currentSection = Section.NONE;
@@ -101,7 +102,9 @@ public class RootController {
 //		tabPane.getSelectionModel().select(1);
 	}
 
-	private void initBot() {
+	public void initBot(String systemPrompt) {
+		systemPromptMainText = systemPrompt;
+
 		OpenAiStreamingChatModel model = OpenAiStreamingChatModel.builder()
 				.modelName(cfg.model_name)
 				.baseUrl(cfg.model_base_url)
@@ -113,7 +116,7 @@ public class RootController {
 				.logResponses(DEBUG_CHAT_MODEL)
 				.returnThinking(true)
 				.sendThinking(true, "reasoning")
-				.defaultRequestParameters(QwenMode.THINKING.parameters())
+				.defaultRequestParameters(qwenMode.parameters())
 				.build();
 
 
@@ -134,7 +137,7 @@ public class RootController {
 
 	@FXML
 	public void onInitBot() {
-		initBot();
+		initBot(readResource("system_prompts/chatbot.md"));  // coder, chatbot
 	}
 
 	@FXML
@@ -145,8 +148,7 @@ public class RootController {
 
 	private String buildSystemPrompt() {
 		if (systemPrompt.isEmpty()) {
-			systemPrompt.append(readResource("system_prompts/coder.md"));
-//			systemPrompt.append(readResource("system_prompts/chatbot.md"));
+			systemPrompt.append(systemPromptMainText);
 			systemPrompt.append("\nToday's date is " + LocalDate.now().format(DATE_FORMATTER) + ".");
 		}
 		return systemPrompt.toString();
@@ -188,6 +190,7 @@ public class RootController {
 
 	@FXML
 	public void onSendPrompt() {
+		btnSend.setDisable(true);
 		beginTurn(txaPrompt.getText());
 		tabPane.getSelectionModel().select(1);
 	}
@@ -212,6 +215,7 @@ public class RootController {
 
 	@FXML
 	public void onSend() {
+		btnSend.setDisable(true);
 		beginTurn(txaToSend.getText());
 		txaToSend.clear();
 	}
@@ -246,26 +250,25 @@ public class RootController {
 		armCancel = true;
 	}
 
-	private void beginTurn(String toSend) {
+	public void beginTurn(String toSend) {
 		if (bot==null) {
 			log.warning("Bot has not been initialized!");
 			return;
 		}
 		armCancel = false;
 		++turnNumber;
-		btnSend.setDisable(true);
 		currentSection = Section.NONE;
 		currentToolIndex = -1;
 
 		if (turnNumber==1) {
 			buildSystemPrompt();
-			appendMd("### ==System Prompt:==\n");
-			appendMd(systemPrompt.toString());
+			sendStream("### ==System Prompt:==\n");
+			sendStream(systemPrompt.toString());
 		}
 
-		appendMd("\n\n## ==Turn "+turnNumber+"==\n");
-		if (toSend.length()>900) appendMd("..."+toSend.substring(toSend.length()-900).replace("```", ""));
-		else appendMd(toSend);
+		sendStream("\n\n## ==Turn "+turnNumber+"==\n");
+		if (toSend.length()>900) sendStream("..."+toSend.substring(toSend.length()-900).replace("```", ""));
+		else sendStream(toSend);
 
 		// reset streaming stats
 		inputTokens = tcEst.estimateTokenCountInMessages(chatMemory.messages());
@@ -284,16 +287,16 @@ public class RootController {
 					recomputeStatsIfPending();
 					if (currentSection != Section.THINKING) {
 						closeSection();
-						appendMd("\n\n==Thinking:==\n");
+						sendStream("\n\n==Thinking:==\n");
 						currentSection = Section.THINKING;
 					}
-					appendMd(partialThinking.text());
+					sendStream(partialThinking.text());
 					outputTokens += tcEst.estimateTokenCountInText(partialThinking.text());
 					updateStatsLabels();
 					if (armCancel) {
 						context.streamingHandle().cancel();
-						appendMd("\n\n==CANCELLED==\n\n");
-						endTurn();
+						sendStream("\n\n==CANCELLED==\n\n");
+						flushStream(true);
 					}
 				})
 				.onPartialResponseWithContext((PartialResponse partialResponse, PartialResponseContext context) -> {
@@ -302,16 +305,16 @@ public class RootController {
 					if (currentSection == Section.TOOL_CALL) return; // don't steal section mid tool-call streaming
 					if (currentSection != Section.RESPONSE) {
 						closeSection();
-						appendMd("\n\n==Response:==\n");
+						sendStream("\n\n==Response:==\n");
 						currentSection = Section.RESPONSE;
 					}
-					appendMd(partialResponse.text());
+					sendStream(partialResponse.text());
 					outputTokens += tcEst.estimateTokenCountInText(partialResponse.text());
 					updateStatsLabels();
 					if (armCancel) {
 						context.streamingHandle().cancel();
-						appendMd("\n\n==CANCELLED==\n\n");
-						endTurn();
+						sendStream("\n\n==CANCELLED==\n\n");
+						flushStream(true);
 					}
 				})
 				.onPartialToolCall(partialToolCall -> {
@@ -319,18 +322,18 @@ public class RootController {
 					if (currentSection != Section.TOOL_CALL
 							|| partialToolCall.index() != currentToolIndex) {
 						if (currentSection == Section.TOOL_CALL) {
-							appendMd("\n```\n"); // close the previous call's fenced block
+							sendStream("\n```\n"); // close the previous call's fenced block
 						}
 						closeSection();
-						appendMd("\n\n==Tool Call:==   *"+partialToolCall.id()+" : "+partialToolCall.name()+"*\n```json\n");
+						sendStream("\n\n==Tool Call:==   *"+partialToolCall.id()+" : "+partialToolCall.name()+"*\n```json\n");
 						currentSection = Section.TOOL_CALL;
 						currentToolIndex = partialToolCall.index();
 						toolCallChunks = 0;
 					}
 					if (toolCallChunks < MAX_TOOL_CALL_DETAIL_CHUNKS) {
-						appendMd(partialToolCall.partialArguments());
+						sendStream(partialToolCall.partialArguments());
 					} else {
-						appendMd(". ");
+						sendStream(".");
 					}
 					toolCallChunks++;
 				})
@@ -339,7 +342,7 @@ public class RootController {
 					// callback for it has already been delivered. Reset so the next round
 					// opens fresh sections instead of continuing stale ones.
 					if (currentSection == Section.TOOL_CALL) {
-						appendMd("\n```\n"); // close the last call's fenced block
+						sendStream("\n```\n"); // close the last call's fenced block
 					}
 					closeSection();
 					currentSection = Section.NONE;
@@ -349,12 +352,12 @@ public class RootController {
 					// the start of the next round.
 				})
 				.onToolExecuted(execution -> {
-					msView.complete();
-					appendMd("\n==Tool Result:==   *"+execution.request().id()+" : "+execution.request().name());
-					if (execution.duration().toSeconds()>1)	appendMd("    took "+execution.duration().toSeconds()+" seconds*  \n");
-					else appendMd("*\n");
-					if (execution.hasFailed()) appendMd("`"+execution.result()+"`\n");
-					msView.complete();
+					flushStream(false);
+					sendStream("\n==Tool Result:==   *"+execution.request().id()+" : "+execution.request().name());
+					if (execution.duration().toSeconds()>1)	sendStream("    took "+execution.duration().toSeconds()+" seconds*  \n");
+					else sendStream("*\n");
+					if (execution.hasFailed()) sendStream("`"+execution.result()+"`\n");
+					flushStream(false);
 					statsRecomputePending = true;
 				})
 				.onCompleteResponse(response -> {
@@ -362,16 +365,16 @@ public class RootController {
 					currentToolIndex = -1;
 //					log.info("'"+response.aiMessage().text()+"'");
 //					log.info("finishReason="+response.metadata().finishReason()+",  "+response.metadata().tokenUsage());
-					appendMd("\n\n- Turn complete. Tokens In: "+response.metadata().tokenUsage().inputTokenCount()+
+					sendStream("\n\n- Turn complete. Tokens In: "+response.metadata().tokenUsage().inputTokenCount()+
 							"   Tokens Out: "+response.metadata().tokenUsage().outputTokenCount()+
 							"   Total: "+response.metadata().tokenUsage().totalTokenCount()+"\n");
-					endTurn();
+					flushStream(true);
 				})
 				.onError(error -> {
 					currentSection = Section.NONE;
 					currentToolIndex = -1;
 					error.printStackTrace();
-					endTurn();
+					flushStream(true);
 				})
 				.start();
 	}
@@ -396,17 +399,17 @@ public class RootController {
 	 */
 	private void closeSection() {
 		if (currentSection != Section.NONE) {
-			msView.complete();
-			appendMd("\n");
+			flushStream(false);
+			sendStream("\n");
 		}
 	}
 
-	private void endTurn() {
+	private void flushStream(boolean endOfTurn) {
 		msView.complete();
-		Platform.runLater(() -> btnSend.setDisable(false));
+		if (endOfTurn) Platform.runLater(() -> btnSend.setDisable(false));
 	}
 
-	private void appendMd(String md) {
+	private void sendStream(String md) {
 		mdRaw.append(md);
 		msView.append(md);
 	}
