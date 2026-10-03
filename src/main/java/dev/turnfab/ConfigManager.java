@@ -148,7 +148,7 @@ public class ConfigManager<T> {
 	
 	
 	@SuppressWarnings("unused")
-	private void debug(Object obj) {
+	public void dump(Object obj) {
 		if (obj==null) {
 			System.out.println("!!!   NULL");
 			return;

@@ -5,54 +5,74 @@ import dev.langchain4j.mcp.client.McpClient;
 import dev.langchain4j.service.tool.AiServiceTool;
 import dev.langchain4j.service.tool.ToolProviderResult;
 
-import java.util.Map;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-/**
- * Loads the MCP servers into the shared {@link DynamicMcpToolProvider}. The server list comes
- * from {@code ../config/McpConfig.yaml} (see {@link McpConfig}); what is left here are the
- * first-run seed defaults (used only until the YAML file exists) and the lookups/debug helpers
- * that will move to the ConfigController/GUI as that is built.
- */
+
+
 public class ToolManager {
 
     @Inject private Logger log;
     @Inject private TurnfabConfig cfg;
     @Inject private DynamicMcpToolProvider toolProvider;
 
-    private final ConfigManager<McpConfig> mcpCfgMgr = ConfigManager.yaml(McpConfig.class, "../config/McpConfig.yaml");
+    private final ConfigManager<McpServers> mcpServerCfgMgr = ConfigManager.yaml(McpServers.class, "../config/McpServers.yaml");
+    private final ConfigManager<McpJetBrainsConfig> jbProjectCfgMgr = ConfigManager.yaml(McpJetBrainsConfig.class, "../config/McpJetBrainsConfig.yaml");
+    private final ConfigManager<McpEnabled> mcpEnableCfgMgr = ConfigManager.yaml(McpEnabled.class, "../config/McpEnabled.yaml");
 
-    /**
-     * Registers every enabled server from McpConfig.yaml. Called by the "Init MCP" button:
-     * the IDE-embedded servers are only reachable once the owning IntelliJ instance is up,
-     * so connecting is an explicit user action, not app startup.
-     */
+
     public void init() {
-        McpConfig config = mcpCfgMgr.load();
+        McpServers rawCfg = mcpServerCfgMgr.load();
+        McpJetBrainsConfig jbProjects = jbProjectCfgMgr.load();
 
-        for (McpConfig.Server server : config.servers) {
-            if (!server.enabled) {
-                log.info("MCP server '" + server.name + "' disabled in config, skipping.");
-                continue;
+        List<McpServers.Server> mergedCfg = new ArrayList<>();
+        mergedCfg.addAll(rawCfg.servers);
+
+        for (McpServers.Server server : rawCfg.servers) {
+            if (server.name.equals("jetbrains")) {
+                System.out.println("Merging");
+                for (McpJetBrainsConfig.Project project : jbProjects.projects) {
+                    McpServers.Server ns = new McpServers.Server();
+                    ns.name = project.name;
+                    ns.url = "http://127.0.0.1:"+project.port+"/stream";
+                    ns.headers.put("IJ_MCP_SERVER_PROJECT_PATH", project.projectPath);
+                    ns.protocolVersion = server.protocolVersion;
+                    ns.excludeTools.addAll(server.excludeTools);
+                    ns.includeTools.addAll(server.includeTools);
+                    if (project.readOnly) ns.excludeTools.addAll(server.excludeWriteTools);
+                    ns.debugTransport = server.debugTransport;
+                    mergedCfg.add(ns);
+                }
             }
-            try {
-                toolProvider.addServer(new DynamicMcpToolProvider.ServerConfig(
-                        server.name, server.url, server.headers, server.protocolVersion,
-                        toSet(server.excludeTools), toSet(server.includeTools),
-                        server.debugTransport));
-            } catch (RuntimeException e) {
-                // one unreachable server should not block the others
-                log.log(Level.WARNING, "MCP server '" + server.name + "' not connected: " + e.getMessage(), e);
+        }
+
+        McpEnabled enables = mcpEnableCfgMgr.load();
+        addEnabledServers(mergedCfg, enables);
+    }
+
+    public void addEnabledServers(List<McpServers.Server> servers, McpEnabled enables) {
+        if (enables.enabled != null) {
+            for (McpServers.Server server : servers) {
+                if (enables.enabled.contains(server.name)) addServer(server);
             }
         }
 
         toolProvider.setToolSpecificationMapper(new TurnfabToolSpecMapper());
     }
 
-    private static Map<String, String> bearer(String apiKey) {
-        return Map.of("Authorization", "Bearer " + apiKey);
+    public void addServer(McpServers.Server server) {
+        try {
+            toolProvider.addServer(new DynamicMcpToolProvider.ServerConfig(
+                    server.name, server.url, server.headers, server.protocolVersion,
+                    toSet(server.excludeTools), toSet(server.includeTools),
+                    server.debugTransport));
+        } catch (RuntimeException e) {
+            // one unreachable server should not block the others
+            log.log(Level.WARNING, "MCP server '" + server.name + "' not connected: " + e.getMessage(), e);
+        }
     }
 
     /** Hand-edited YAML can carry an explicit null where a tool list was expected. */

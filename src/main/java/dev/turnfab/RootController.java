@@ -164,7 +164,7 @@ public class RootController {
 
 	private void buildPromptFromTabFiles() {
 		txaPrompt.clear();
-		txaPrompt.appendText(promptManager.readAllTabs(toolProvider.getMcpClientByKey("main_project")));
+		txaPrompt.appendText(promptManager.readAllTabs(toolProvider.getMcpClientByKey("turnfab")));
 //		txaPrompt.appendText(promptManager.readAllTabs(toolProvider.getMcpClientByKey("lc4j")));
 	}
 
@@ -173,14 +173,14 @@ public class RootController {
 		txaPrompt.appendText("Full searchable source code for LangChain4j is available with lc4j-* tools.\n\n");
 		txaPrompt.appendText("LangChain4j documentation: ");
 		txaPrompt.appendText(promptManager.listDirTree(toolProvider.getMcpClientByKey("lc4j"), "docs/docs", 3));
-		txaPrompt.appendText(promptManager.readAllTabs(toolProvider.getMcpClientByKey("main_project")));
+		txaPrompt.appendText(promptManager.readAllTabs(toolProvider.getMcpClientByKey("turnfab")));
 	}
 
 	private void buildMsPrompt() {
 		txaPrompt.clear();
 		txaPrompt.appendText("Documentation for markstream-vue:");  // dirPath: docs, depth: 2
 //		txaPrompt.appendText(promptManager.msvDocs(toolManager.getMsvsrcMcpClient()));
-		txaPrompt.appendText("Location of files that render markdown in my app (main_project):");  // dirPath markstream-page, depth: 2
+		txaPrompt.appendText("Location of files that render markdown in my app (turnfab):");  // dirPath markstream-page, depth: 2
 //		txaPrompt.appendText(promptManager.mspLoc(toolManager.getMainprjMcpClient()));
 		txaPrompt.appendText("main_project-read_file: file_path = src/main/java/dev/turnfab/RootController.java");
 //		txaPrompt.appendText(promptManager.rootCtlr(toolManager.getMainprjMcpClient()));
