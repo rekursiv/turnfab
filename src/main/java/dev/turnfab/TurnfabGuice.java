@@ -7,6 +7,8 @@ import java.util.logging.Handler;
 import java.util.logging.Level;
 import java.util.logging.LogManager;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import com.google.common.eventbus.EventBus;
 import com.google.inject.AbstractModule;
 import com.google.inject.TypeLiteral;
@@ -19,7 +21,7 @@ import com.google.inject.spi.TypeListener;
 public class TurnfabGuice extends AbstractModule {
 
 	protected final EventBus eventBus = new EventBus();
-	protected final ConfigManager<TurnfabConfig> cfgMgr = new ConfigManager<TurnfabConfig>(TurnfabConfig.class, "../config/TurnfabConfig.json");
+	protected final ConfigManager<TurnfabConfig> cfgMgr = new ConfigManager<>(TurnfabConfig.class, "../config/TurnfabConfig.yaml", new ObjectMapper(new YAMLFactory()));
 	protected TurnfabConfig config;
 	
 	@Override

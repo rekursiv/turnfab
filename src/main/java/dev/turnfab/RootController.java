@@ -45,12 +45,12 @@ public class RootController {
 	private static final boolean DEBUG_CHAT_MODEL = true;
 	private static final int MAX_TOOL_CALL_DETAIL_CHUNKS = 20;
 	private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("EEEE, MMMM d, yyyy");
-    private static final int MAX_TOKENS = 180000;  // model length is 262144, leave headroom for long replies
 
 	@Inject private Logger log;
 	@Inject private TurnfabConfig cfg;
 	@Inject private GuiceFXMLLoader fxmlLoader;
 
+	@Inject private DynamicMcpToolProvider toolProvider;
 	@Inject private ToolManager toolManager;
 	@Inject private PromptManager promptManager;
 
@@ -77,7 +77,7 @@ public class RootController {
 	private boolean armCancel = false;
 
 	// The window is what the model sees; JournalingChatMemory also keeps the full session
-	// trajectory, including whatever the MAX_TOKENS window has already evicted.
+	// trajectory, including whatever has already evicted.
 	private JournalingChatMemory chatMemory;
 
 	// streaming stats
@@ -120,9 +120,9 @@ public class RootController {
 		bot = AiServices.builder(Bot.class)
 				.streamingChatModel(new ThinkingFirstStreamingModel(model))
 				.systemMessageTransformer(systemMessage -> buildSystemPrompt())
-				.toolProvider(toolManager.getProvider())
+				.toolProvider(toolProvider)
 				.chatMemory(chatMemory = new JournalingChatMemory(
-						TokenWindowChatMemory.withMaxTokens(MAX_TOKENS, tcEst), () -> turnNumber))
+						TokenWindowChatMemory.withMaxTokens(calcMaxTokens(), tcEst), () -> turnNumber))
 				.build();
 
 		log.info("Model and AI Service Ready.");
@@ -158,18 +158,22 @@ public class RootController {
 //		buildPromptFromTabFiles();
 	}
 
+	private int calcMaxTokens() {
+		return (int) (cfg.model_length*(cfg.trim_context_percent/100.0f));
+	}
+
 	private void buildPromptFromTabFiles() {
 		txaPrompt.clear();
-		txaPrompt.appendText(promptManager.readAllTabs(toolManager.getMainprjMcpClient()));
-//		txaPrompt.appendText(promptManager.readAllTabs(toolManager.getLc4jMcpClient()));
+		txaPrompt.appendText(promptManager.readAllTabs(toolProvider.getMcpClientByKey("main_project")));
+//		txaPrompt.appendText(promptManager.readAllTabs(toolProvider.getMcpClientByKey("lc4j")));
 	}
 
 	private void buildLc4jPrompt() {
 		txaPrompt.clear();
-		txaPrompt.appendText("Full searchable source code for LangChain4j is available with langchain4j_src-* tools.\n\n");
+		txaPrompt.appendText("Full searchable source code for LangChain4j is available with lc4j-* tools.\n\n");
 		txaPrompt.appendText("LangChain4j documentation: ");
-		txaPrompt.appendText(promptManager.listDirTree(toolManager.getLc4jMcpClient(), "docs/docs", 3));
-		txaPrompt.appendText(promptManager.readAllTabs(toolManager.getMainprjMcpClient()));
+		txaPrompt.appendText(promptManager.listDirTree(toolProvider.getMcpClientByKey("lc4j"), "docs/docs", 3));
+		txaPrompt.appendText(promptManager.readAllTabs(toolProvider.getMcpClientByKey("main_project")));
 	}
 
 	private void buildMsPrompt() {
