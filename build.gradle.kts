@@ -26,10 +26,10 @@ dependencies {
     implementation(libs.fx.guice)
     implementation(libs.junique)
 
-    implementation("dev.langchain4j:langchain4j:1.20.2")
-    implementation("dev.langchain4j:langchain4j-open-ai:1.20.2")
-    implementation("dev.langchain4j:langchain4j-http-client-jdk:1.20.2")
-    implementation("dev.langchain4j:langchain4j-mcp:1.20.2-beta30")
+    implementation("dev.langchain4j:langchain4j:1.21.0")
+    implementation("dev.langchain4j:langchain4j-open-ai:1.21.0")
+    implementation("dev.langchain4j:langchain4j-http-client-jdk:1.21.0")
+    implementation("dev.langchain4j:langchain4j-mcp:1.21.0-beta31")
 
     runtimeOnly("org.slf4j:slf4j-simple:2.0.18")
 }

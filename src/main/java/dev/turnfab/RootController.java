@@ -73,7 +73,7 @@ public class RootController {
 
 	@FXML
 	public void onInitBot() {
-		tokenJockey.initBot(readResource("system_prompts/chatbot.md"));  // coder, chatbot
+		tokenJockey.initBot(readResource("system_prompts/coder.md"));  // coder, chatbot
 	}
 
 	@FXML
@@ -98,7 +98,8 @@ public class RootController {
 
 	@FXML
 	public void onTest() {
-		tokenJockey.testJournal();
+		toolManager.test();
+//		tokenJockey.testJournal();
 //		txaPrompt.clear();
 //		txaPrompt.appendText(toolManager.getMcpInst());
 //		txaPrompt.appendText(promptManager.getAllTabPaths(toolManager.getMainprjMcpClient()));

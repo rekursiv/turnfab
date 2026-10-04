@@ -13,6 +13,15 @@ select context blocks (load these from config files??)
 TextArea for prompt
 <send btn>
 
+---
+
+main config:
+boolean enableThinking
+system prompt filename
+list of enabled MCP servers (ORed with toolConfig)
+(list of read-only servers?)
+toolContext map names (multiple allowed)
+
 =======
 
 For multi-block messages use @UserMessage List<Content> (text + images) — same code path, same no-substitution guarantee.

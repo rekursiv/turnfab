@@ -33,7 +33,7 @@ public class TokenJockey {
     @Inject private TurnfabConfig cfg;
     @Inject private DynamicMcpToolProvider toolProvider;
 
-    private QwenMode qwenMode = QwenMode.INSTRUCT;
+    private QwenMode qwenMode = QwenMode.THINKING;
     private Bot bot;
     private String systemPromptMainText = "";
     private StringBuilder systemPrompt = new StringBuilder();

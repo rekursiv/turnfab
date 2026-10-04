@@ -1,22 +1,19 @@
 package dev.turnfab;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
-public class McpServers extends ConfigBase {
+public class McpServerConfig extends ConfigBase {
 
-	public List<Server> servers = new ArrayList<>();
+	public List<Server> servers = new ArrayList<>();   // TODO: make LinkedHashMap
 
 	@JsonIgnoreProperties(ignoreUnknown = true)
 	public static class Server {
 		public String name = "";
 		public String url = "";
-		public Map<String, String> headers = new HashMap<>();
+		public Map<String, String> headers = new LinkedHashMap<>();
 		public String protocolVersion = DynamicMcpToolProvider.DEFAULT_PROTOCOL_VERSION;
 		public List<String> excludeTools = new ArrayList<>();
 		public List<String> excludeWriteTools = new ArrayList<>();

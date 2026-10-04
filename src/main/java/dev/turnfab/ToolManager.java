@@ -19,23 +19,33 @@ public class ToolManager {
     @Inject private TurnfabConfig cfg;
     @Inject private DynamicMcpToolProvider toolProvider;
 
-    private final ConfigManager<McpServers> mcpServerCfgMgr = ConfigManager.yaml(McpServers.class, "../config/McpServers.yaml");
+    private final ConfigManager<McpServerConfig> mcpServerCfgMgr = ConfigManager.yaml(McpServerConfig.class, "../config/McpServers.yaml");
     private final ConfigManager<McpJetBrainsConfig> jbProjectCfgMgr = ConfigManager.yaml(McpJetBrainsConfig.class, "../config/McpJetBrainsConfig.yaml");
     private final ConfigManager<McpEnabled> mcpEnableCfgMgr = ConfigManager.yaml(McpEnabled.class, "../config/McpEnabled.yaml");
 
 
+    private final ConfigManager<ToolContextConfig> toolCfgMgr = ConfigManager.yaml(ToolContextConfig.class, "../config/ToolContext.yaml");
+
+
+    public void test() {
+        ToolContextConfig tcc = toolCfgMgr.load();
+        toolCfgMgr.dump(tcc);
+        McpEnabled enables = mcpEnableCfgMgr.load();
+        mcpEnableCfgMgr.dump(enables);
+    }
+
     public void init() {
-        McpServers rawCfg = mcpServerCfgMgr.load();
+        McpServerConfig rawCfg = mcpServerCfgMgr.load();
         McpJetBrainsConfig jbProjects = jbProjectCfgMgr.load();
 
-        List<McpServers.Server> mergedCfg = new ArrayList<>();
+        List<McpServerConfig.Server> mergedCfg = new ArrayList<>();
         mergedCfg.addAll(rawCfg.servers);
 
-        for (McpServers.Server server : rawCfg.servers) {
+        for (McpServerConfig.Server server : rawCfg.servers) {
             if (server.name.equals("jetbrains")) {
                 System.out.println("Merging");
                 for (McpJetBrainsConfig.Project project : jbProjects.projects) {
-                    McpServers.Server ns = new McpServers.Server();
+                    McpServerConfig.Server ns = new McpServerConfig.Server();
                     ns.name = project.name;
                     ns.url = "http://127.0.0.1:"+project.port+"/stream";
                     ns.headers.put("IJ_MCP_SERVER_PROJECT_PATH", project.projectPath);
@@ -53,9 +63,9 @@ public class ToolManager {
         addEnabledServers(mergedCfg, enables);
     }
 
-    public void addEnabledServers(List<McpServers.Server> servers, McpEnabled enables) {
+    public void addEnabledServers(List<McpServerConfig.Server> servers, McpEnabled enables) {
         if (enables.enabled != null) {
-            for (McpServers.Server server : servers) {
+            for (McpServerConfig.Server server : servers) {
                 if (enables.enabled.contains(server.name)) addServer(server);
             }
         }
@@ -63,7 +73,7 @@ public class ToolManager {
         toolProvider.setToolSpecificationMapper(new TurnfabToolSpecMapper());
     }
 
-    public void addServer(McpServers.Server server) {
+    public void addServer(McpServerConfig.Server server) {
         try {
             toolProvider.addServer(new DynamicMcpToolProvider.ServerConfig(
                     server.name, server.url, server.headers, server.protocolVersion,

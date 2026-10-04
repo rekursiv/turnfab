@@ -37,7 +37,7 @@ public class PromptManager {
     private void buildMsPrompt() {
         prompt.append("Documentation for markstream-vue:");
         listDirTree(toolProvider.getMcpClientByKey("markstream"), "docs", 2);
-        prompt.append("Location of files that render markdown in my app (turnfab):");  // dirPath markstream-page, depth: 2
+        prompt.append("Location of files that render markdown in my app (turnfab):");
         listDirTree(toolProvider.getMcpClientByKey("turnfab"), "markstream-page", 2);
     }
 
