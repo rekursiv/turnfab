@@ -17,10 +17,11 @@ TextArea for prompt
 
 main config:
 boolean enableThinking
-system prompt filename
+system prompt filename (load from cfg dir)
 list of enabled MCP servers (ORed with toolConfig)
 (list of read-only servers?)
 toolContext map names (multiple allowed)
+debug chat model
 
 =======
 

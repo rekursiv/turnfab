@@ -73,7 +73,7 @@ public class RootController {
 
 	@FXML
 	public void onInitBot() {
-		tokenJockey.initBot(readResource("system_prompts/coder.md"));  // coder, chatbot
+		tokenJockey.initBot();
 	}
 
 	@FXML
@@ -151,7 +151,7 @@ public class RootController {
 
 	@Subscribe
 	public void onTokenStats(TokenStatsEvent evt) {
-		String ctxText = String.format("%d/%d (%.1f%%)", evt.getTotalTokens(), cfg.model_length, evt.getPercentTokensUsed());
+		String ctxText = String.format("%d/%d (%.1f%%)", evt.getUsedTokens(), evt.getTotalTokens(), evt.getPercentTokensUsed());
 		String tpsText = String.format("%.1f tok/s", evt.getTokensPerSec());
     	lblCtxUsage.setText(ctxText);
 		lblTokPerSec.setText(tpsText);
@@ -199,15 +199,5 @@ public class RootController {
 		stage.show();
 	}
 
-	private String readResource(String name) {
-		try (InputStream in = getClass().getResourceAsStream(name)) {
-			if (in == null) {
-				throw new IllegalArgumentException("Missing resource: " + name);
-			}
-			return new String(in.readAllBytes(), StandardCharsets.UTF_8);
-		} catch (IOException e) {
-			throw new RuntimeException(e);
-		}
-	}
 
 }

@@ -16,15 +16,20 @@ import dev.langchain4j.service.AiServices;
 import dev.langchain4j.service.TokenStream;
 import javafx.application.Platform;
 
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 
 public class TokenJockey {
 
-    private static final boolean DEBUG_CHAT_MODEL = false;
     private static final int MAX_TOOL_CALL_DETAIL_CHUNKS = 20;
     private static final int LONG_TOOL_CALL_RATE_DIV = 20;
     private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("EEEE, MMMM d, yyyy");
@@ -34,9 +39,8 @@ public class TokenJockey {
     @Inject private TurnfabConfig cfg;
     @Inject private DynamicMcpToolProvider toolProvider;
 
-    private QwenMode qwenMode = QwenMode.THINKING;
+    private QwenMode qwenMode = QwenMode.INSTRUCT;
     private Bot bot;
-    private String systemPromptMainText = "";
     private StringBuilder systemPrompt = new StringBuilder();
     private TokenCountEstimator tcEst = new OpenAiTokenCountEstimator("o200K_BASE"); // hack to trigger this.encoding = ENCODING_REGISTRY.getEncoding(O200K_BASE);
 
@@ -47,7 +51,7 @@ public class TokenJockey {
     private Section currentSection = Section.NONE;
     private int currentToolIndex = -1;
     private int toolCallChunks = 0;
-    private int turnNumber = 0;
+    private int turnNumber = 1;
 
     // streaming stats
     private long streamStartNanos;
@@ -59,20 +63,25 @@ public class TokenJockey {
     private boolean armCancel = false;
     private enum Section { NONE, THINKING, RESPONSE, TOOL_CALL }
 
+    private final ConfigManager<ModelConfig> modelCfgMgr = ConfigManager.yaml(ModelConfig.class, "../config/McpServers.yaml");
+    private ModelConfig modelCfg = new ModelConfig();
 
 
-    public void initBot(String systemPrompt) {
-        systemPromptMainText = systemPrompt;
+
+
+    public void initBot() {
+        if (cfg.enableThinking) qwenMode = QwenMode.THINKING;
+        modelCfg = modelCfgMgr.load();
 
         OpenAiStreamingChatModel model = OpenAiStreamingChatModel.builder()
-                .modelName(cfg.model_name)
-                .baseUrl(cfg.model_base_url)
-                .apiKey(cfg.model_key)
+                .modelName(modelCfg.name)
+                .baseUrl(modelCfg.url)
+                .apiKey(modelCfg.key)
                 .httpClientBuilder(new JdkHttpClientBuilder()
                         .httpClientBuilder(java.net.http.HttpClient.newBuilder()
                                 .version(java.net.http.HttpClient.Version.HTTP_1_1)))
-                .logRequests(DEBUG_CHAT_MODEL)
-                .logResponses(DEBUG_CHAT_MODEL)
+                .logRequests(cfg.logRequests)
+                .logResponses(cfg.logResponses)
                 .returnThinking(true)
                 .sendThinking(true, "reasoning")
                 .defaultRequestParameters(qwenMode.parameters())
@@ -81,7 +90,8 @@ public class TokenJockey {
 
         bot = AiServices.builder(Bot.class)
                 .streamingChatModel(new ThinkingFirstStreamingModel(model))
-                .systemMessageTransformer(systemMessage -> buildSystemPrompt())
+ //               .systemMessageTransformer(systemMessage -> buildSystemPrompt())
+                .systemMessageTransformer(_ -> systemPrompt.toString())
                 .toolProvider(toolProvider)
                 .chatMemory(chatMemory = new JournalingChatMemory(
                         TokenWindowChatMemory.withMaxTokens(calcMaxTokens(), tcEst), () -> turnNumber))
@@ -99,16 +109,24 @@ public class TokenJockey {
             log.warning("Bot has not been initialized!");
             return;
         }
-        armCancel = false;
-        ++turnNumber;
-        currentSection = Section.NONE;
-        currentToolIndex = -1;
 
         if (turnNumber==1) {
-            buildSystemPrompt();
+            if (systemPrompt.isEmpty()) {
+                try {
+                    loadSystemPromptFromFile(cfg.systemPromptFileName);
+                } catch (IOException e) {
+                    log.log(Level.WARNING, "Could not load system prompt file!", e);
+                    return;
+                }
+            }
             sendStream("### ==System Prompt:==\n");
             sendStream(systemPrompt.toString());
         }
+        ++turnNumber;
+
+        armCancel = false;
+        currentSection = Section.NONE;
+        currentToolIndex = -1;
 
         sendStream("\n\n## ==Turn "+turnNumber+"==\n");
         if (toSend.length()>900) sendStream("..."+toSend.substring(toSend.length()-900).replace("```", ""));
@@ -271,22 +289,14 @@ public class TokenJockey {
         double elapsedSec = (now - streamStartNanos) / 1_000_000_000.0;
         double tokensPerSec = elapsedSec > 0.2 ? outputTokens / elapsedSec : 0;
         int totalTokens = inputTokens + outputTokens;
-        double percentTokensUsed = 100.0 * totalTokens / cfg.model_length;
+        double percentTokensUsed = 100.0 * totalTokens / modelCfg.length;
 
-        runOnJavaFx(()->eb.post(new TokenStatsEvent(totalTokens, (float)percentTokensUsed, (float)tokensPerSec)));
+        runOnJavaFx(()->eb.post(new TokenStatsEvent(modelCfg.length, totalTokens, (float)percentTokensUsed, (float)tokensPerSec)));
 
     }
 
     private int calcMaxTokens() {
-        return (int) (cfg.model_length*(cfg.trim_context_percent/100.0f));
-    }
-
-    private String buildSystemPrompt() {
-        if (systemPrompt.isEmpty()) {
-            systemPrompt.append(systemPromptMainText);
-            systemPrompt.append("\nToday's date is " + LocalDate.now().format(DATE_FORMATTER) + ".");
-        }
-        return systemPrompt.toString();
+        return (int) (modelCfg.length*(modelCfg.trim_context_percent/100.0f));
     }
 
     private void runOnJavaFx(Runnable action) {
@@ -295,6 +305,16 @@ public class TokenJockey {
         } else {
             Platform.runLater(action);
         }
+    }
+
+    public void loadSystemPromptFromFile(String fileName) throws IOException {
+        systemPrompt = new StringBuilder();
+        String pathStr = System.getProperty("user.dir")+"/../config/system_prompts/"+fileName;
+		System.out.println("load: "+pathStr);
+        for (String line : Files.readAllLines(Paths.get(pathStr), StandardCharsets.UTF_8)) {
+            systemPrompt.append(line);
+        }
+        systemPrompt.append("\nToday's date is " + LocalDate.now().format(DATE_FORMATTER) + ".");
     }
 
     public void testJournal() {
