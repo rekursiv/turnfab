@@ -26,6 +26,7 @@ public class TokenJockey {
 
     private static final boolean DEBUG_CHAT_MODEL = false;
     private static final int MAX_TOOL_CALL_DETAIL_CHUNKS = 20;
+    private static final int LONG_TOOL_CALL_RATE_DIV = 20;
     private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("EEEE, MMMM d, yyyy");
 
     @Inject private Logger log;
@@ -175,7 +176,7 @@ public class TokenJockey {
                     }
                     if (toolCallChunks < MAX_TOOL_CALL_DETAIL_CHUNKS) {
                         sendStream(partialToolCall.partialArguments());
-                    } else {
+                    } else if (toolCallChunks%LONG_TOOL_CALL_RATE_DIV==0) {
                         sendStream(".");
                     }
                     toolCallChunks++;
