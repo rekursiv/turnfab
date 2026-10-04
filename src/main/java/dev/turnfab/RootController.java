@@ -98,7 +98,6 @@ public class RootController {
 
 	@FXML
 	public void onTest() {
-		toolManager.test();
 //		tokenJockey.testJournal();
 //		txaPrompt.clear();
 //		txaPrompt.appendText(toolManager.getMcpInst());

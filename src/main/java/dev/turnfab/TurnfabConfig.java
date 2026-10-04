@@ -14,6 +14,7 @@ public class TurnfabConfig extends ConfigBase {
     public String systemPromptFileName = "coder.md";
 	public Set<String> mcpServers = new LinkedHashSet<>();
 	public Set<String> toolContext = new LinkedHashSet<>();
+	// TODO: list of read-only servers?
 
 	public boolean logRequests = false;
 	public boolean logResponses = false;

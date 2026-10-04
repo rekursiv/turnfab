@@ -1,27 +1,10 @@
 
 
+rename TurnfabConfig -> SystemConfig?
+
+====
 
 file LC4J issue: "C:\projects\AI\md\2026-09-30_23-57-27.md"
-
-=======
-
-select preset for main config (file list)
-THINK/INSTRUCT
-select system prompt (file list)
-MCP servers: check enable, readOnly per server
-select context blocks (load these from config files??)
-TextArea for prompt
-<send btn>
-
----
-
-main config:
-boolean enableThinking
-system prompt filename (load from cfg dir)
-list of enabled MCP servers (ORed with toolConfig)
-(list of read-only servers?)
-toolContext map names (multiple allowed)
-debug chat model
 
 =======
 

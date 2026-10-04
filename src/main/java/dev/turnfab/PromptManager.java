@@ -20,7 +20,7 @@ public class PromptManager {
     public void buildPrompt() {
         resetPrompt();
         buildLc4jPrompt();
-        buildMsPrompt();
+//        buildMsPrompt();
         buildPromptFromTabFiles("turnfab");
     }
 
