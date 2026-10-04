@@ -1,5 +1,17 @@
 
+
+
 file LC4J issue: "C:\projects\AI\md\2026-09-30_23-57-27.md"
+
+=======
+
+select preset for main config (file list)
+THINK/INSTRUCT
+select system prompt (file list)
+MCP servers: check enable, readOnly per server
+select context blocks (load these from config files??)
+TextArea for prompt
+<send btn>
 
 =======
 
@@ -47,6 +59,9 @@ dynamically add MCP instructions to system prompt if the MCP server is used. Git
 
 ======
 
+build a better patch
+
+======
 	// NOTE: McpToolProvider.Builder leaves mcpClients null unless mcpClients(...) is called,
 	// and the constructor passes it straight into CopyOnWriteArrayList, which NPEs on null.
 	// So we must seed an explicit (empty) list — addMcpClient() then works dynamically.
