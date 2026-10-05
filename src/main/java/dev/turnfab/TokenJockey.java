@@ -50,7 +50,7 @@ public class TokenJockey {
     private Section currentSection = Section.NONE;
     private int currentToolIndex = -1;
     private int toolCallChunks = 0;
-    private int turnNumber = 1;
+    private int turnNumber = 0;
 
     // streaming stats
     private long streamStartNanos;
@@ -109,6 +109,7 @@ public class TokenJockey {
             return;
         }
 
+        ++turnNumber;
         if (turnNumber==1) {
             if (systemPrompt.isEmpty()) {
                 try {
@@ -121,7 +122,6 @@ public class TokenJockey {
             sendStream("### ==System Prompt:==\n");
             sendStream(systemPrompt.toString());
         }
-        ++turnNumber;
 
         armCancel = false;
         currentSection = Section.NONE;

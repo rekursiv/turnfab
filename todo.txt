@@ -1,6 +1,6 @@
 
 
-
+log to TextArea
 
 
 ====== exceptions ====
