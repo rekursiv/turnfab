@@ -5,10 +5,7 @@ import dev.langchain4j.mcp.client.McpClient;
 import dev.langchain4j.service.tool.AiServiceTool;
 import dev.langchain4j.service.tool.ToolProviderResult;
 
-import java.util.ArrayList;
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -25,8 +22,8 @@ public class ToolManager {
     private final ConfigManager<ToolContextConfig> toolCfgMgr = ConfigManager.yaml(ToolContextConfig.class, "../config/ToolContext.yaml");
 
     public void init() {
-        Set<String> enabled = mainCfg.mcpServers;
-        if (enabled==null) enabled = new LinkedHashSet<>();
+        List<String> enabled = mainCfg.mcpServers;
+        if (enabled==null) enabled = new ArrayList<>();
         ToolContextConfig tcc = toolCfgMgr.load();
 
         if (mainCfg.toolContext!=null) {
@@ -45,30 +42,28 @@ public class ToolManager {
         McpServerConfig rawCfg = mcpServerCfgMgr.load();
         McpJetBrainsConfig jbProjects = jbProjectCfgMgr.load();
 
-        List<McpServerConfig.Server> mergedCfg = new ArrayList<>();
-        mergedCfg.addAll(rawCfg.servers);
+        Map<String, McpServerConfig.Server> mergedCfg = new LinkedHashMap<>(rawCfg.servers);
 
-        // TODO: instead of looping thru all of these, simply retrieve rawCfg.servers.get("jetbrains")
-        for (McpServerConfig.Server server : rawCfg.servers) {
-            if (server.name.equals("jetbrains")) {
-                for (McpJetBrainsConfig.Project project : jbProjects.projects) {
-                    McpServerConfig.Server ns = new McpServerConfig.Server();
-                    ns.name = project.name;
-                    ns.url = "http://127.0.0.1:"+project.port+"/stream";
-                    ns.headers.put("IJ_MCP_SERVER_PROJECT_PATH", project.projectPath);
-                    ns.protocolVersion = server.protocolVersion;
-                    ns.excludeTools.addAll(server.excludeTools);
-                    ns.includeTools.addAll(server.includeTools);
-                    if (project.readOnly) ns.excludeTools.addAll(server.excludeWriteTools);
-                    ns.debugTransport = server.debugTransport;
-                    mergedCfg.add(ns);
-                }
+        // Expand the "jetbrains" template into one server per configured project.
+        McpServerConfig.Server jb = mergedCfg.remove("jetbrains");
+        if (jb != null) {
+            for (McpJetBrainsConfig.Project project : jbProjects.projects) {
+                McpServerConfig.Server ns = new McpServerConfig.Server();
+                ns.url = "http://127.0.0.1:"+project.port+"/stream";
+                ns.headers.put("IJ_MCP_SERVER_PROJECT_PATH", project.projectPath);
+                ns.protocolVersion = jb.protocolVersion;
+                ns.excludeTools.addAll(jb.excludeTools);
+                ns.includeTools.addAll(jb.includeTools);
+                if (project.readOnly) ns.excludeTools.addAll(jb.excludeWriteTools);
+                ns.debugTransport = jb.debugTransport;
+                mergedCfg.put(project.name, ns);
             }
         }
 
-        // TODO: instead of looping thru all of these, iterate over `enabled` and addServer(en)
-        for (McpServerConfig.Server server : mergedCfg) {
-            if (enabled.contains(server.name)) addServer(server);
+        // For each enabled name, look it up and register it.
+        for (String name : enabled) {
+            McpServerConfig.Server s = mergedCfg.get(name);
+            if (s != null) addServer(name, s);
         }
 
         ctxMgr.resetPrompt();
@@ -82,15 +77,15 @@ public class ToolManager {
 
     }
 
-    public void addServer(McpServerConfig.Server server) {
+    public void addServer(String name, McpServerConfig.Server server) {
         try {
             toolProvider.addServer(new DynamicMcpToolProvider.ServerConfig(
-                    server.name, server.url, server.headers, server.protocolVersion,
+                    name, server.url, server.headers, server.protocolVersion,
                     toSet(server.excludeTools), toSet(server.includeTools),
                     server.debugTransport));
         } catch (RuntimeException e) {
             // one unreachable server should not block the others
-            log.log(Level.WARNING, "MCP server '" + server.name + "' not connected: " + e.getMessage(), e);
+            log.log(Level.WARNING, "MCP server '" + name + "' not connected: " + e.getMessage(), e);
         }
     }
 
