@@ -9,39 +9,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.logging.Logger;
 
-public class PromptManager {
+public class ToolContextManager {
 
     @Inject private Logger log;
     @Inject private DynamicMcpToolProvider toolProvider;
 
     private StringBuilder prompt = new StringBuilder();
-
-
-    public void buildPrompt() {
-        resetPrompt();
-        buildLc4jPrompt();
-//        buildMsPrompt();
-        buildPromptFromTabFiles("turnfab");
-    }
-
-    public void buildPromptFromTabFiles(String mcpName) {
-        readAllTabs(toolProvider.getMcpClientByKey(mcpName));
-    }
-
-    private void buildLc4jPrompt() {
-        prompt.append("Full searchable source code for LangChain4j is available with lc4j-* tools.\n\n");
-        prompt.append("LangChain4j documentation: ");
-        listDirTree(toolProvider.getMcpClientByKey("lc4j"), "docs/docs", 3);
-    }
-
-    private void buildMsPrompt() {
-        prompt.append("Documentation for markstream-vue:");
-        listDirTree(toolProvider.getMcpClientByKey("markstream"), "docs", 2);
-        prompt.append("Location of files that render markdown in my app (turnfab):");
-        listDirTree(toolProvider.getMcpClientByKey("turnfab"), "markstream-page", 2);
-    }
-
-
 
 
     public void resetPrompt() {
@@ -53,7 +26,35 @@ public class PromptManager {
     }
 
 
+    public void buildPrompt(List<ToolContextConfig.Context> context) {
+        for (ToolContextConfig.Context block : context) {
+            if (block.text!=null) prompt.append(block.text);
+            else if (block.toolName!=null) callTool(block);
+        }
+    }
 
+    private void callTool(ToolContextConfig.Context block) {
+        McpClient mcpClient = toolProvider.getMcpClientByKey(block.mcpName);
+        if (mcpClient == null) {
+            log.warning("Cannot find MCP Client for " + block.mcpName);
+            return;
+        }
+        switch (block.toolName) {
+            case "allTabs":
+                readAllTabs(mcpClient);
+                break;
+            case "activeTabs":
+                readActiveTab(mcpClient);
+                break;
+            case "dirTree":
+                String dirPath = block.arg1;
+                int depth =  Integer.parseInt(block.arg2);
+                listDirTree(mcpClient, dirPath, depth);
+                break;
+            default:
+                log.warning("Unknown Tool Name " + block.toolName);
+        }
+    }
 
 
     public void listDirTree(McpClient mcpClient, String dirPath, int maxDepth) {

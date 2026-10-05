@@ -48,7 +48,6 @@ public class RootController {
 
 	@Inject private DynamicMcpToolProvider toolProvider;
 	@Inject private ToolManager toolManager;
-	@Inject private PromptManager promptManager;
 	@Inject private TokenJockey tokenJockey;
 
 	@FXML private TabPane tabPane;
@@ -85,8 +84,7 @@ public class RootController {
 	@FXML
 	public void onBuildPrompt() {
 		txaPrompt.clear();
-		promptManager.buildPrompt();
-		txaPrompt.appendText(promptManager.getPrompt());
+		txaPrompt.appendText(toolManager.getPrompt());
 	}
 
 	@FXML

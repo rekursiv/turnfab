@@ -6,6 +6,7 @@ import dev.langchain4j.service.tool.AiServiceTool;
 import dev.langchain4j.service.tool.ToolProviderResult;
 
 import java.util.ArrayList;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.logging.Level;
@@ -17,6 +18,7 @@ public class ToolManager {
     @Inject private Logger log;
     @Inject private TurnfabConfig mainCfg;
     @Inject private DynamicMcpToolProvider toolProvider;
+    @Inject private ToolContextManager ctxMgr;
 
     private final ConfigManager<McpServerConfig> mcpServerCfgMgr = ConfigManager.yaml(McpServerConfig.class, "../config/McpServers.yaml");
     private final ConfigManager<McpJetBrainsConfig> jbProjectCfgMgr = ConfigManager.yaml(McpJetBrainsConfig.class, "../config/McpJetBrainsConfig.yaml");
@@ -24,14 +26,18 @@ public class ToolManager {
 
     public void init() {
         Set<String> enabled = mainCfg.mcpServers;
+        if (enabled==null) enabled = new LinkedHashSet<>();
         ToolContextConfig tcc = toolCfgMgr.load();
-        for (String tc : mainCfg.toolContext) {
-            List<ToolContextConfig.Context> ctx = tcc.context.get(tc);
-            if (ctx==null) {
-                System.out.println("No tool context found for " + tc);
-            } else {
-                for (ToolContextConfig.Context c : ctx) {
-                    if (c.mcpName!=null) enabled.add(c.mcpName);
+
+        if (mainCfg.toolContext!=null) {
+            for (String tc : mainCfg.toolContext) {
+                List<ToolContextConfig.Context> ctx = tcc.context.get(tc);
+                if (ctx == null) {
+                    System.out.println("No tool context found for " + tc);
+                } else {
+                    for (ToolContextConfig.Context c : ctx) {
+                        if (c.mcpName != null) enabled.add(c.mcpName);
+                    }
                 }
             }
         }
@@ -63,6 +69,14 @@ public class ToolManager {
             if (enabled.contains(server.name)) addServer(server);
         }
 
+        ctxMgr.resetPrompt();
+        if (mainCfg.toolContext!=null) {
+            for (String tc : mainCfg.toolContext) {
+                ctxMgr.buildPrompt(tcc.context.get(tc));
+                System.out.println("*** "+tc);  //  FIXME: order is different than in YAML file
+            }
+        }
+
         toolProvider.setToolSpecificationMapper(new TurnfabToolSpecMapper());
 
     }
@@ -77,6 +91,10 @@ public class ToolManager {
             // one unreachable server should not block the others
             log.log(Level.WARNING, "MCP server '" + server.name + "' not connected: " + e.getMessage(), e);
         }
+    }
+
+    public String getPrompt() {
+        return ctxMgr.getPrompt();
     }
 
     /** Hand-edited YAML can carry an explicit null where a tool list was expected. */
