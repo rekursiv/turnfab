@@ -1,8 +1,11 @@
 package dev.turnfab;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 
+import java.util.ArrayList;
 import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Set;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
@@ -12,9 +15,10 @@ public class TurnfabConfig extends ConfigBase {
 
 	public boolean enableThinking = true;
     public String systemPromptFileName = "coder.md";
+
+//	@JsonDeserialize(as = LinkedHashSet.class)
 	public Set<String> mcpServers = new LinkedHashSet<>();
-	public Set<String> toolContext = new LinkedHashSet<>();
-	// TODO: list of read-only servers?
+	public List<String> toolContext = new ArrayList<>();
 
 	public boolean logRequests = false;
 	public boolean logResponses = false;

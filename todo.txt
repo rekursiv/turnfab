@@ -2,6 +2,9 @@
 
 rename TurnfabConfig -> SystemConfig?
 
+java.lang.RuntimeException: The LLM is trying to execute the 'search_file' tool, but no such tool exists. Most likely, it is a hallucination. You can override this default strategy by setting the hallucinatedToolNameStrategy on the AiService
+
+
 ====
 
 file LC4J issue: "C:\projects\AI\md\2026-09-30_23-57-27.md"
@@ -17,6 +20,8 @@ find a way to bring up tool calls later if needed (show ID, save in buffer, reca
 Copy MD btn: puts on clipboard
 
 calc an average tok/sec for a turn, display it at turn's end
+
+in main config, add list of read-only servers?
 
 === rendering issues ===
 
@@ -72,6 +77,8 @@ build a better patch
     */
 
 
+	@JsonDeserialize(as = LinkedHashSet.class)
+	public Set<String> mcpServers = new LinkedHashSet<>();
 ====
 
 This is the future relative to your training data, but is present day reality for the user.

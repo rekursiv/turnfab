@@ -48,6 +48,7 @@ public class ToolManager {
         List<McpServerConfig.Server> mergedCfg = new ArrayList<>();
         mergedCfg.addAll(rawCfg.servers);
 
+        // TODO: instead of looping thru all of these, simply retrieve rawCfg.servers.get("jetbrains")
         for (McpServerConfig.Server server : rawCfg.servers) {
             if (server.name.equals("jetbrains")) {
                 for (McpJetBrainsConfig.Project project : jbProjects.projects) {
@@ -65,6 +66,7 @@ public class ToolManager {
             }
         }
 
+        // TODO: instead of looping thru all of these, iterate over `enabled` and addServer(en)
         for (McpServerConfig.Server server : mergedCfg) {
             if (enabled.contains(server.name)) addServer(server);
         }
@@ -73,7 +75,6 @@ public class ToolManager {
         if (mainCfg.toolContext!=null) {
             for (String tc : mainCfg.toolContext) {
                 ctxMgr.buildPrompt(tcc.context.get(tc));
-                System.out.println("*** "+tc);  //  FIXME: order is different than in YAML file
             }
         }
 
