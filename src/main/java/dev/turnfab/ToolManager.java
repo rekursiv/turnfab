@@ -13,13 +13,16 @@ import java.util.logging.Logger;
 public class ToolManager {
 
     @Inject private Logger log;
-    @Inject private TurnfabConfig mainCfg;
+    @Inject private SystemConfig mainCfg;
     @Inject private DynamicMcpToolProvider toolProvider;
     @Inject private ToolContextManager ctxMgr;
 
-    private final ConfigManager<McpServerConfig> mcpServerCfgMgr = ConfigManager.yaml(McpServerConfig.class, "../config/McpServers.yaml");
-    private final ConfigManager<McpJetBrainsConfig> jbProjectCfgMgr = ConfigManager.yaml(McpJetBrainsConfig.class, "../config/McpJetBrainsConfig.yaml");
-    private final ConfigManager<ToolContextConfig> toolCfgMgr = ConfigManager.yaml(ToolContextConfig.class, "../config/ToolContext.yaml");
+    private final ConfigManager<McpServerConfig> mcpServerCfgMgr =
+            ConfigManager.yaml(McpServerConfig.class, "../turnfab_config/mcp_servers.yaml");
+    private final ConfigManager<McpJetBrainsConfig> jbProjectCfgMgr =
+            ConfigManager.yaml(McpJetBrainsConfig.class, "../turnfab_config/jet_brains.yaml");
+    private final ConfigManager<ToolContextConfig> toolCfgMgr =
+            ConfigManager.yaml(ToolContextConfig.class, "../turnfab_config/tool_context.yaml");
 
     public void init() {
         List<String> enabled = mainCfg.mcpServers;

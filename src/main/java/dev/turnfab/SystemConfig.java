@@ -5,7 +5,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
-public class TurnfabConfig extends ConfigBase {
+public class SystemConfig extends ConfigBase {
 	public boolean logToConsole=true;
 	public boolean logToFile=false;
 

@@ -19,7 +19,6 @@ import javafx.application.Platform;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
-import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
@@ -36,7 +35,7 @@ public class TokenJockey {
 
     @Inject private Logger log;
     @Inject private EventBus eb;
-    @Inject private TurnfabConfig cfg;
+    @Inject private SystemConfig cfg;
     @Inject private DynamicMcpToolProvider toolProvider;
 
     private QwenMode qwenMode = QwenMode.INSTRUCT;

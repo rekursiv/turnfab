@@ -1,15 +1,15 @@
 
 
-rename TurnfabConfig -> SystemConfig?
-
-java.lang.RuntimeException: The LLM is trying to execute the 'search_file' tool, but no such tool exists. Most likely, it is a hallucination. You can override this default strategy by setting the hallucinatedToolNameStrategy on the AiService
-
 
 ====
 
 file LC4J issue: "C:\projects\AI\md\2026-09-30_23-57-27.md"
 
-=======
+====== exceptions ====
+
+java.lang.RuntimeException: The LLM is trying to execute the 'search_file' tool, but no such tool exists. Most likely, it is a hallucination. You can override this default strategy by setting the hallucinatedToolNameStrategy on the AiService
+
+======
 
 For multi-block messages use @UserMessage List<Content> (text + images) — same code path, same no-substitution guarantee.
 

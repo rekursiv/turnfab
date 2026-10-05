@@ -8,8 +8,6 @@ import com.cathive.fx.guice.GuiceFXMLLoader;
 import com.google.inject.Inject;
 import com.google.inject.Module;
 
-import it.sauronsoftware.junique.AlreadyLockedException;
-import it.sauronsoftware.junique.JUnique;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.stage.Stage;
@@ -33,7 +31,7 @@ public class TurnfabApp extends GuiceApplication {
 			Scene scene = new Scene(root);
 			scene.getStylesheets().add(getClass().getResource("application.css").toExternalForm());
 			primaryStage.setScene(scene);
-			primaryStage.setTitle("Turnfab");
+			primaryStage.setTitle("Turnfab V1.00");
 		    primaryStage.addEventHandler(WindowEvent.WINDOW_SHOWN, (evt)->{if (SplashScreen.getSplashScreen()!=null) SplashScreen.getSplashScreen().close();});
 			primaryStage.show();
 		} catch(Exception e) {
@@ -53,13 +51,7 @@ public class TurnfabApp extends GuiceApplication {
 		// but breaks auto-scaling on scaled screens (hi-res laptops)
 		System.setProperty("glass.win.uiScale", "100%");
 
-		Class<TurnfabApp> appClass = TurnfabApp.class;
-		try {
-			JUnique.acquireLock(appClass.getName());
-			GuiceApplication.launch(appClass);
-		} catch (AlreadyLockedException e) {
-			System.out.println("Another instance of "+appClass.getName()+" was detected, shutting down.");
-		}
+		GuiceApplication.launch(TurnfabApp.class);
 		if (SplashScreen.getSplashScreen()!=null) SplashScreen.getSplashScreen().close();
 		System.out.println("END main()");
 		System.exit(0);

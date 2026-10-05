@@ -2,31 +2,15 @@ package dev.turnfab;
 
 import java.io.File;
 import java.io.IOException;
-import java.io.InputStream;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.List;
 import java.util.logging.Logger;
 
 import com.cathive.fx.guice.FXMLController;
 import com.cathive.fx.guice.GuiceFXMLLoader;
 import com.google.common.eventbus.Subscribe;
 import com.google.inject.Inject;
-import dev.langchain4j.data.message.TextContent;
-import dev.langchain4j.http.client.jdk.JdkHttpClientBuilder;
-import dev.langchain4j.memory.chat.TokenWindowChatMemory;
-import dev.langchain4j.model.TokenCountEstimator;
-import dev.langchain4j.model.chat.response.PartialResponse;
-import dev.langchain4j.model.chat.response.PartialResponseContext;
-import dev.langchain4j.model.chat.response.PartialThinking;
-import dev.langchain4j.model.chat.response.PartialThinkingContext;
-import dev.langchain4j.model.openai.OpenAiStreamingChatModel;
-import dev.langchain4j.model.openai.OpenAiTokenCountEstimator;
-import dev.langchain4j.service.AiServices;
-import dev.langchain4j.service.TokenStream;
 import javafx.application.Platform;
 import javafx.fxml.FXML;
 import javafx.scene.Scene;
@@ -43,7 +27,7 @@ import javafx.stage.Stage;
 public class RootController {
 
 	@Inject private Logger log;
-	@Inject private TurnfabConfig cfg;
+	@Inject private SystemConfig cfg;
 	@Inject private GuiceFXMLLoader fxmlLoader;
 
 	@Inject private DynamicMcpToolProvider toolProvider;

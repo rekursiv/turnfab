@@ -10,7 +10,6 @@ module dev.turnfab {
 	requires javafx.fxml;
 	requires javafx.graphics;
 	requires javafx.web;
-	requires junique;
 	requires com.google.common;
 	requires com.google.guice;
 	requires com.cathive.fx.guice;

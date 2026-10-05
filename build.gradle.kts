@@ -24,7 +24,6 @@ dependencies {
     implementation(libs.jackson.annotations)
     implementation(libs.jackson.dataformat.yaml)
     implementation(libs.fx.guice)
-    implementation(libs.junique)
 
     implementation("dev.langchain4j:langchain4j:1.21.0")
     implementation("dev.langchain4j:langchain4j-open-ai:1.21.0")
@@ -61,12 +60,12 @@ application {
 val copyLibs = tasks.register<Copy>("copyLibs") {
     description = "Emulates Eclipse-style JAR export with required libraries in sub-folder"
     // Copy all dependencies INCLUDING JavaFX
-    // from(configurations.runtimeClasspath)
+    from(configurations.runtimeClasspath)
 
     // Copy all dependencies EXCEPT JavaFX
-    from(configurations.runtimeClasspath.get().filter { file ->
-        !file.name.contains("javafx")
-    })
+    //from(configurations.runtimeClasspath.get().filter { file ->
+    //    !file.name.contains("javafx")
+    //})
 
     into(layout.buildDirectory.dir("libs/${appName}_lib"))
 }

@@ -21,8 +21,9 @@ import com.google.inject.spi.TypeListener;
 public class TurnfabGuice extends AbstractModule {
 
 	protected final EventBus eventBus = new EventBus();
-	protected final ConfigManager<TurnfabConfig> cfgMgr = new ConfigManager<>(TurnfabConfig.class, "../config/TurnfabConfig.yaml", new ObjectMapper(new YAMLFactory()));
-	protected TurnfabConfig config;
+	protected final ConfigManager<SystemConfig> cfgMgr =
+			new ConfigManager<>(SystemConfig.class, "../turnfab_config/system.yaml", new ObjectMapper(new YAMLFactory()));
+	protected SystemConfig config;
 	
 	@Override
 	protected void configure() {
@@ -44,8 +45,8 @@ public class TurnfabGuice extends AbstractModule {
 	
 	protected void setupConfig() {
 		config = cfgMgr.load();
-		bind(new TypeLiteral<ConfigManager<TurnfabConfig>>() {}).toInstance(cfgMgr);
-		bind(TurnfabConfig.class).toInstance(config);
+		bind(new TypeLiteral<ConfigManager<SystemConfig>>() {}).toInstance(cfgMgr);
+		bind(SystemConfig.class).toInstance(config);
 	}
 
 	protected void setupEventBus() {
