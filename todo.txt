@@ -1,9 +1,7 @@
 
 
 
-====
 
-file LC4J issue: "C:\projects\AI\md\2026-09-30_23-57-27.md"
 
 ====== exceptions ====
 

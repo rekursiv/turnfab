@@ -2,6 +2,7 @@ package dev.turnfab;
 
 import dev.langchain4j.data.message.TextContent;
 import dev.langchain4j.service.TokenStream;
+import dev.langchain4j.service.UserMessage;
 import dev.langchain4j.service.memory.ChatMemoryAccess;
 
 public interface Bot extends ChatMemoryAccess {
@@ -11,4 +12,8 @@ public interface Bot extends ChatMemoryAccess {
 	// @UserMessage sends it verbatim as a single content part. See the caveat about @UserMessage
 	// TextContent: LC4J duplicates it (DefaultAiServices.addContentsToUserMessage).
 	TokenStream chat(TextContent message);
+
+	// This path exposes duplication bug in LC4J
+	// Issue #6585
+//	TokenStream chat(@UserMessage TextContent message);
 }

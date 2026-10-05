@@ -308,7 +308,7 @@ public class TokenJockey {
 
     public void loadSystemPromptFromFile(String fileName) throws IOException {
         systemPrompt = new StringBuilder();
-        String pathStr = System.getProperty("user.dir")+"/../config/system_prompts/"+fileName;
+        String pathStr = System.getProperty("user.dir")+"/../turnfab_config/system_prompts/"+fileName;
 		System.out.println("load: "+pathStr);
         for (String line : Files.readAllLines(Paths.get(pathStr), StandardCharsets.UTF_8)) {
             systemPrompt.append(line);
