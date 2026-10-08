@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<TitledPane animated="false" collapsible="false" prefHeight="1000.0" text="Log" xmlns="http://javafx.com/javafx/17.0.12" xmlns:fx="http://javafx.com/fxml/1" fx:controller="dev.turnfab.LogController">
+   <content>
+      <VBox>
+         <children>
+            <TextArea fx:id="taLog" VBox.vgrow="ALWAYS" />
+         </children>
+      </VBox>
+   </content>
+</TitledPane>

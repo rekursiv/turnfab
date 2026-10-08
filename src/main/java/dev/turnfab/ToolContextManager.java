@@ -43,7 +43,7 @@ public class ToolContextManager {
             case "allTabs":
                 readAllTabs(mcpClient);
                 break;
-            case "activeTabs":
+            case "curTab":
                 readActiveTab(mcpClient);
                 break;
             case "dirTree":
@@ -100,16 +100,18 @@ public class ToolContextManager {
         }
     }
 
-
-
-    public String readActiveTab(McpClient mcpClient) {
+    public void readActiveTab(McpClient mcpClient) {
         if (mcpClient == null) {
-            return "MCP Client is null";
+            prompt.append("\n\n*** MCP Client is null ***\n\n");
+            return;
         }
         String activeFile = getActiveTabPath(mcpClient);
-        System.out.println(">>>>  activeFile: " + activeFile);
-        return readFile(mcpClient, activeFile);
+        prompt.append(readFile(mcpClient, activeFile));
+        prompt.append('\n');
     }
+
+
+
 
     public String getActiveTabPath(McpClient mcpClient) {
         ToolExecutionRequest request = ToolExecutionRequest.builder()

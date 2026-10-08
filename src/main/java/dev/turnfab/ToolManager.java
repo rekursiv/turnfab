@@ -1,5 +1,6 @@
 package dev.turnfab;
 
+import com.google.common.eventbus.EventBus;
 import com.google.inject.Inject;
 import dev.langchain4j.mcp.client.McpClient;
 import dev.langchain4j.service.tool.AiServiceTool;
@@ -13,6 +14,7 @@ import java.util.logging.Logger;
 public class ToolManager {
 
     @Inject private Logger log;
+    @Inject private EventBus eb;
     @Inject private SystemConfig mainCfg;
     @Inject private DynamicMcpToolProvider toolProvider;
     @Inject private ToolContextManager ctxMgr;
@@ -33,7 +35,7 @@ public class ToolManager {
             for (String tc : mainCfg.toolContext) {
                 List<ToolContextConfig.Context> ctx = tcc.context.get(tc);
                 if (ctx == null) {
-                    System.out.println("No tool context found for " + tc);
+                    log.warning("No tool context found for " + tc);
                 } else {
                     for (ToolContextConfig.Context c : ctx) {
                         if (c.mcpName != null) enabled.add(c.mcpName);
@@ -104,7 +106,7 @@ public class ToolManager {
     public void printEnabledTools() {
         ToolProviderResult tpr = toolProvider.provideTools(null);
         for (AiServiceTool tool : tpr.aiServiceTools()) {
-            System.out.println(tool.name()+":\t\t"+extractSnippet(tool.toolSpecification().description(), 120));
+            eb.post(new LogEvent("  "+(tool.name()+":\t\t"+extractSnippet(tool.toolSpecification().description(), 120))+"\n"));
         }
     }
 

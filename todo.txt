@@ -1,7 +1,5 @@
 
 
-log to TextArea
-
 
 ====== exceptions ====
 
@@ -9,13 +7,13 @@ java.lang.RuntimeException: The LLM is trying to execute the 'search_file' tool,
 
 ======
 
+Tool context: for tabs, put all/cur in arg1, will make it easier to switch between with GUI (???)
+
 For multi-block messages use @UserMessage List<Content> (text + images) — same code path, same no-substitution guarantee.
 
 add "Thinking" indicator via FX?
 
 find a way to bring up tool calls later if needed (show ID, save in buffer, recall by ID?)
-
-Copy MD btn: puts on clipboard
 
 calc an average tok/sec for a turn, display it at turn's end
 
@@ -32,7 +30,7 @@ rendering thinking in markdown can really screw up the parser, any way to render
 
 =======
 
-markstream-page: to udate all packages to latest: pnpm update --latest (or pnpm up --latest)
+markstream-page: to update all packages to latest: pnpm update --latest (or pnpm up --latest)
 
 ======
 

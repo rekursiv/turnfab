@@ -115,6 +115,13 @@
                         </SplitPane>
                      </content>
                   </Tab>
+                  <Tab closable="false" text="Log">
+                  <content>
+                     <VBox>
+                        <fx:include source="Log.fxml" />
+                     </VBox>
+                  </content>
+                  </Tab>
                </tabs>
             </TabPane>
          </children>

@@ -9,6 +9,7 @@ import java.util.logging.Logger;
 
 import com.cathive.fx.guice.FXMLController;
 import com.cathive.fx.guice.GuiceFXMLLoader;
+import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
 import com.google.inject.Inject;
 import javafx.application.Platform;
@@ -28,6 +29,7 @@ public class RootController {
 
 	@Inject private Logger log;
 	@Inject private SystemConfig cfg;
+	@Inject private EventBus eb;
 	@Inject private GuiceFXMLLoader fxmlLoader;
 
 	@Inject private DynamicMcpToolProvider toolProvider;
@@ -104,7 +106,7 @@ public class RootController {
 	public void onSaveMd() throws IOException {
 		File selectedFile = askUserWhereToSave();
 		if (selectedFile!=null) {
-			System.out.println("Saving markdown to: "+selectedFile.getAbsolutePath());
+			eb.post(new LogEvent("  Saving markdown to: "+selectedFile.getAbsolutePath()+"\n"));
 			Files.writeString(selectedFile.toPath(), mdRaw.toString());
 		}
 	}
@@ -112,7 +114,7 @@ public class RootController {
 	@FXML
 	public void onLoadMd() throws IOException {
 		File selectedFile = askUserWhatToLoad();
-		System.out.println("Loading "+selectedFile.getAbsolutePath());
+		eb.post(new LogEvent("  Loading "+selectedFile.getAbsolutePath()+"\n"));
 		String content = new String(Files.readAllBytes(selectedFile.toPath()));
 		msView.reset();
 		msView.load(content);

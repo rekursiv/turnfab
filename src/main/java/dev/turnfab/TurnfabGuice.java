@@ -76,9 +76,9 @@ public class TurnfabGuice extends AbstractModule {
 		}
 		
 		// setup logging to event bus
-//		EbLogHandler logCon = new EbLogHandler(eventBus);
-//		logCon.setLevel(Level.ALL);
-//		LogManager.getLogManager().getLogger("").addHandler(logCon);
+		EbLogHandler logCon = new EbLogHandler(eventBus);
+		logCon.setLevel(Level.ALL);
+		LogManager.getLogManager().getLogger("").addHandler(logCon);
 		
 		// setup logging to file
 		if (config.logToFile) {

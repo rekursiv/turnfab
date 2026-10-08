@@ -2,11 +2,14 @@ package dev.turnfab;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.inject.Inject;
 import javafx.concurrent.Worker.State;
 import javafx.scene.Node;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.web.WebEngine;
 import javafx.scene.web.WebView;
+
+import java.util.logging.Logger;
 
 
 /**
@@ -47,6 +50,8 @@ public class MarkstreamView {
           + " git-ignored, so run the build in every fresh checkout.</p>"
           + "</div></body></html>";
 
+  @Inject private Logger log;
+
   private final WebView webView = new WebView();
   private final WebEngine engine = webView.getEngine();
   private final BorderPane borderPane = new BorderPane();
@@ -59,7 +64,7 @@ public class MarkstreamView {
     webView.setContextMenuEnabled(false);
     var url = getClass().getResource(PAGE_RESOURCE);
     if (url == null) {
-        System.out.println(
+        log.warning(
           "Markstream page not found at {} - build it in the markstream-page folder"
               + " (pnpm install && pnpm build). Showing a placeholder."
               + PAGE_RESOURCE);
@@ -100,7 +105,7 @@ public class MarkstreamView {
   /** Clears the rendered content, preparing for a new stream. */
   public void reset() {
     if (!ready) {
-      System.out.println("Markstream page not loaded yet, cannot reset");
+      log.warning("Markstream page not loaded yet, cannot reset");
       return;
     }
     engine.executeScript("msReset();");
@@ -119,7 +124,7 @@ public class MarkstreamView {
       return;
     }
     if (!ready) {
-      System.out.println("Markstream page not loaded yet, content chunk dropped");
+      log.warning("Markstream page not loaded yet, content chunk dropped");
       return;
     }
     engine.executeScript("msAppend(" + jsStringLiteral(chunk) + ");");
@@ -146,7 +151,7 @@ public class MarkstreamView {
       return;
     }
     if (!ready) {
-      System.out.println("Markstream page not loaded yet, cannot load content");
+      log.warning("Markstream page not loaded yet, cannot load content");
       return;
     }
     engine.executeScript("msLoad(" + jsStringLiteral(fullText) + ");");
