@@ -10,11 +10,11 @@
     "dev": "vite"
   },
   "dependencies": {
-    "markstream-vue": "^2.0.11"
+    "markstream-vue": "^2.0.16"
   },
   "devDependencies": {
     "@vitejs/plugin-vue": "^6.0.9",
-    "vite": "^8.3.0",
+    "vite": "^8.3.3",
     "vue": "^3.5.43"
   }
 }

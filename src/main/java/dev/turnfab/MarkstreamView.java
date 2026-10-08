@@ -9,8 +9,20 @@ import javafx.scene.layout.BorderPane;
 import javafx.scene.web.WebEngine;
 import javafx.scene.web.WebView;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.JarURLConnection;
+import java.net.URISyntaxException;
+import java.net.URL;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
+import java.util.Comparator;
+import java.util.jar.JarEntry;
+import java.util.jar.JarFile;
+import java.util.logging.Level;
 import java.util.logging.Logger;
-
+import java.util.stream.Stream;
 
 /**
  * WebView-based view that renders streaming markdown with the <a
@@ -20,16 +32,15 @@ import java.util.logging.Logger;
  * text into a self-contained web page that runs markstream-vue inside the WebView,
  * letting the library's own incremental parser do the work.
  *
-  * <p>The page is loaded from {@code /markstream/markstream-view.html} on the classpath. It is
-  * produced by building the {@code markstream-page} folder (see its README: {@code pnpm install}
-  * and {@code pnpm build}), which writes the built page into {@code
-   * spike.webkit/src/main/resources/markstream}. Until that is done, a placeholder page explaining
-   * the steps is
-  * shown instead.
-  *
-  * <p>All methods must be called from the JavaFX application thread. This class no longer does any
-  * thread hopping of its own, and {@link WebEngine#executeScript} is only safe on the FX thread.
-  */
+ * <p>The page is loaded from {@code dev/turnfab/markstream/markstream-view.html} on
+ * the classpath. It is produced by building the {@code markstream-page} folder (see
+ * its README: {@code pnpm install} and {@code pnpm build}), which writes the built
+ * page into the module resources. Until that is done, a placeholder page explaining
+ * the steps is shown instead.
+ *
+ * <p>All methods must be called from the JavaFX application thread. This class no longer does any
+ * thread hopping of its own, and {@link WebEngine#executeScript} is only safe on the FX thread.
+ */
 public class MarkstreamView {
 
   /** Classpath location of the built markstream page. */
@@ -46,7 +57,7 @@ public class MarkstreamView {
           + "<p>This placeholder is replaced by the real page after you build it:</p>"
           + "<pre>cd markstream-page\npnpm install\npnpm build</pre>"
           + "<p>Output is written to"
-          + " <code>spike.webkit/src/main/resources/markstream</code> and is"
+          + " <code>src/main/resources/dev/turnfab/markstream</code> and is"
           + " git-ignored, so run the build in every fresh checkout.</p>"
           + "</div></body></html>";
 
@@ -58,20 +69,27 @@ public class MarkstreamView {
   private static final ObjectMapper JACKSON = new ObjectMapper();
   private volatile boolean ready = false;
 
-
   public MarkstreamView() {
     borderPane.setCenter(webView);
     webView.setContextMenuEnabled(false);
-    var url = getClass().getResource(PAGE_RESOURCE);
+    URL url = getClass().getResource(PAGE_RESOURCE);
     if (url == null) {
-        log.warning(
-          "Markstream page not found at {} - build it in the markstream-page folder"
-              + " (pnpm install && pnpm build). Showing a placeholder."
-              + PAGE_RESOURCE);
+      log.warning(
+          "Markstream page not found at " + PAGE_RESOURCE
+              + " - build it in the markstream-page folder (pnpm install && pnpm build)."
+              + " Showing a placeholder.");
       engine.loadContent(PAGE_MISSING_HTML);
       return;
     }
-    engine.load(url.toExternalForm());
+    String pageUrl;
+    try {
+      pageUrl = materializeOnDisk(url);
+    } catch (IOException | URISyntaxException e) {
+      log.log(Level.WARNING, "Failed to stage the markstream page from " + url, e);
+      engine.loadContent(PAGE_MISSING_HTML);
+      return;
+    }
+    engine.load(pageUrl);
     engine
         .getLoadWorker()
         .stateProperty()
@@ -82,6 +100,44 @@ public class MarkstreamView {
 //                applyTheme();
               }
             });
+  }
+
+  /**
+   * Returns a URL the WebEngine can actually load.
+   *
+   * <p>In a development run the resources sit in the classes folder, so {@code getResource}
+   * yields a {@code file:} URL and the page's relative asset references ({@code ./assets/...})
+   * resolve as siblings without help. Inside a jar the same call returns a {@code jar:} URL:
+   * WebKit can load that main document, but its network layer does not resolve relative
+   * sub-resources against {@code jar:} URLs (see JDK-8159447), so the script and stylesheet are
+   * never fetched and the view renders broken. When running from a jar, extract the page folder
+   * into the temp directory first and load it from there - shipping stays one single jar.
+   */
+  private String materializeOnDisk(URL url) throws IOException, URISyntaxException {
+    if (!"jar".equals(url.toURI().getScheme())) {
+      return url.toExternalForm(); // classes folder during development: fine as is
+    }
+    String prefix = getClass().getPackageName().replace('.', '/') + "/markstream/";
+    Path pageDir = Path.of(System.getProperty("java.io.tmpdir"), "dev.turnfab", "markstream");
+    JarURLConnection connection = (JarURLConnection) url.openConnection();
+    connection.setUseCaches(false);
+    try (JarFile jar = connection.getJarFile()) {
+      for (JarEntry entry : jar.stream().filter(e -> !e.isDirectory()).toList()) {
+        if (!entry.getName().startsWith(prefix)) {
+          continue;
+        }
+        Path target = pageDir.resolve(entry.getName().substring(prefix.length()));
+        Files.createDirectories(target.getParent());
+        try (InputStream in = jar.getInputStream(entry)) {
+          Files.copy(in, target, StandardCopyOption.REPLACE_EXISTING);
+        }
+      }
+    }
+    // Keep repeated runs from leaving stale copies behind.
+    try (Stream<Path> paths = Files.walk(pageDir)) {
+      paths.sorted(Comparator.reverseOrder()).forEach(p -> p.toFile().deleteOnExit());
+    }
+    return pageDir.resolve("markstream-view.html").toUri().toURL().toExternalForm();
   }
 
   /**

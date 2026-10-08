@@ -52,7 +52,7 @@ const app = createApp({
       }
       streaming = true
       finalDoc.value = false
-      smoothStreaming.value = 'auto'
+      smoothStreaming.value = true
     }
 
     function exitStreaming() {

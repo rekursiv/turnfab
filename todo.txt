@@ -30,7 +30,9 @@ rendering thinking in markdown can really screw up the parser, any way to render
 
 =======
 
-markstream-page: to update all packages to latest: pnpm update --latest (or pnpm up --latest)
+markstream-page: to update all packages to latest:
+pnpm update --latest (or pnpm up --latest)
+pnpm build
 
 ======
 
