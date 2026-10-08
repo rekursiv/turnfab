@@ -3,6 +3,7 @@ package dev.turnfab;
 import com.google.common.eventbus.EventBus;
 import com.google.inject.Inject;
 import dev.langchain4j.data.message.TextContent;
+import dev.langchain4j.data.message.ToolExecutionResultMessage;
 import dev.langchain4j.http.client.jdk.JdkHttpClientBuilder;
 import dev.langchain4j.memory.chat.TokenWindowChatMemory;
 import dev.langchain4j.model.TokenCountEstimator;
@@ -89,7 +90,10 @@ public class TokenJockey {
 
         bot = AiServices.builder(Bot.class)
                 .streamingChatModel(new ThinkingFirstStreamingModel(model))
- //               .systemMessageTransformer(systemMessage -> buildSystemPrompt())
+                .hallucinatedToolNameStrategy(req -> {
+                    log.warning("Non-existent tool called: '" + req.name() + "'");
+                    return ToolExecutionResultMessage.from(req, "Tool '" + req.name() + "' does not exist.");
+                })
                 .systemMessageTransformer(_ -> systemPrompt.toString())
                 .toolProvider(toolProvider)
                 .chatMemory(chatMemory = new JournalingChatMemory(
