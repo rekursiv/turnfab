@@ -3,7 +3,10 @@ guice = "7.0.0"
 guava = "33.0.0-jre"
 jackson = "2.17.0"
 fx-guice = "8.0.0"
-controlsfx = "11.2.4"
+langchain4j = "1.21.0"
+langchain4j-mcp = "1.21.0-beta31"
+#controlsfx = "11.2.4"
+
 
 [libraries]
 google-guice = { group = "com.google.inject", name = "guice", version.ref = "guice" }
@@ -13,4 +16,8 @@ jackson-core = { group = "com.fasterxml.jackson.core", name = "jackson-core", ve
 jackson-annotations = { group = "com.fasterxml.jackson.core", name = "jackson-annotations", version.ref = "jackson" }
 jackson-dataformat-yaml = { group = "com.fasterxml.jackson.dataformat", name = "jackson-dataformat-yaml", version.ref = "jackson" }
 fx-guice = { group = "com.cathive.fx", name = "fx-guice", version.ref = "fx-guice" }
-controlsfx = { group = "org.controlsfx", name = "controlsfx", version.ref = "controlsfx" }
+langchain4j = { group = "dev.langchain4j", name = "langchain4j", version.ref = "langchain4j" }
+langchain4j-open-ai = { group = "dev.langchain4j", name = "langchain4j-open-ai", version.ref = "langchain4j" }
+langchain4j-http-client-jdk = { group = "dev.langchain4j", name = "langchain4j-http-client-jdk", version.ref = "langchain4j" }
+langchain4j-mcp = { group = "dev.langchain4j", name = "langchain4j-mcp", version.ref = "langchain4j-mcp" }
+#controlsfx = { group = "org.controlsfx", name = "controlsfx", version.ref = "controlsfx" }

@@ -25,10 +25,10 @@ dependencies {
     implementation(libs.jackson.dataformat.yaml)
     implementation(libs.fx.guice)
 
-    implementation("dev.langchain4j:langchain4j:1.21.0")
-    implementation("dev.langchain4j:langchain4j-open-ai:1.21.0")
-    implementation("dev.langchain4j:langchain4j-http-client-jdk:1.21.0")
-    implementation("dev.langchain4j:langchain4j-mcp:1.21.0-beta31")
+    implementation(libs.langchain4j)
+    implementation(libs.langchain4j.open.ai)
+    implementation(libs.langchain4j.http.client.jdk)
+    implementation(libs.langchain4j.mcp)
 
     runtimeOnly("org.slf4j:slf4j-simple:2.0.18")
 }
