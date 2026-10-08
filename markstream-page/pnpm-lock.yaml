@@ -166,9 +166,12 @@ importers:
 
   .:
     dependencies:
+      katex:
+        specifier: ^0.19.0
+        version: 0.19.0
       markstream-vue:
         specifier: ^2.0.16
-        version: 2.0.16(vue@3.5.43)
+        version: 2.0.16(katex@0.19.0)(vue@3.5.43)
     devDependencies:
       '@vitejs/plugin-vue':
         specifier: ^6.0.9
@@ -350,6 +353,10 @@ packages:
   '@vue/shared@3.5.43':
     resolution: {integrity: sha512-uksS7YGMR5NZyr4JNq0Rp+QyLns0ueaz20KwzIPW9R0LH1Vnt4E+XUM29PNseEbf1www2gOuhuDi5AKOIXag9Q==}
 
+  commander@15.0.0:
+    resolution: {integrity: sha512-z67u4ZhzCL/Tydu1lJARtEZYWbWaN7oYLHbsuzocr6y4N6WZAagG3RQ4FW61V1/0+jImpj293XfrcYnd1qxtPg==}
+    engines: {node: '>=22.12.0'}
+
   csstype@3.2.3:
     resolution: {integrity: sha512-z1HGKcYy2xA8AGQfwrn0PAy+PB7X/GSj3UVJW9qKyn43xWa+gl5nXmU4qqLMRzWVLFC8KusUX8T/0kCiOYpAIQ==}
 
@@ -381,6 +388,10 @@ packages:
     resolution: {integrity: sha512-5xoDfX+fL7faATnagmWPpbFtwh/R77WmMMqqHGS65C3vvB0YHrgF+B1YmZ3441tMj5n63k0212XNoJwzlhffQw==}
     engines: {node: ^8.16.0 || ^10.6.0 || >=11.0.0}
     os: [darwin]
+
+  katex@0.19.0:
+    resolution: {integrity: sha512-v6Tznz3zJ7u3niRCoDTsumM2+HA2XXcCu+WAacCeHD2z3p9A9Ks987o5FzfTGBN0e8A0vjEgIDvLbICrXpdw/Q==}
+    hasBin: true
 
   lightningcss-android-arm64@1.33.0:
     resolution: {integrity: sha512-gEpRTalKdosp4Bb8qWtc2iOgE5SeIHlpS1up9bFq2wAyYhl1UdTObYiHe98zEM9SQvSoqQZ1IQD0JNpg3Ml5pg==}
@@ -743,6 +754,8 @@ snapshots:
 
   '@vue/shared@3.5.43': {}
 
+  commander@15.0.0: {}
+
   csstype@3.2.3: {}
 
   detect-libc@2.1.2: {}
@@ -759,6 +772,10 @@ snapshots:
 
   fsevents@2.3.3:
     optional: true
+
+  katex@0.19.0:
+    dependencies:
+      commander: 15.0.0
 
   lightningcss-android-arm64@1.33.0:
     optional: true
@@ -838,13 +855,15 @@ snapshots:
 
   markstream-core@2.0.16: {}
 
-  markstream-vue@2.0.16(vue@3.5.43):
+  markstream-vue@2.0.16(katex@0.19.0)(vue@3.5.43):
     dependencies:
       '@chenglou/pretext': 0.0.9
       '@floating-ui/dom': 1.8.0
       markstream-core: 2.0.16
       stream-markdown-parser: 1.2.18
       vue: 3.5.43
+    optionalDependencies:
+      katex: 0.19.0
 
   mdurl@2.1.0: {}
 

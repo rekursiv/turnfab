@@ -2,6 +2,7 @@ import { createApp, nextTick, ref } from 'vue'
 import MarkdownRender from 'markstream-vue'
 import { useStickToBottom } from 'markstream-vue/utils'
 import 'markstream-vue/index.css'
+import 'katex/dist/katex.min.css'
 
 //
 // Bridge between the JavaFX side and the Vue app.
