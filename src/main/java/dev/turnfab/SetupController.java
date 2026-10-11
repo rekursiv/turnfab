@@ -2,14 +2,13 @@ package dev.turnfab;
 
 import com.cathive.fx.guice.FXMLController;
 import com.google.common.eventbus.EventBus;
-import com.google.common.eventbus.Subscribe;
 import com.google.inject.Inject;
-import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
 import javafx.scene.control.CheckBox;
 import javafx.scene.control.ChoiceBox;
+import javafx.scene.control.ListView;
 import javafx.scene.control.TextArea;
 import org.controlsfx.control.CheckListView;
 
@@ -25,6 +24,7 @@ import java.util.logging.Logger;
 @FXMLController
 public class SetupController {
 	@Inject	private Logger log;
+	@Inject private ConfigManager<SystemConfig> cfgMgr;
 	@Inject private SystemConfig cfg;
 	@Inject private EventBus eb;
 	@Inject private ToolManager toolManager;
@@ -38,27 +38,39 @@ public class SetupController {
 
 	@FXML private CheckListView<String> clvMcpServers = new CheckListView<>();
 
+	@FXML private ListView<String> lsvToolCtxAvail;
+	@FXML private ListView<String> lsvToolCtxSel;
+
 	@FXML
 	private void initialize() throws IOException {
+		toolManager.init();
+
     	ckbThink.setSelected(cfg.enableThinking);
 		ckbLogReq.setSelected(cfg.logRequests);
 		ckbLogRes.setSelected(cfg.logResponses);
 
-		ObservableList<String> sysPromptFiles = FXCollections.observableArrayList();
+		chbSysPrompts.itemsProperty().setValue(FXCollections.observableArrayList());
 		String sysPromptDir = System.getProperty("user.dir")+"/../turnfab_config/system_prompts/";
 		Files.list(Paths.get(sysPromptDir)).forEach(file -> {
-			System.out.println(file.getFileName());
-			sysPromptFiles.add(file.getFileName().toString());
+			chbSysPrompts.getItems().add(file.getFileName().toString());
 		});
-		chbSysPrompts.itemsProperty().setValue(sysPromptFiles);
 		chbSysPrompts.valueProperty().addListener(
 				(_, _, newValue) -> onSelectSystemPrompt(newValue));
 		chbSysPrompts.getSelectionModel().select(cfg.systemPromptFileName);
 
-		ObservableList<String> mcpServers = FXCollections.observableArrayList();
-		mcpServers.addAll(cfg.mcpServers);  //  FIXME
-		clvMcpServers.itemsProperty().setValue(mcpServers);
-		mcpServers.forEach(server -> clvMcpServers.getCheckModel().check(server));
+		clvMcpServers.itemsProperty().setValue(FXCollections.observableArrayList());
+		clvMcpServers.getItems().addAll(toolManager.getMcpServerList());
+		if (cfg.mcpServers!=null) {
+			for (String enabled : cfg.mcpServers) {
+				clvMcpServers.getCheckModel().check(enabled);
+			}
+		}
+
+		lsvToolCtxAvail.itemsProperty().setValue(FXCollections.observableArrayList());
+		lsvToolCtxAvail.getItems().addAll(toolManager.getToolContextList());
+
+		lsvToolCtxSel.itemsProperty().setValue(FXCollections.observableArrayList());
+		if (cfg.toolContext!=null) lsvToolCtxSel.getItems().addAll(cfg.toolContext);
 
 	}
 
@@ -72,8 +84,9 @@ public class SetupController {
     }
 
 	@FXML
-	public void onInitMcp() {
-		toolManager.init();
+	public void onLoadTools() {
+		writeGuiToCfg();
+		toolManager.loadTools();
 		toolManager.printEnabledTools();
 	}
 
@@ -94,10 +107,37 @@ public class SetupController {
 	}
 
 	@FXML
-	public void onTest() {
-
+	public void onSaveCfg() throws Exception {
+		writeGuiToCfg();
+		cfgMgr.save(cfg);
 	}
 
+	@FXML
+	public void onTcAdd() {
+		String sel = lsvToolCtxAvail.getSelectionModel().getSelectedItem();
+		if (sel!=null) lsvToolCtxSel.getItems().add(sel);
+	}
+
+	@FXML
+	public void onTcRemove() {
+		String sel = lsvToolCtxSel.getSelectionModel().getSelectedItem();
+		if (sel!=null) lsvToolCtxSel.getItems().remove(sel);
+	}
+
+	@FXML
+	public void onTcUp() {
+		// TODO: move selected item in lsvToolCtxSel up one, unless at the top
+	}
+
+	@FXML
+	public void onTcDown() {
+		// TODO: move selected item in lsvToolCtxSel down one, unless at the bottom
+	}
+
+	private void writeGuiToCfg() {
+		cfg.mcpServers = clvMcpServers.getCheckModel().getCheckedItems();
+		cfg.toolContext = lsvToolCtxSel.getItems();
+	}
 
 	private void loadSystemPromptFromFile(String fileName) throws IOException {
 		txaSysPrompt.clear();

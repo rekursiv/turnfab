@@ -49,27 +49,27 @@
             </TitledPane>
             <TitledPane animated="false" collapsible="false" prefWidth="150.0" text="Selected Tool Context" HBox.hgrow="NEVER">
                <content>
-                  <ListView />
+                  <ListView fx:id="lsvToolCtxSel" />
                </content>
             </TitledPane>
             <VBox HBox.hgrow="NEVER">
                <children>
-                  <Button mnemonicParsing="false" prefWidth="80.0" text="Add">
+                  <Button mnemonicParsing="false" onAction="#onTcAdd" prefWidth="80.0" text="Add">
                      <VBox.margin>
                         <Insets top="40.0" />
                      </VBox.margin>
                   </Button>
-                  <Button mnemonicParsing="false" prefWidth="80.0" text="Remove">
+                  <Button mnemonicParsing="false" onAction="#onTcRemove" prefWidth="80.0" text="Remove">
                      <VBox.margin>
                         <Insets top="5.0" />
                      </VBox.margin>
                   </Button>
-                  <Button mnemonicParsing="false" prefWidth="80.0" text="Up">
+                  <Button mnemonicParsing="false" onAction="#onTcUp" prefWidth="80.0" text="Up">
                      <VBox.margin>
                         <Insets top="20.0" />
                      </VBox.margin>
                   </Button>
-                  <Button mnemonicParsing="false" prefWidth="80.0" text="Down">
+                  <Button mnemonicParsing="false" onAction="#onTcDown" prefWidth="80.0" text="Down">
                      <VBox.margin>
                         <Insets top="5.0" />
                      </VBox.margin>
@@ -78,7 +78,7 @@
             </VBox>
             <TitledPane animated="false" collapsible="false" prefWidth="150.0" text="Available Tool Context" HBox.hgrow="NEVER">
                <content>
-                  <ListView />
+                  <ListView fx:id="lsvToolCtxAvail" />
                </content>
             </TitledPane>
             <TitledPane animated="false" collapsible="false" text="Tool Context Preview" HBox.hgrow="ALWAYS">
@@ -90,7 +90,7 @@
       </HBox>
       <HBox>
          <children>
-            <Button mnemonicParsing="false" onAction="#onInitMcp" text="Init MCP">
+            <Button mnemonicParsing="false" onAction="#onLoadTools" text="Load Tools">
                <HBox.margin>
                   <Insets bottom="4.0" left="4.0" right="4.0" top="4.0" />
                </HBox.margin>
@@ -110,7 +110,7 @@
                   <Insets bottom="4.0" left="40.0" right="4.0" top="4.0" />
                </HBox.margin>
             </Button>
-            <Button mnemonicParsing="false" onAction="#onTest" text="TEST">
+            <Button mnemonicParsing="false" onAction="#onSaveCfg" text="Save Config">
                <HBox.margin>
                   <Insets bottom="4.0" left="40.0" right="4.0" top="4.0" />
                </HBox.margin>

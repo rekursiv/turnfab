@@ -1,4 +1,5 @@
 
+checkbox in setup: add date to system prompt
 
 
 ====== exceptions ====

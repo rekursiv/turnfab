@@ -26,14 +26,38 @@ public class ToolManager {
     private final ConfigManager<ToolContextConfig> toolCfgMgr =
             ConfigManager.yaml(ToolContextConfig.class, "../turnfab_config/tool_context.yaml");
 
+    private McpServerConfig mcpServerCfg;
+    private McpServerConfig.Server jbMcpMetaDef;
+    private ToolContextConfig toolCfg;
+
     public void init() {
-        List<String> enabled = mainCfg.mcpServers;
-        if (enabled==null) enabled = new ArrayList<>();
-        ToolContextConfig tcc = toolCfgMgr.load();
+        mcpServerCfg = mcpServerCfgMgr.load();
+
+        // store Jet Brains meta-definition for merging in loadTools()
+        // and take out of main list of fully defined MCP servers
+        jbMcpMetaDef = mcpServerCfg.servers.remove("jetbrains");
+
+       toolCfg = toolCfgMgr.load();
+    }
+
+    public List<String> getMcpServerList() {
+        return mcpServerCfg.servers.keySet().stream().toList();
+    }
+
+    public List<String> getToolContextList() {
+        return toolCfg.context.keySet().stream().toList();
+    }
+
+    public void loadTools() {
+        if (mcpServerCfg==null) return;
+        if (jbMcpMetaDef==null) return;
+        if (toolCfg==null) return;
+
+        List<String> enabled = new ArrayList<>(mainCfg.mcpServers);
 
         if (mainCfg.toolContext!=null) {
             for (String tc : mainCfg.toolContext) {
-                List<ToolContextConfig.Context> ctx = tcc.context.get(tc);
+                List<ToolContextConfig.Context> ctx = toolCfg.context.get(tc);
                 if (ctx == null) {
                     log.warning("No tool context found for " + tc);
                 } else {
@@ -44,23 +68,20 @@ public class ToolManager {
             }
         }
 
-        McpServerConfig rawCfg = mcpServerCfgMgr.load();
         McpJetBrainsConfig jbProjects = jbProjectCfgMgr.load();
-
-        Map<String, McpServerConfig.Server> mergedCfg = new LinkedHashMap<>(rawCfg.servers);
+        Map<String, McpServerConfig.Server> mergedCfg = new LinkedHashMap<>(mcpServerCfg.servers);
 
         // Expand the "jetbrains" template into one server per configured project.
-        McpServerConfig.Server jb = mergedCfg.remove("jetbrains");
-        if (jb != null) {
+        if (jbMcpMetaDef != null) {
             for (McpJetBrainsConfig.Project project : jbProjects.projects) {
                 McpServerConfig.Server ns = new McpServerConfig.Server();
                 ns.url = "http://127.0.0.1:"+project.port+"/stream";
                 ns.headers.put("IJ_MCP_SERVER_PROJECT_PATH", project.projectPath);
-                ns.protocolVersion = jb.protocolVersion;
-                ns.excludeTools.addAll(jb.excludeTools);
-                ns.includeTools.addAll(jb.includeTools);
-                if (project.readOnly) ns.excludeTools.addAll(jb.excludeWriteTools);
-                ns.debugTransport = jb.debugTransport;
+                ns.protocolVersion = jbMcpMetaDef.protocolVersion;
+                ns.excludeTools.addAll(jbMcpMetaDef.excludeTools);
+                ns.includeTools.addAll(jbMcpMetaDef.includeTools);
+                if (project.readOnly) ns.excludeTools.addAll(jbMcpMetaDef.excludeWriteTools);
+                ns.debugTransport = jbMcpMetaDef.debugTransport;
                 mergedCfg.put(project.name, ns);
             }
         }
@@ -74,13 +95,13 @@ public class ToolManager {
         ctxMgr.resetPrompt();
         if (mainCfg.toolContext!=null) {
             for (String tc : mainCfg.toolContext) {
-                ctxMgr.buildPrompt(tcc.context.get(tc));
+                ctxMgr.buildPrompt(toolCfg.context.get(tc));
             }
         }
 
         toolProvider.setToolSpecificationMapper(new TurnfabToolSpecMapper());
-
     }
+
 
     public void addServer(String name, McpServerConfig.Server server) {
         try {
