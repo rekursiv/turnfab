@@ -1,0 +1,122 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.*?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import org.controlsfx.control.*?>
+
+<VBox xmlns="http://javafx.com/javafx/17.0.12" xmlns:fx="http://javafx.com/fxml/1" fx:controller="dev.turnfab.SetupController">
+   <children>
+      <HBox>
+         <children>
+            <CheckBox fx:id="ckbThink" mnemonicParsing="false" text="Enable Thinking">
+               <HBox.margin>
+                  <Insets bottom="4.0" left="4.0" right="4.0" top="4.0" />
+               </HBox.margin>
+            </CheckBox>
+            <CheckBox fx:id="ckbLogReq" mnemonicParsing="false" text="Log Requests">
+               <HBox.margin>
+                  <Insets bottom="4.0" left="40.0" right="4.0" top="4.0" />
+               </HBox.margin>
+            </CheckBox>
+            <CheckBox fx:id="ckbLogRes" mnemonicParsing="false" text="Log Responses">
+               <HBox.margin>
+                  <Insets bottom="4.0" left="4.0" right="4.0" top="4.0" />
+               </HBox.margin>
+            </CheckBox>
+         </children>
+      </HBox>
+      <HBox>
+         <VBox.margin>
+            <Insets bottom="4.0" left="4.0" right="4.0" top="4.0" />
+         </VBox.margin>
+         <children>
+            <Label text="System Prompt:">
+               <HBox.margin>
+                  <Insets bottom="4.0" left="8.0" right="8.0" top="4.0" />
+               </HBox.margin>
+            </Label>
+            <ChoiceBox fx:id="chbSysPrompts" prefWidth="150.0" />
+         </children>
+      </HBox>
+      <TextArea fx:id="txaSysPrompt" prefHeight="100.0" wrapText="true" />
+      <HBox prefHeight="200.0">
+         <children>
+            <TitledPane animated="false" collapsible="false" prefWidth="130.0" text="MCP Servers" HBox.hgrow="NEVER">
+               <content>
+                  <CheckListView fx:id="clvMcpServers" />
+               </content>
+            </TitledPane>
+            <TitledPane animated="false" collapsible="false" prefWidth="150.0" text="Selected Tool Context" HBox.hgrow="NEVER">
+               <content>
+                  <ListView />
+               </content>
+            </TitledPane>
+            <VBox HBox.hgrow="NEVER">
+               <children>
+                  <Button mnemonicParsing="false" prefWidth="80.0" text="Add">
+                     <VBox.margin>
+                        <Insets top="40.0" />
+                     </VBox.margin>
+                  </Button>
+                  <Button mnemonicParsing="false" prefWidth="80.0" text="Remove">
+                     <VBox.margin>
+                        <Insets top="5.0" />
+                     </VBox.margin>
+                  </Button>
+                  <Button mnemonicParsing="false" prefWidth="80.0" text="Up">
+                     <VBox.margin>
+                        <Insets top="20.0" />
+                     </VBox.margin>
+                  </Button>
+                  <Button mnemonicParsing="false" prefWidth="80.0" text="Down">
+                     <VBox.margin>
+                        <Insets top="5.0" />
+                     </VBox.margin>
+                  </Button>
+               </children>
+            </VBox>
+            <TitledPane animated="false" collapsible="false" prefWidth="150.0" text="Available Tool Context" HBox.hgrow="NEVER">
+               <content>
+                  <ListView />
+               </content>
+            </TitledPane>
+            <TitledPane animated="false" collapsible="false" text="Tool Context Preview" HBox.hgrow="ALWAYS">
+               <content>
+                  <TextArea />
+               </content>
+            </TitledPane>
+         </children>
+      </HBox>
+      <HBox>
+         <children>
+            <Button mnemonicParsing="false" onAction="#onInitMcp" text="Init MCP">
+               <HBox.margin>
+                  <Insets bottom="4.0" left="4.0" right="4.0" top="4.0" />
+               </HBox.margin>
+            </Button>
+            <Button mnemonicParsing="false" onAction="#onBuildPrompt" text="Build Prompt">
+               <HBox.margin>
+                  <Insets bottom="4.0" left="4.0" right="4.0" top="4.0" />
+               </HBox.margin>
+            </Button>
+            <Button mnemonicParsing="false" onAction="#onSendPrompt" text="Send Prompt">
+               <HBox.margin>
+                  <Insets bottom="4.0" left="40.0" right="4.0" top="4.0" />
+               </HBox.margin>
+            </Button>
+            <Button mnemonicParsing="false" onAction="#onClearPrompt" text="Clear Prompt">
+               <HBox.margin>
+                  <Insets bottom="4.0" left="40.0" right="4.0" top="4.0" />
+               </HBox.margin>
+            </Button>
+            <Button mnemonicParsing="false" onAction="#onTest" text="TEST">
+               <HBox.margin>
+                  <Insets bottom="4.0" left="40.0" right="4.0" top="4.0" />
+               </HBox.margin>
+            </Button>
+         </children>
+      </HBox>
+      <TextArea fx:id="txaUserPrompt" wrapText="true" VBox.vgrow="ALWAYS" />
+   </children>
+</VBox>

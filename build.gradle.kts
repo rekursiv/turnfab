@@ -24,6 +24,7 @@ dependencies {
     implementation(libs.jackson.annotations)
     implementation(libs.jackson.dataformat.yaml)
     implementation(libs.fx.guice)
+    implementation(libs.controlsfx)
 
     implementation(libs.langchain4j)
     implementation(libs.langchain4j.open.ai)

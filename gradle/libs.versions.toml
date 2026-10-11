@@ -3,9 +3,9 @@ guice = "7.0.0"
 guava = "33.0.0-jre"
 jackson = "2.17.0"
 fx-guice = "8.0.0"
-langchain4j = "1.21.0"
-langchain4j-mcp = "1.21.0-beta31"
-#controlsfx = "11.2.4"
+langchain4j = "1.22.0"
+langchain4j-mcp = "1.22.0-beta32"
+controlsfx = "11.2.5"
 
 
 [libraries]
@@ -20,4 +20,4 @@ langchain4j = { group = "dev.langchain4j", name = "langchain4j", version.ref = "
 langchain4j-open-ai = { group = "dev.langchain4j", name = "langchain4j-open-ai", version.ref = "langchain4j" }
 langchain4j-http-client-jdk = { group = "dev.langchain4j", name = "langchain4j-http-client-jdk", version.ref = "langchain4j" }
 langchain4j-mcp = { group = "dev.langchain4j", name = "langchain4j-mcp", version.ref = "langchain4j-mcp" }
-#controlsfx = { group = "org.controlsfx", name = "controlsfx", version.ref = "controlsfx" }
+controlsfx = { group = "org.controlsfx", name = "controlsfx", version.ref = "controlsfx" }

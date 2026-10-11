@@ -10,12 +10,14 @@ public class SystemConfig extends ConfigBase {
 	public boolean logToFile=false;
 
 	public boolean enableThinking = true;
+	public boolean logRequests = false;
+	public boolean logResponses = false;
+
     public String systemPromptFileName = "coder.md";
 
 	public List<String> mcpServers = new ArrayList<>();
 	public List<String> toolContext = new ArrayList<>();
 
-	public boolean logRequests = false;
-	public boolean logResponses = false;
+
 
 }

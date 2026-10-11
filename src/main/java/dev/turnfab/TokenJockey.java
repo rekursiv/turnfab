@@ -32,7 +32,7 @@ public class TokenJockey {
 
     private static final int MAX_TOOL_CALL_DETAIL_CHUNKS = 20;
     private static final int LONG_TOOL_CALL_RATE_DIV = 20;
-    private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("EEEE, MMMM d, yyyy");
+    public static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("EEEE, MMMM d, yyyy");
 
     @Inject private Logger log;
     @Inject private EventBus eb;
@@ -109,8 +109,7 @@ public class TokenJockey {
 
     public void beginTurn(String toSend) {
         if (bot==null) {
-            log.warning("Bot has not been initialized!");
-            return;
+            initBot();
         }
 
         ++turnNumber;
