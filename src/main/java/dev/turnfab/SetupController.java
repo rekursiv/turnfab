@@ -126,12 +126,22 @@ public class SetupController {
 
 	@FXML
 	public void onTcUp() {
-		// TODO: move selected item in lsvToolCtxSel up one, unless at the top
+		ObservableList<String> items = lsvToolCtxSel.getItems();
+		int idx = lsvToolCtxSel.getSelectionModel().getSelectedIndex();
+		if (idx > 0) {
+			items.add(idx - 1, items.remove(idx));
+			lsvToolCtxSel.getSelectionModel().select(idx - 1);
+		}
 	}
 
 	@FXML
 	public void onTcDown() {
-		// TODO: move selected item in lsvToolCtxSel down one, unless at the bottom
+		ObservableList<String> items = lsvToolCtxSel.getItems();
+		int idx = lsvToolCtxSel.getSelectionModel().getSelectedIndex();
+		if (idx >= 0 && idx < items.size() - 1) {
+			items.add(idx + 1, items.remove(idx));
+			lsvToolCtxSel.getSelectionModel().select(idx + 1);
+		}
 	}
 
 	private void writeGuiToCfg() {
@@ -150,5 +160,4 @@ public class SetupController {
 	}
 
 }
-
 
