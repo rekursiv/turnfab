@@ -35,6 +35,7 @@ public class SetupController {
 
 	@FXML private Button btnSendPrompt;
 	@FXML private Button btnShowFullPrompt;
+	@FXML private Button btnShowTools;
 	@FXML private CheckBox ckbThink;
 	@FXML private CheckBox ckbLogReq;
 	@FXML private CheckBox ckbLogRes;
@@ -115,11 +116,17 @@ public class SetupController {
 		txaTcSummary.appendText(toolManager.getPromptSummary());
 		btnShowFullPrompt.setDisable(false);
 		btnSendPrompt.setDisable(false);
+		btnShowTools.setDisable(false);
 	}
 
 	@FXML
 	public void onShowFullPrompt() throws IOException {
-		showFullPrompt();
+		loadFullPromptWindow();
+	}
+
+	@FXML
+	public void onShowTools() throws IOException {
+		loadToolViewWindow();
 	}
 
 	@FXML
@@ -199,7 +206,7 @@ public class SetupController {
 		onCkbAddDate();
 	}
 
-	private void showFullPrompt() throws IOException {
+	private void loadFullPromptWindow() throws IOException {
 		GuiceFXMLLoader.Result res = fxmlLoader.load(getClass().getResource("TextWindow.fxml"));
 		TextWindowController ctlr = (TextWindowController) res.getController();
 		ctlr.setText(txaSysPrompt.getText()+"\n\n"+toolManager.getPrompt()+txaUserPrompt.getText());
@@ -207,6 +214,16 @@ public class SetupController {
 		scene.getStylesheets().add(getClass().getResource("application.css").toExternalForm());
 		Stage stage = new Stage();
 		stage.setTitle("Full Prompt View");
+		stage.setScene(scene);
+		stage.show();
+	}
+
+	private void loadToolViewWindow() throws IOException {
+		GuiceFXMLLoader.Result res = fxmlLoader.load(getClass().getResource("ToolView.fxml"));
+		Scene scene = new Scene(res.getRoot());
+		scene.getStylesheets().add(getClass().getResource("application.css").toExternalForm());
+		Stage stage = new Stage();
+		stage.setTitle("MCP Tool View");
 		stage.setScene(scene);
 		stage.show();
 	}

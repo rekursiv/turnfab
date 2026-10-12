@@ -1,6 +1,7 @@
 
 
-btn: View MCP Tools (then configure full desc, summary desc, or params)
+
+Setup: reset btn: remove all tools from DynMcpTP (+ reset turn to 0?)
 
 global config in SystemConfig, dir /setups/ with multiple SetupConfigs, select from Setup GUI
 save sys prompts?

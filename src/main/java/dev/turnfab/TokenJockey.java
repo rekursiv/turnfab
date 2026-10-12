@@ -127,10 +127,8 @@ public class TokenJockey {
         currentToolIndex = -1;
 
         sendStream("\n\n## ==Turn "+turnNumber+"==\n");
-        if (evt.getUserPromptSummary()!=null) sendStream(evt.getUserPromptSummary());
+        if (evt.getUserPromptSummary()!=null && !evt.getUserPromptSummary().isBlank()) sendStream(evt.getUserPromptSummary());
         else sendStream(evt.getUserPrompt());
-//        if (toSend.length()>900) sendStream("..."+toSend.substring(toSend.length()-900).replace("```", ""));
-//        else sendStream(toSend);
 
         // reset streaming stats
         inputTokens = tcEst.estimateTokenCountInMessages(chatMemory.messages());
