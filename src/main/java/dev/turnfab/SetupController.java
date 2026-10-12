@@ -38,6 +38,7 @@ public class SetupController {
 	@FXML private CheckBox ckbAddDate;
 	@FXML private ChoiceBox<String> chbSysPrompts;
 	@FXML private TextArea txaSysPrompt;
+	@FXML private TextArea txaTcPreview;
 	@FXML private TextArea txaUserPrompt;
 
 	@FXML private CheckListView<String> clvMcpServers = new CheckListView<>();
@@ -75,6 +76,7 @@ public class SetupController {
 
 		lsvToolCtxAvail.itemsProperty().setValue(FXCollections.observableArrayList());
 		lsvToolCtxAvail.getItems().addAll(toolManager.getToolContextList());
+		// TODO: add selected listener to lsvToolCtxAvail that calls toolManager.getToolContextPreview(selected)
 
 		lsvToolCtxSel.itemsProperty().setValue(FXCollections.observableArrayList());
 		if (cfg.toolContext!=null) lsvToolCtxSel.getItems().addAll(cfg.toolContext);

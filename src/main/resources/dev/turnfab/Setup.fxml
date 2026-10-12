@@ -88,7 +88,7 @@
             </TitledPane>
             <TitledPane animated="false" collapsible="false" text="Tool Context Preview" HBox.hgrow="ALWAYS">
                <content>
-                  <TextArea />
+                  <TextArea fx:id="txaTcPreview" />
                </content>
             </TitledPane>
          </children>
