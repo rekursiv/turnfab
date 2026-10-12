@@ -2,13 +2,17 @@ package dev.turnfab;
 
 import com.cathive.fx.guice.FXMLController;
 import com.google.inject.Inject;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import dev.langchain4j.service.tool.AiServiceTool;
 import dev.langchain4j.service.tool.ToolProviderResult;
+import dev.langchain4j.internal.JsonSchemaElementJsonUtils;
 import javafx.collections.FXCollections;
 import javafx.fxml.FXML;
 import javafx.scene.control.ListView;
 import javafx.scene.control.TextArea;
 
+import java.util.Map;
 import java.util.logging.Logger;
 
 @FXMLController
@@ -43,11 +47,20 @@ public class ToolViewController {
 			return tool.toolSpecification().description();
 		}
 		public String getParameters() {
-			// TODO: pretty-print the JSON tool params with Jackson
-			return tool.toolSpecification().parameters().toString();
+			try {
+				Map<String, Object> map = JsonSchemaElementJsonUtils.toMap(
+						tool.toolSpecification().parameters());
+				return new ObjectMapper().writerWithDefaultPrettyPrinter()
+						.writeValueAsString(map);
+			} catch (JsonProcessingException e) {
+				return String.valueOf(tool.toolSpecification().parameters());
+			}
+		}
+		public int numParameters() {
+			return tool.toolSpecification().parameters().properties().entrySet().toArray().length;
 		}
 		@Override public String toString() {
-			return tool.name()+": "+extractSnippet(getDescription(), 80);
+			return tool.name()+": ("+numParameters()+")   "+extractSnippet(getDescription(), 80);
 		}
 		private String extractSnippet(String in, int len) {
 			if (in==null) return "";

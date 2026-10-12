@@ -1,5 +1,5 @@
 
-
+fix TurnfabToolSpecMapper
 
 Setup: reset btn: remove all tools from DynMcpTP (+ reset turn to 0?)
 
@@ -7,6 +7,8 @@ global config in SystemConfig, dir /setups/ with multiple SetupConfigs, select f
 save sys prompts?
 
 ======
+
+convert ToolView list to table
 
 load MD file into separate tab
 
