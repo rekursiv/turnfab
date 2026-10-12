@@ -110,16 +110,11 @@ public class ToolManager {
     }
 
 
-    public void addServer(String name, McpServerConfig.Server server) {
-        try {
-            toolProvider.addServer(new DynamicMcpToolProvider.ServerConfig(
-                    name, server.url, server.headers, server.protocolVersion,
-                    toSet(server.excludeTools), toSet(server.includeTools),
-                    server.debugTransport));
-        } catch (RuntimeException e) {
-            // one unreachable server should not block the others
-            log.log(Level.WARNING, "MCP server '" + name + "' not connected: " + e.getMessage(), e);
-        }
+    public void addServer(String name, McpServerConfig.Server server) throws Exception {
+        toolProvider.addServer(new DynamicMcpToolProvider.ServerConfig(
+                name, server.url, server.headers, server.protocolVersion,
+                toSet(server.excludeTools), toSet(server.includeTools),
+                server.debugTransport));
     }
 
     public String getPrompt() {
