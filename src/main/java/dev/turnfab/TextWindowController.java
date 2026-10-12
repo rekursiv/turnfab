@@ -8,19 +8,18 @@ import javafx.scene.control.TextArea;
 import java.util.logging.Logger;
 
 @FXMLController
-public class RawMarkdownViewController {
+public class TextWindowController {
 
 	@Inject private Logger log;
 
-	@FXML private TextArea txaRaw;
+	@FXML private TextArea txaText;
 
 	@FXML
 	private void initialize() {
-		log.info("Controller loaded");
 	}
 	
 	public void setText(String text) {
-		txaRaw.setText(text);
+		txaText.setText(text);
 	}
 	
 }

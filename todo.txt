@@ -1,13 +1,21 @@
 
+Tool Context Preview -> Tool Preview
+  when Load Tools btn pressed, put status info into this window
+    error msgs: example, lc4jDocs without having lc4j IDEA project loaded currently shows no sign of fail in UI
+    full list of MCP tools won't fit, need summary
 
-ToolContext summaries, userPrompt summary
+btn: View MCP Tools (then configure full desc, summary desc, or params)
 
-
-2nd TA for user prompt?
 global config in SystemConfig, dir /setups/ with multiple SetupConfigs, select from Setup GUI
 save sys prompts?
 
 ======
+
+load MD file into separate tab
+
+ToolContextManager promptSummary
+  report tokens/percent instead of # chars
+  total up tokens/percent, append to end
 
 For multi-block messages use @UserMessage List<Content> (text + images) — same code path, same no-substitution guarantee.
 
@@ -16,8 +24,6 @@ add "Thinking" indicator via FX?
 find a way to bring up tool calls later if needed (show ID, save in buffer, recall by ID?)
 
 calc an average tok/sec for a turn, display it at turn's end
-
-in main config, add list of read-only servers?
 
 === rendering issues ===
 

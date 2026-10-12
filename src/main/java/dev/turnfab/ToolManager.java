@@ -52,24 +52,7 @@ public class ToolManager {
         if (toolCfg==null) return "toolCfg is null.";
         List<ToolContextConfig.Context> context = toolCfg.context.get(name);
         if (context == null) return "name not found";
-        StringBuilder sb = new StringBuilder();
-        if (context.isEmpty()) return "context is empty.";
-        for (ToolContextConfig.Context block : context) {
-            if (block.text != null) {
-                sb.append(block.text);
-                sb.append("\n");
-            } else if (block.toolName!=null) {
-                sb.append("> ");
-                sb.append(block.toolName);
-                sb.append(" ");
-                sb.append(block.mcpName);
-                sb.append(" ");
-                if (block.arg1!=null) sb.append(block.arg1);
-                if (block.arg2!=null) sb.append(block.arg2);
-                sb.append("\n");
-            }
-        }
-        return sb.toString();
+        return ctxMgr.getPreview(context);
     }
 
     public void loadTools() {
@@ -142,6 +125,13 @@ public class ToolManager {
     public String getPrompt() {
         return ctxMgr.getPrompt();
     }
+
+    public String getPromptSummary() {
+        return ctxMgr.getPromptSummary();
+    }
+
+
+
 
     /** Hand-edited YAML can carry an explicit null where a tool list was expected. */
     private static Set<String> toSet(java.util.List<String> list) {

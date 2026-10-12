@@ -15,23 +15,55 @@ public class ToolContextManager {
     @Inject private DynamicMcpToolProvider toolProvider;
 
     private StringBuilder prompt = new StringBuilder();
-
+    private StringBuilder promptSummary = new StringBuilder();
 
     public void resetPrompt() {
         prompt = new StringBuilder();
+        promptSummary = new StringBuilder();
     }
 
     public String getPrompt() {
         return prompt.toString();
     }
 
+    public String getPromptSummary() {
+        return promptSummary.toString();
+    }
+
+    public String getPreview(List<ToolContextConfig.Context> context) {
+        StringBuilder sb = new StringBuilder();
+        if (context.isEmpty()) return "context is empty.";
+        for (ToolContextConfig.Context block : context) {
+            if (block.text != null) {
+                sb.append(block.text);
+                sb.append("\n");
+            } else if (block.toolName!=null) {
+                sb.append("> ");
+                sb.append(block.mcpName);
+                sb.append(" ");
+                sb.append(block.toolName);
+                sb.append(" ");
+                if (block.arg1!=null) sb.append(block.arg1);
+                if (block.arg2!=null) sb.append(block.arg2);
+                sb.append("\n");
+            }
+        }
+        return sb.toString();
+    }
 
     public void buildPrompt(List<ToolContextConfig.Context> context) {
         for (ToolContextConfig.Context block : context) {
-            if (block.text!=null) prompt.append(block.text);
-            else if (block.toolName!=null) callTool(block);
+            if (block.text!=null) {
+                prompt.append(block.text);
+                promptSummary.append(block.text);
+            } else if (block.toolName!=null) {
+                callTool(block);
+            }
         }
     }
+
+
+
 
     private void callTool(ToolContextConfig.Context block) {
         McpClient mcpClient = toolProvider.getMcpClientByKey(block.mcpName);
@@ -57,16 +89,16 @@ public class ToolContextManager {
     }
 
 
-    public void listDirTree(McpClient mcpClient, String dirPath, int maxDepth) {
+    private void listDirTree(McpClient mcpClient, String dirPath, int maxDepth) {
         if (mcpClient == null) {
-            prompt.append("\n\n*** MCP Client is null ***\n\n");
+            appendBoth("\n\n*** MCP Client is null ***\n\n");
             return;
         }
-        prompt.append(mcpClient.key());
-        prompt.append("-list_directory_tree: directoryPath = ");
-        prompt.append(dirPath);
-        prompt.append(", max_depth = ");
-        prompt.append(maxDepth);
+
+        appendBoth(mcpClient.key());
+        appendBoth("-list_directory_tree: directoryPath = ");
+        appendBoth(dirPath);
+        appendBoth(", max_depth = "+maxDepth);
         ToolExecutionRequest request = ToolExecutionRequest.builder()
                 .name("list_directory_tree")
                 .arguments("{\"directoryPath\": \""+dirPath+"\", \"maxDepth\": "+maxDepth+"}")
@@ -78,13 +110,19 @@ public class ToolContextManager {
         Map<String, String> rmap = (Map<String, String>) res.result();
         prompt.append(rmap.get("tree"));
         prompt.append("\n\n");
+
+        promptSummary.append(":  ");
+        promptSummary.append(rmap.get("tree").length());
+        promptSummary.append(" characters");
+        promptSummary.append("\n");
     }
 
-    public void readAllTabs(McpClient mcpClient) {
+    private void readAllTabs(McpClient mcpClient) {
         if (mcpClient == null) {
-            prompt.append("\n\n*** MCP Client is null ***\n\n");
+            appendBoth("\n\n*** MCP Client is null ***\n\n");
             return;
         }
+
         ToolExecutionRequest request = ToolExecutionRequest.builder()
                 .name("get_all_open_file_paths")
                 .build();
@@ -94,26 +132,25 @@ public class ToolContextManager {
         List<?> openFiles = (List<?>) rmap.get("openFiles");
         if (openFiles != null) {
             for (Object file : openFiles) {
-                prompt.append(readFile(mcpClient, file.toString().replace("\\", "/")));
-                prompt.append('\n');
+                readFile(mcpClient, file.toString().replace("\\", "/"));
             }
         }
     }
 
-    public void readActiveTab(McpClient mcpClient) {
+    private void readActiveTab(McpClient mcpClient) {
         if (mcpClient == null) {
-            prompt.append("\n\n*** MCP Client is null ***\n\n");
+            appendBoth("\n\n*** MCP Client is null ***\n\n");
             return;
         }
+
         String activeFile = getActiveTabPath(mcpClient);
-        prompt.append(readFile(mcpClient, activeFile));
-        prompt.append('\n');
+        readFile(mcpClient, activeFile);
     }
 
 
 
 
-    public String getActiveTabPath(McpClient mcpClient) {
+    private String getActiveTabPath(McpClient mcpClient) {
         ToolExecutionRequest request = ToolExecutionRequest.builder()
                 .name("get_all_open_file_paths")
                 .build();
@@ -123,14 +160,16 @@ public class ToolContextManager {
         return (String) rmap.get("activeFilePath").toString().replace("\\", "/");
     }
 
-    public String readFile(McpClient mcpClient, String filePath) {
+    private void readFile(McpClient mcpClient, String filePath) {
         if (mcpClient == null) {
-            return "MCP Client is null";
+            appendBoth("\n\n*** MCP Client is null ***\n\n");
+            return;
         }
-        StringBuilder prompt = new StringBuilder();
-        prompt.append(mcpClient.key());
-        prompt.append("-read_file: file_path = ");
-        prompt.append(filePath);
+
+//        StringBuilder prompt = new StringBuilder();
+        appendBoth(mcpClient.key());
+        appendBoth("-read_file: file_path = ");
+        appendBoth(filePath);
         ToolExecutionRequest request = ToolExecutionRequest.builder()
                 .name("read_file")
                 .arguments("{\"file_path\": \""+filePath+"\"}")
@@ -140,8 +179,23 @@ public class ToolContextManager {
         prompt.append(res.resultText());
         prompt.append("\n```\n\n");
 
-        return prompt.toString();
+        promptSummary.append(":  ");
+        promptSummary.append(res.resultText().length());
+        promptSummary.append(" characters");
+        promptSummary.append("\n");
+
     }
+
+    private void appendBoth(String txt) {
+        prompt.append(txt);
+        promptSummary.append(txt);
+    }
+
+
+
+    /////////////
+    ///
+    ///
 
     public String getAllTabPaths(McpClient mcpClient) {
         if (mcpClient==null) {

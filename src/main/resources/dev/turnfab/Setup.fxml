@@ -88,7 +88,7 @@
             </TitledPane>
             <TitledPane animated="false" collapsible="false" text="Tool Context Preview" HBox.hgrow="ALWAYS">
                <content>
-                  <TextArea fx:id="txaTcPreview" />
+                  <TextArea fx:id="txaTcPreview" editable="false" wrapText="true" />
                </content>
             </TitledPane>
          </children>
@@ -100,12 +100,12 @@
                   <Insets bottom="4.0" left="4.0" right="4.0" top="4.0" />
                </HBox.margin>
             </Button>
-            <Button mnemonicParsing="false" onAction="#onBuildPrompt" text="Build Prompt">
+            <Button fx:id="btnShowFullPrompt" disable="true" mnemonicParsing="false" onAction="#onShowFullPrompt" text="Show Full Prompt">
                <HBox.margin>
                   <Insets bottom="4.0" left="4.0" right="4.0" top="4.0" />
                </HBox.margin>
             </Button>
-            <Button mnemonicParsing="false" onAction="#onSendPrompt" text="Send Prompt">
+            <Button fx:id="btnSendPrompt" disable="true" mnemonicParsing="false" onAction="#onSendPrompt" text="Send Prompt">
                <HBox.margin>
                   <Insets bottom="4.0" left="40.0" right="4.0" top="4.0" />
                </HBox.margin>
@@ -122,6 +122,7 @@
             </Button>
          </children>
       </HBox>
+      <TextArea fx:id="txaTcSummary" editable="false" wrapText="true" />
       <TextArea fx:id="txaUserPrompt" wrapText="true" VBox.vgrow="ALWAYS" />
    </children>
 </VBox>

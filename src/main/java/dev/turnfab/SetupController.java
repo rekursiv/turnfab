@@ -1,15 +1,15 @@
 package dev.turnfab;
 
 import com.cathive.fx.guice.FXMLController;
+import com.cathive.fx.guice.GuiceFXMLLoader;
 import com.google.common.eventbus.EventBus;
 import com.google.inject.Inject;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
-import javafx.scene.control.CheckBox;
-import javafx.scene.control.ChoiceBox;
-import javafx.scene.control.ListView;
-import javafx.scene.control.TextArea;
+import javafx.scene.Scene;
+import javafx.scene.control.*;
+import javafx.stage.Stage;
 import org.controlsfx.control.CheckListView;
 
 import java.io.IOException;
@@ -27,11 +27,14 @@ public class SetupController {
 	private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("EEEE, MMMM d, yyyy");
 
 	@Inject	private Logger log;
+	@Inject private GuiceFXMLLoader fxmlLoader;
 	@Inject private ConfigManager<SystemConfig> cfgMgr;
 	@Inject private SystemConfig cfg;
 	@Inject private EventBus eb;
 	@Inject private ToolManager toolManager;
 
+	@FXML private Button btnSendPrompt;
+	@FXML private Button btnShowFullPrompt;
 	@FXML private CheckBox ckbThink;
 	@FXML private CheckBox ckbLogReq;
 	@FXML private CheckBox ckbLogRes;
@@ -39,6 +42,7 @@ public class SetupController {
 	@FXML private ChoiceBox<String> chbSysPrompts;
 	@FXML private TextArea txaSysPrompt;
 	@FXML private TextArea txaTcPreview;
+	@FXML private TextArea txaTcSummary;
 	@FXML private TextArea txaUserPrompt;
 
 	@FXML private CheckListView<String> clvMcpServers = new CheckListView<>();
@@ -76,11 +80,15 @@ public class SetupController {
 
 		lsvToolCtxAvail.itemsProperty().setValue(FXCollections.observableArrayList());
 		lsvToolCtxAvail.getItems().addAll(toolManager.getToolContextList());
-		// TODO: add selected listener to lsvToolCtxAvail that calls toolManager.getToolContextPreview(selected)
+		lsvToolCtxAvail.getSelectionModel().selectedItemProperty().addListener(
+				(_, _, newValue) -> {
+			if (newValue != null) txaTcPreview.setText(toolManager.getToolContextPreview(newValue));
+		});
 
 		lsvToolCtxSel.itemsProperty().setValue(FXCollections.observableArrayList());
 		if (cfg.toolContext!=null) lsvToolCtxSel.getItems().addAll(cfg.toolContext);
 
+		txaUserPrompt.setText(cfg.userPrompt);
 	}
 
 	private void onSelectSystemPrompt(String fileName){
@@ -97,17 +105,20 @@ public class SetupController {
 		writeGuiToCfg();
 		toolManager.loadTools();
 		toolManager.printEnabledTools();
+		txaTcSummary.clear();
+		txaTcSummary.appendText(toolManager.getPromptSummary());
+		btnShowFullPrompt.setDisable(false);
+		btnSendPrompt.setDisable(false);
 	}
 
 	@FXML
-	public void onBuildPrompt() {
-		txaUserPrompt.clear();
-		txaUserPrompt.appendText(toolManager.getPrompt());
+	public void onShowFullPrompt() throws IOException {
+		showFullPrompt();
 	}
 
 	@FXML
 	public void onSendPrompt() {
-		eb.post(new BeginTurnEvent(txaSysPrompt.getText(), txaUserPrompt.getText(), null));
+		eb.post(new BeginTurnEvent(txaSysPrompt.getText(), toolManager.getPrompt()+txaUserPrompt.getText(), toolManager.getPromptSummary()));
 	}
 
 	@FXML
@@ -169,7 +180,7 @@ public class SetupController {
 		cfg.enableThinking = ckbThink.isSelected();
 		cfg.logRequests = ckbLogReq.isSelected();
 		cfg.logResponses = ckbLogRes.isSelected();
-
+		cfg.userPrompt = txaUserPrompt.getText();
 	}
 
 	private void loadSystemPromptFromFile(String fileName) throws IOException {
@@ -182,5 +193,16 @@ public class SetupController {
 		onCkbAddDate();
 	}
 
-}
+	private void showFullPrompt() throws IOException {
+		GuiceFXMLLoader.Result res = fxmlLoader.load(getClass().getResource("TextWindow.fxml"));
+		TextWindowController ctlr = (TextWindowController) res.getController();
+		ctlr.setText(txaSysPrompt.getText()+"\n\n"+toolManager.getPrompt()+txaUserPrompt.getText());
+		Scene scene = new Scene(res.getRoot());
+		scene.getStylesheets().add(getClass().getResource("application.css").toExternalForm());
+		Stage stage = new Stage();
+		stage.setTitle("Full Prompt View");
+		stage.setScene(scene);
+		stage.show();
+	}
 
+}

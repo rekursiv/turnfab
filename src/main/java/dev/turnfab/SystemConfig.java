@@ -21,6 +21,7 @@ public class SystemConfig extends ConfigBase {
 	public List<String> mcpServers = new ArrayList<>();
 	public List<String> toolContext = new ArrayList<>();
 
+	public String userPrompt = null;
 
 
 }

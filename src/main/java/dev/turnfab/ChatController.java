@@ -10,7 +10,6 @@ import javafx.fxml.FXML;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
-import javafx.scene.control.TabPane;
 import javafx.scene.control.TextArea;
 import javafx.scene.layout.StackPane;
 import javafx.stage.FileChooser;
@@ -130,8 +129,8 @@ public class ChatController {
 	}
 
 	private void showRawMarkdown() throws IOException {
-		GuiceFXMLLoader.Result res = fxmlLoader.load(getClass().getResource("RawMarkdownView.fxml"));
-		RawMarkdownViewController ctlr = (RawMarkdownViewController) res.getController();
+		GuiceFXMLLoader.Result res = fxmlLoader.load(getClass().getResource("TextWindow.fxml"));
+		TextWindowController ctlr = (TextWindowController) res.getController();
 		ctlr.setText(mdRaw.toString());
 		Scene scene = new Scene(res.getRoot());
 		scene.getStylesheets().add(getClass().getResource("application.css").toExternalForm());
