@@ -133,13 +133,6 @@ public class ToolManager {
         return (list == null) ? Set.of() : Set.copyOf(list);
     }
 
-    public void printEnabledTools() {
-        ToolProviderResult tpr = toolProvider.provideTools(null);
-        for (AiServiceTool tool : tpr.aiServiceTools()) {
-            eb.post(new LogEvent("  "+(tool.name()+":\t\t"+extractSnippet(tool.toolSpecification().description(), 120))+"\n"));
-        }
-    }
-
     public String getEnabledTools() {
         StringBuilder sb = new StringBuilder();
         ToolProviderResult tpr = toolProvider.provideTools(null);
@@ -160,11 +153,4 @@ public class ToolManager {
         }
     }
 
-    private String extractSnippet(String in, int len) {
-        if (in==null) return "";
-        String end = "";
-        if (in.length() > len) end="...";
-        else len = in.length();
-        return in.stripLeading().substring(0, len).replace("\n", "  ")+end;
-    }
 }

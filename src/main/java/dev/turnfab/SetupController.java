@@ -111,7 +111,6 @@ public class SetupController {
 			return;
         }
 		txaToolPreview.setText(toolManager.getEnabledTools());
-        toolManager.printEnabledTools();
 		txaTcSummary.clear();
 		txaTcSummary.appendText(toolManager.getPromptSummary());
 		btnShowFullPrompt.setDisable(false);

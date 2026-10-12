@@ -21,7 +21,11 @@ public class ToolViewController {
 	@Inject private Logger log;
 	@Inject private DynamicMcpToolProvider toolProvider;
 
-	@FXML private ListView<ToolWrapper> lsvTools;
+	@FXML private ListView<ToolWrapper> lsvTools;  // TODO: replace with TableView<ToolWrapper> tbvTools
+	// TODO: TableColumn<ToolWrapper, String> tbcToolName
+	// TODO: TableColumn<ToolWrapper, Integer> tbcToolNumParams
+	// TODO: TableColumn<ToolWrapper, String> tbcToolDesc
+
 	@FXML private TextArea txaDesc;
 	@FXML private TextArea txaParams;
 

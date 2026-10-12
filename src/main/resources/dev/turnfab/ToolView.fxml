@@ -5,22 +5,24 @@
 
 <AnchorPane prefHeight="600.0" prefWidth="800.0" xmlns="http://javafx.com/javafx/17.0.12" xmlns:fx="http://javafx.com/fxml/1" fx:controller="dev.turnfab.ToolViewController">
    <children>
-      <VBox prefHeight="400.0" prefWidth="600.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
-         <children>
+      <SplitPane dividerPositions="0.5" orientation="VERTICAL" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
+         <items>
             <ListView fx:id="lsvTools" prefHeight="200.0" />
-            <TabPane tabClosingPolicy="UNAVAILABLE" VBox.vgrow="ALWAYS">
+            <TabPane tabClosingPolicy="UNAVAILABLE">
               <tabs>
                 <Tab closable="false" text="Description">
                      <content>
                         <TextArea fx:id="txaDesc" editable="false" wrapText="true" />
-                     </content></Tab>
+                     </content>
+                  </Tab>
                 <Tab closable="false" text="Parameters">
                      <content>
                         <TextArea fx:id="txaParams" editable="false" wrapText="true" />
-                     </content></Tab>
+                     </content>
+                  </Tab>
               </tabs>
             </TabPane>
-         </children>
-      </VBox>
+         </items>
+      </SplitPane>
    </children>
 </AnchorPane>

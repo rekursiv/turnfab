@@ -11,9 +11,9 @@ public class TurnfabToolSpecMapper implements BiFunction<McpClient, ToolSpecific
         String newName = mc.key().equals("tavily") ? original.name() : mc.key() + "-" + original.name();
         ToolSpecification.Builder b = original.toBuilder().name(newName);
 
-        if (mc.key().equals("main_project")) {
+        if (!mc.key().equals("tavily") && !mc.key().equals("github")) {
             switch (original.name()) {
-                case "create_new_file" -> b.name("main_project-create_new_file")
+                case "create_new_file" -> b.name(mc.key()+"-create_new_file")
                         .description("""
                         Creates a new file with the given content, or fully replaces an existing file's \
                         contents when overwrite is true.
@@ -21,7 +21,7 @@ public class TurnfabToolSpecMapper implements BiFunction<McpClient, ToolSpecific
                         Use apply_patch instead for partial or surgical edits to an existing file.
                         Paths are relative to the project root.
                         """);
-                case "apply_patch" -> b.name("main_project-apply_patch")
+                case "apply_patch" -> b.name(mc.key()+"-apply_patch")
                         .description("""
                         Makes surgical edits to existing files, and can also delete or rename/move files.
                         To create a file or replace a whole file's contents, use create_new_file instead.
