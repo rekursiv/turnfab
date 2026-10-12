@@ -8,8 +8,6 @@ save sys prompts?
 
 ======
 
-convert ToolView list to table
-
 load MD file into separate tab
 
 ToolContextManager promptSummary

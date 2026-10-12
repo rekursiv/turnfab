@@ -7,7 +7,13 @@
    <children>
       <SplitPane dividerPositions="0.5" orientation="VERTICAL" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
          <items>
-            <ListView fx:id="lsvTools" prefHeight="200.0" />
+            <TableView fx:id="tbvTools" prefHeight="200.0">
+               <columns>
+                  <TableColumn fx:id="tbcToolName" editable="false" prefWidth="250.0" resizable="false" text="Tool" />
+                  <TableColumn fx:id="tbcToolNumParams" editable="false" prefWidth="60.0" resizable="false" text="Params" />
+                  <TableColumn fx:id="tbcToolDesc" editable="false" prefWidth="500.0" text="Description" />
+               </columns>
+            </TableView>
             <TabPane tabClosingPolicy="UNAVAILABLE">
               <tabs>
                 <Tab closable="false" text="Description">
