@@ -57,7 +57,7 @@ public class ChatController {
 	@FXML
 	public void onSend() {
 		btnSend.setDisable(true);
-		tokenJockey.beginTurn(txaToSend.getText());
+		eb.post(new BeginTurnEvent(txaToSend.getText()));
 		txaToSend.clear();
 	}
 
@@ -109,11 +109,6 @@ public class ChatController {
 	public void onSendStream(TokenStreamEvent evt) {
 		mdRaw.append(evt.getChunk());
 		msView.append(evt.getChunk());
-	}
-
-	@Subscribe
-	public void onPrompt(SendPromptEvent evt) {
-		tokenJockey.beginTurn(evt.getPrompt());
 	}
 
 	private File askUserWhereToSave() {

@@ -17,12 +17,15 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 
 @FXMLController
 public class SetupController {
+	private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("EEEE, MMMM d, yyyy");
+
 	@Inject	private Logger log;
 	@Inject private ConfigManager<SystemConfig> cfgMgr;
 	@Inject private SystemConfig cfg;
@@ -32,6 +35,7 @@ public class SetupController {
 	@FXML private CheckBox ckbThink;
 	@FXML private CheckBox ckbLogReq;
 	@FXML private CheckBox ckbLogRes;
+	@FXML private CheckBox ckbAddDate;
 	@FXML private ChoiceBox<String> chbSysPrompts;
 	@FXML private TextArea txaSysPrompt;
 	@FXML private TextArea txaUserPrompt;
@@ -41,6 +45,8 @@ public class SetupController {
 	@FXML private ListView<String> lsvToolCtxAvail;
 	@FXML private ListView<String> lsvToolCtxSel;
 
+	private StringBuilder systemPrompt = new StringBuilder();
+
 	@FXML
 	private void initialize() throws IOException {
 		toolManager.init();
@@ -48,6 +54,7 @@ public class SetupController {
     	ckbThink.setSelected(cfg.enableThinking);
 		ckbLogReq.setSelected(cfg.logRequests);
 		ckbLogRes.setSelected(cfg.logResponses);
+		ckbAddDate.setSelected(cfg.addDateToSystemPrompt);
 
 		chbSysPrompts.itemsProperty().setValue(FXCollections.observableArrayList());
 		String sysPromptDir = System.getProperty("user.dir")+"/../turnfab_config/system_prompts/";
@@ -98,7 +105,7 @@ public class SetupController {
 
 	@FXML
 	public void onSendPrompt() {
-		eb.post(new SendPromptEvent(txaUserPrompt.getText()));
+		eb.post(new BeginTurnEvent(txaSysPrompt.getText(), txaUserPrompt.getText(), null));
 	}
 
 	@FXML
@@ -144,19 +151,33 @@ public class SetupController {
 		}
 	}
 
+	@FXML
+	public void onCkbAddDate(){
+		cfg.addDateToSystemPrompt = ckbAddDate.isSelected();
+		txaSysPrompt.clear();
+		txaSysPrompt.appendText(systemPrompt.toString());
+		if (ckbAddDate.isSelected()) {
+			txaSysPrompt.appendText("\nToday's date is " + LocalDate.now().format(DATE_FORMATTER) + ".");
+		}
+	}
+
 	private void writeGuiToCfg() {
 		cfg.mcpServers = clvMcpServers.getCheckModel().getCheckedItems();
 		cfg.toolContext = lsvToolCtxSel.getItems();
+		cfg.enableThinking = ckbThink.isSelected();
+		cfg.logRequests = ckbLogReq.isSelected();
+		cfg.logResponses = ckbLogRes.isSelected();
+
 	}
 
 	private void loadSystemPromptFromFile(String fileName) throws IOException {
-		txaSysPrompt.clear();
+		systemPrompt = new StringBuilder();
 		String pathStr = System.getProperty("user.dir")+"/../turnfab_config/system_prompts/"+fileName;
 		log.info("Loading system prompt: "+pathStr);
 		for (String line : Files.readAllLines(Paths.get(pathStr), StandardCharsets.UTF_8)) {
-			txaSysPrompt.appendText(line);
+			systemPrompt.append(line);
 		}
-		txaSysPrompt.appendText("\nToday's date is " + LocalDate.now().format(TokenJockey.DATE_FORMATTER) + ".");
+		onCkbAddDate();
 	}
 
 }

@@ -1,6 +1,7 @@
 package dev.turnfab;
 
 import com.google.common.eventbus.EventBus;
+import com.google.common.eventbus.Subscribe;
 import com.google.inject.Inject;
 import dev.langchain4j.data.message.TextContent;
 import dev.langchain4j.data.message.ToolExecutionResultMessage;
@@ -32,7 +33,6 @@ public class TokenJockey {
 
     private static final int MAX_TOOL_CALL_DETAIL_CHUNKS = 20;
     private static final int LONG_TOOL_CALL_RATE_DIV = 20;
-    public static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("EEEE, MMMM d, yyyy");
 
     @Inject private Logger log;
     @Inject private EventBus eb;
@@ -41,7 +41,7 @@ public class TokenJockey {
 
     private QwenMode qwenMode = QwenMode.INSTRUCT;
     private Bot bot;
-    private StringBuilder systemPrompt = new StringBuilder();
+    private String systemPrompt = "";
     private TokenCountEstimator tcEst = new OpenAiTokenCountEstimator("o200K_BASE"); // hack to trigger this.encoding = ENCODING_REGISTRY.getEncoding(O200K_BASE);
 
     // The window is what the model sees; JournalingChatMemory also keeps the full session
@@ -94,7 +94,7 @@ public class TokenJockey {
                     log.warning("Non-existent tool called: '" + req.name() + "'");
                     return ToolExecutionResultMessage.from(req, "Tool '" + req.name() + "' does not exist.");
                 })
-                .systemMessageTransformer(_ -> systemPrompt.toString())
+                .systemMessageTransformer(_ -> systemPrompt)
                 .toolProvider(toolProvider)
                 .chatMemory(chatMemory = new JournalingChatMemory(
                         TokenWindowChatMemory.withMaxTokens(calcMaxTokens(), tcEst), () -> turnNumber))
@@ -107,23 +107,19 @@ public class TokenJockey {
         armCancel = true;
     }
 
-    public void beginTurn(String toSend) {
-        if (bot==null) {
-            initBot();
-        }
+    @Subscribe
+    public void beginTurn(BeginTurnEvent evt) {
 
         ++turnNumber;
-        if (turnNumber==1) {
-            if (systemPrompt.isEmpty()) {
-                try {
-                    loadSystemPromptFromFile(cfg.systemPromptFileName);
-                } catch (IOException e) {
-                    log.log(Level.WARNING, "Could not load system prompt file!", e);
-                    return;
-                }
-            }
+        if (turnNumber==1) {  // system prompt stays the same, ensuring prefix cache hits
+            if (evt.getSystemPrompt()==null || evt.getSystemPrompt().isBlank()) systemPrompt = "blank"; // text cannot be null or blank
+            else systemPrompt = evt.getSystemPrompt();
             sendStream("### ==System Prompt:==\n");
-            sendStream(systemPrompt.toString());
+            sendStream(systemPrompt);
+        }
+
+        if (bot==null) {
+            initBot();
         }
 
         armCancel = false;
@@ -131,8 +127,10 @@ public class TokenJockey {
         currentToolIndex = -1;
 
         sendStream("\n\n## ==Turn "+turnNumber+"==\n");
-        if (toSend.length()>900) sendStream("..."+toSend.substring(toSend.length()-900).replace("```", ""));
-        else sendStream(toSend);
+        if (evt.getUserPromptSummary()!=null) sendStream(evt.getUserPromptSummary());
+        else sendStream(evt.getUserPrompt());
+//        if (toSend.length()>900) sendStream("..."+toSend.substring(toSend.length()-900).replace("```", ""));
+//        else sendStream(toSend);
 
         // reset streaming stats
         inputTokens = tcEst.estimateTokenCountInMessages(chatMemory.messages());
@@ -143,7 +141,7 @@ public class TokenJockey {
 
         // TextContent without @UserMessage: sent verbatim as a single content part,
         // no {{...}} template processing (see Bot#chat); reasoning_effort is a model default now.
-        TokenStream stream = bot.chat(TextContent.from(toSend));
+        TokenStream stream = bot.chat(TextContent.from(evt.getUserPrompt()));
 
         stream
                 .onPartialThinkingWithContext((PartialThinking partialThinking, PartialThinkingContext context) -> {
@@ -307,16 +305,6 @@ public class TokenJockey {
         } else {
             Platform.runLater(action);
         }
-    }
-
-    public void loadSystemPromptFromFile(String fileName) throws IOException {
-        systemPrompt = new StringBuilder();
-        String pathStr = System.getProperty("user.dir")+"/../turnfab_config/system_prompts/"+fileName;
-		log.info("Loading system prompt: "+pathStr);
-        for (String line : Files.readAllLines(Paths.get(pathStr), StandardCharsets.UTF_8)) {
-            systemPrompt.append(line);
-        }
-        systemPrompt.append("\nToday's date is " + LocalDate.now().format(DATE_FORMATTER) + ".");
     }
 
     public void testJournal() {

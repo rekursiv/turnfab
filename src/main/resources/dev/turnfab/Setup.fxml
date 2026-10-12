@@ -37,6 +37,11 @@
                </HBox.margin>
             </Label>
             <ChoiceBox fx:id="chbSysPrompts" prefWidth="150.0" />
+            <CheckBox fx:id="ckbAddDate" mnemonicParsing="false" onAction="#onCkbAddDate" text="Add Date to System Prompt">
+               <HBox.margin>
+                  <Insets bottom="4.0" left="40.0" right="4.0" top="4.0" />
+               </HBox.margin>
+            </CheckBox>
          </children>
       </HBox>
       <TextArea fx:id="txaSysPrompt" prefHeight="100.0" wrapText="true" />

@@ -1,13 +1,13 @@
 
-checkbox in setup: add date to system prompt
+
+ToolContext summaries, userPrompt summary
 
 
-====== exceptions ====
-
+2nd TA for user prompt?
+global config in SystemConfig, dir /setups/ with multiple SetupConfigs, select from Setup GUI
+save sys prompts?
 
 ======
-
-Tool context: for tabs, put all/cur in arg1, will make it easier to switch between with GUI (???)
 
 For multi-block messages use @UserMessage List<Content> (text + images) — same code path, same no-substitution guarantee.
 
