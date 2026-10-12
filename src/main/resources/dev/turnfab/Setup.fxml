@@ -86,9 +86,9 @@
                   <ListView fx:id="lsvToolCtxAvail" />
                </content>
             </TitledPane>
-            <TitledPane animated="false" collapsible="false" text="Tool Context Preview" HBox.hgrow="ALWAYS">
+            <TitledPane animated="false" collapsible="false" text="Tool Preview" HBox.hgrow="ALWAYS">
                <content>
-                  <TextArea fx:id="txaTcPreview" editable="false" wrapText="true" />
+                  <TextArea fx:id="txaToolPreview" editable="false" wrapText="true" />
                </content>
             </TitledPane>
          </children>

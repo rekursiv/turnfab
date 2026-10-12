@@ -51,7 +51,7 @@ public class ToolContextManager {
         return sb.toString();
     }
 
-    public void buildPrompt(List<ToolContextConfig.Context> context) {
+    public void buildPrompt(List<ToolContextConfig.Context> context) throws Exception {
         for (ToolContextConfig.Context block : context) {
             if (block.text!=null) {
                 prompt.append(block.text);
@@ -65,7 +65,7 @@ public class ToolContextManager {
 
 
 
-    private void callTool(ToolContextConfig.Context block) {
+    private void callTool(ToolContextConfig.Context block) throws Exception {
         McpClient mcpClient = toolProvider.getMcpClientByKey(block.mcpName);
         if (mcpClient == null) {
             log.warning("Cannot find MCP Client for " + block.mcpName);
@@ -89,7 +89,7 @@ public class ToolContextManager {
     }
 
 
-    private void listDirTree(McpClient mcpClient, String dirPath, int maxDepth) {
+    private void listDirTree(McpClient mcpClient, String dirPath, int maxDepth) throws Exception {
         if (mcpClient == null) {
             appendBoth("\n\n*** MCP Client is null ***\n\n");
             return;
@@ -117,7 +117,7 @@ public class ToolContextManager {
         promptSummary.append("\n");
     }
 
-    private void readAllTabs(McpClient mcpClient) {
+    private void readAllTabs(McpClient mcpClient) throws Exception {
         if (mcpClient == null) {
             appendBoth("\n\n*** MCP Client is null ***\n\n");
             return;
@@ -137,7 +137,7 @@ public class ToolContextManager {
         }
     }
 
-    private void readActiveTab(McpClient mcpClient) {
+    private void readActiveTab(McpClient mcpClient) throws Exception {
         if (mcpClient == null) {
             appendBoth("\n\n*** MCP Client is null ***\n\n");
             return;
@@ -150,7 +150,7 @@ public class ToolContextManager {
 
 
 
-    private String getActiveTabPath(McpClient mcpClient) {
+    private String getActiveTabPath(McpClient mcpClient) throws Exception {
         ToolExecutionRequest request = ToolExecutionRequest.builder()
                 .name("get_all_open_file_paths")
                 .build();

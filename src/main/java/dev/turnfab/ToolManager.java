@@ -55,7 +55,7 @@ public class ToolManager {
         return ctxMgr.getPreview(context);
     }
 
-    public void loadTools() {
+    public void loadTools() throws Exception {
         if (mcpServerCfg==null) return;
         if (jbMcpMetaDef==null) return;
         if (toolCfg==null) return;
@@ -143,6 +143,16 @@ public class ToolManager {
         for (AiServiceTool tool : tpr.aiServiceTools()) {
             eb.post(new LogEvent("  "+(tool.name()+":\t\t"+extractSnippet(tool.toolSpecification().description(), 120))+"\n"));
         }
+    }
+
+    public String getEnabledTools() {
+        StringBuilder sb = new StringBuilder();
+        ToolProviderResult tpr = toolProvider.provideTools(null);
+        for (AiServiceTool tool : tpr.aiServiceTools()) {
+            sb.append(tool.name());
+            sb.append(" ");
+        }
+        return sb.toString();
     }
 
     private String getMcpInst(McpClient mcpClient) {

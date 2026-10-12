@@ -41,7 +41,7 @@ public class SetupController {
 	@FXML private CheckBox ckbAddDate;
 	@FXML private ChoiceBox<String> chbSysPrompts;
 	@FXML private TextArea txaSysPrompt;
-	@FXML private TextArea txaTcPreview;
+	@FXML private TextArea txaToolPreview;
 	@FXML private TextArea txaTcSummary;
 	@FXML private TextArea txaUserPrompt;
 
@@ -82,7 +82,7 @@ public class SetupController {
 		lsvToolCtxAvail.getItems().addAll(toolManager.getToolContextList());
 		lsvToolCtxAvail.getSelectionModel().selectedItemProperty().addListener(
 				(_, _, newValue) -> {
-			if (newValue != null) txaTcPreview.setText(toolManager.getToolContextPreview(newValue));
+			if (newValue != null) txaToolPreview.setText(toolManager.getToolContextPreview(newValue));
 		});
 
 		lsvToolCtxSel.itemsProperty().setValue(FXCollections.observableArrayList());
@@ -103,8 +103,14 @@ public class SetupController {
 	@FXML
 	public void onLoadTools() {
 		writeGuiToCfg();
-		toolManager.loadTools();
-		toolManager.printEnabledTools();
+        try {
+            toolManager.loadTools();
+        } catch (Exception e) {
+            txaToolPreview.setText(e.getMessage());
+			return;
+        }
+		txaToolPreview.setText(toolManager.getEnabledTools());
+        toolManager.printEnabledTools();
 		txaTcSummary.clear();
 		txaTcSummary.appendText(toolManager.getPromptSummary());
 		btnShowFullPrompt.setDisable(false);
