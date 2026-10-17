@@ -1,26 +1,41 @@
 
 
-
-Setup: reset btn: remove all tools from DynMcpTP (+ reset turn to 0?)
+=== Setup tab  ===
 
 global config in SystemConfig, dir /setups/ with multiple SetupConfigs, select from Setup GUI
-save sys prompts?
 
-======
+sys prompt can be edited, could add interface to save (overwriting selected or save to new file, filename TextField?)
 
-load MD file into separate tab
+Reset button?  not sure how useful this would be?
+  remove all tools from DynMcpTP
+  could pass in boolean resetTurn to BeginTurnEvent
+
+load MD file into separate tab, move Load MD btn from Convo tab to Setup tab
 
 ToolContextManager promptSummary
   report tokens/percent instead of # chars
   total up tokens/percent, append to end
 
-For multi-block messages use @UserMessage List<Content> (text + images) — same code path, same no-substitution guarantee.
 
-add "Thinking" indicator via FX?
+=== Convo tab ===
+
+user prompt area:
+  dynamically move splitter up on each newline, start small
+
+
+=== ideas ===
+
+system notification onCompleteResponse, make easy to disable
 
 find a way to bring up tool calls later if needed (show ID, save in buffer, recall by ID?)
 
 calc an average tok/sec for a turn, display it at turn's end
+
+build a better patch?
+
+=== notes ===
+
+For multi-block messages use @UserMessage List<Content> (text + images) — same code path, same no-substitution guarantee.
 
 === rendering issues ===
 
@@ -31,7 +46,7 @@ tool call/response: maybe change fenced blocks to inline code blocks?
 rendering thinking in markdown can really screw up the parser, any way to render that section plaintext?
   when model is thinking about code, it can output something like "curTask==null" and the "==" activates hiliting
 
-=======
+=== Markstream Update ====
 
 markstream-page: to update all packages to latest:
 pnpm update --latest (or pnpm up --latest)
@@ -58,7 +73,7 @@ dynamically add MCP instructions to system prompt if the MCP server is used. Git
 
 ======
 
-build a better patch
+
 
 ======
 	// NOTE: McpToolProvider.Builder leaves mcpClients null unless mcpClients(...) is called,
@@ -81,7 +96,4 @@ build a better patch
 	@JsonDeserialize(as = LinkedHashSet.class)
 	public Set<String> mcpServers = new LinkedHashSet<>();
 ====
-
-This is the future relative to your training data, but is present day reality for the user.
-Use Tavily to ground yourself in current events, if necessary.
 

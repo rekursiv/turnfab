@@ -5,13 +5,12 @@
 <?import javafx.scene.layout.*?>
 <?import javafx.scene.text.*?>
 
-
-  <SplitPane dividerPositions="0.8" orientation="VERTICAL" xmlns="http://javafx.com/javafx/17.0.12" xmlns:fx="http://javafx.com/fxml/1" fx:controller="dev.turnfab.ChatController">
+<SplitPane fx:id="splDiv" dividerPositions="0.8" orientation="VERTICAL" xmlns="http://javafx.com/javafx/17.0.12" xmlns:fx="http://javafx.com/fxml/1" fx:controller="dev.turnfab.ChatController">
       <items>
           <StackPane fx:id="stpRenderedConvo" />
           <VBox>
               <children>
-                  <TextArea fx:id="txaToSend" wrapText="true" VBox.vgrow="ALWAYS">
+                  <TextArea fx:id="txaToSend" onKeyReleased="#onPromptKey" wrapText="true" VBox.vgrow="ALWAYS">
                       <font>
                           <Font size="18.0" />
                       </font>
