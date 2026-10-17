@@ -3,6 +3,7 @@
 <?import javafx.geometry.*?>
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
+<?import javafx.scene.text.*?>
 <?import org.controlsfx.control.*?>
 
 <VBox xmlns="http://javafx.com/javafx/17.0.12" xmlns:fx="http://javafx.com/fxml/1" fx:controller="dev.turnfab.SetupController">
@@ -44,7 +45,10 @@
             </CheckBox>
          </children>
       </HBox>
-      <TextArea fx:id="txaSysPrompt" prefHeight="100.0" wrapText="true" />
+      <TextArea fx:id="txaSysPrompt" prefRowCount="5" wrapText="true">
+         <font>
+            <Font size="14.0" />
+         </font></TextArea>
       <HBox prefHeight="200.0">
          <children>
             <TitledPane animated="false" collapsible="false" prefWidth="130.0" text="MCP Servers" HBox.hgrow="NEVER">
@@ -127,7 +131,13 @@
             </Button>
          </children>
       </HBox>
-      <TextArea fx:id="txaTcSummary" editable="false" wrapText="true" />
-      <TextArea fx:id="txaUserPrompt" wrapText="true" VBox.vgrow="ALWAYS" />
+      <TextArea fx:id="txaTcSummary" editable="false" prefRowCount="5" wrapText="true">
+         <font>
+            <Font size="14.0" />
+         </font></TextArea>
+      <TextArea fx:id="txaUserPrompt" prefRowCount="5" wrapText="true" VBox.vgrow="ALWAYS">
+         <font>
+            <Font size="14.0" />
+         </font></TextArea>
    </children>
 </VBox>

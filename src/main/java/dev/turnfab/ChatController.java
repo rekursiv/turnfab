@@ -10,7 +10,6 @@ import javafx.fxml.FXML;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
-import javafx.scene.control.SplitPane;
 import javafx.scene.control.TextArea;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
@@ -29,6 +28,8 @@ import java.util.logging.Logger;
 @FXMLController
 public class ChatController {
 
+	private static final int PROMPT_MAX_ROW_COUNT = 12;
+
 	@Inject private Logger log;
 	@Inject private SystemConfig cfg;
 	@Inject private EventBus eb;
@@ -37,7 +38,6 @@ public class ChatController {
 	@Inject private DynamicMcpToolProvider toolProvider;
 	@Inject private TokenJockey tokenJockey;
 
-    @FXML private SplitPane splDiv;
 	@FXML private StackPane stpRenderedConvo;
 	@FXML private TextArea txaToSend;
 	@FXML private Button btnSend;
@@ -49,6 +49,7 @@ public class ChatController {
 	private StringBuilder mdRaw = new StringBuilder();
 
 	private boolean sendArmed = false;
+	private int promptRowCount = 1;
 
 	@FXML
 	private void initialize() {
@@ -95,6 +96,7 @@ public class ChatController {
 	@FXML
 	public void onPromptKey(KeyEvent evt) {
 		if (evt.getCode() == KeyCode.ENTER) {
+			expandPromptAreaHeight();
 			int lastMinusOne = txaToSend.getText().length()-2;
 			if (txaToSend.getText().lastIndexOf('\n', lastMinusOne) == lastMinusOne) {
 				if (sendArmed) {
@@ -105,9 +107,6 @@ public class ChatController {
 					sendArmed = true;
 					txaToSend.setStyle("-fx-control-inner-background: #E0FAE0;");
 				}
-			} else {
-                // TODO: expand prompt area based on how tall the text is, up to a maximum divider position of 0.5
-//				splDiv.setDividerPosition(0, .8);
 			}
 		} else {
 			sendArmed = false;
@@ -136,9 +135,23 @@ public class ChatController {
 	}
 
 	private void sendPrompt() {
-		btnSend.setDisable(true);
-		eb.post(new BeginTurnEvent(txaToSend.getText().strip()));
+//		btnSend.setDisable(true);
+//		eb.post(new BeginTurnEvent(txaToSend.getText().strip()));
+		System.out.println("*****");
 		txaToSend.clear();
+		resetPromptAreaHeight();
+	}
+
+	private void resetPromptAreaHeight() {
+		promptRowCount=1;
+		txaToSend.setPrefRowCount(promptRowCount);
+	}
+
+	private void expandPromptAreaHeight() {
+		if (promptRowCount < PROMPT_MAX_ROW_COUNT) {
+			promptRowCount++;
+			txaToSend.setPrefRowCount(promptRowCount);
+		}
 	}
 
 	private File askUserWhereToSave() {

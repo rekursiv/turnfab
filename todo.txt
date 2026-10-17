@@ -17,11 +17,9 @@ ToolContextManager promptSummary
   total up tokens/percent, append to end
 
 
-=== Convo tab ===
+=== Chat tab ===
 
-user prompt area:
-  dynamically move splitter up on each newline, start small
-
+expand prompt area when txt pasted in
 
 === ideas ===
 
