@@ -70,7 +70,6 @@ public class TokenJockey {
 
 
     public void initBot() {
-        if (cfg.enableThinking) qwenMode = QwenMode.THINKING;
         modelCfg = modelCfgMgr.load();
 
         OpenAiStreamingChatModel model = OpenAiStreamingChatModel.builder()
@@ -84,7 +83,6 @@ public class TokenJockey {
                 .logResponses(cfg.logResponses)
                 .returnThinking(true)
                 .sendThinking(true, "reasoning")
-                .defaultRequestParameters(qwenMode.parameters())
                 .build();
 
 
@@ -130,6 +128,10 @@ public class TokenJockey {
         if (evt.getUserPromptSummary()!=null && !evt.getUserPromptSummary().isBlank()) sendStream(evt.getUserPromptSummary());
         else sendStream(evt.getUserPrompt());
 
+        // The thinking toggle is picked up every turn from the shared SystemConfig singleton,
+        // so flipping it in the Setup window takes effect on the next turn without any rebuild.
+        qwenMode = cfg.enableThinking ? QwenMode.THINKING : QwenMode.INSTRUCT;
+
         // reset streaming stats
         inputTokens = tcEst.estimateTokenCountInMessages(chatMemory.messages());
         outputTokens = 0;
@@ -137,9 +139,10 @@ public class TokenJockey {
         lastLabelUpdateNanos = 0;
         statsRecomputePending = false;
 
-        // TextContent without @UserMessage: sent verbatim as a single content part,
-        // no {{...}} template processing (see Bot#chat); reasoning_effort is a model default now.
-        TokenStream stream = bot.chat(TextContent.from(evt.getUserPrompt()));
+        // TextContent + @UserMessage: sent verbatim as a single content part, no {{...}} template
+        // processing (see Bot#chat). The per-turn parameters ride along as request parameters and
+        // override anything the model builder's defaults specify.
+        TokenStream stream = bot.chat(TextContent.from(evt.getUserPrompt()), qwenMode.parameters());
 
         stream
                 .onPartialThinkingWithContext((PartialThinking partialThinking, PartialThinkingContext context) -> {

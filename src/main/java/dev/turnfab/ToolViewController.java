@@ -59,7 +59,7 @@ public class ToolViewController {
     }
 
 
-	private static record ToolWrapper(AiServiceTool tool) {
+	private record ToolWrapper(AiServiceTool tool) {
 		public String getName() {
 			return tool.name();
 		}

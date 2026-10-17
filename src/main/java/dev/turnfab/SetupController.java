@@ -177,6 +177,11 @@ public class SetupController {
 	}
 
 	@FXML
+	public void onCkbThink(){
+		cfg.enableThinking = ckbThink.isSelected();
+	}
+
+	@FXML
 	public void onCkbAddDate(){
 		cfg.addDateToSystemPrompt = ckbAddDate.isSelected();
 		txaSysPrompt.clear();
@@ -189,7 +194,6 @@ public class SetupController {
 	private void writeGuiToCfg() {
 		cfg.mcpServers = clvMcpServers.getCheckModel().getCheckedItems();
 		cfg.toolContext = lsvToolCtxSel.getItems();
-		cfg.enableThinking = ckbThink.isSelected();
 		cfg.logRequests = ckbLogReq.isSelected();
 		cfg.logResponses = ckbLogRes.isSelected();
 		cfg.userPrompt = txaUserPrompt.getText();

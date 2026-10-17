@@ -9,7 +9,7 @@
    <children>
       <HBox>
          <children>
-            <CheckBox fx:id="ckbThink" mnemonicParsing="false" text="Enable Thinking">
+            <CheckBox fx:id="ckbThink" mnemonicParsing="false" onAction="#onCkbThink" text="Enable Thinking">
                <HBox.margin>
                   <Insets bottom="4.0" left="4.0" right="4.0" top="4.0" />
                </HBox.margin>
