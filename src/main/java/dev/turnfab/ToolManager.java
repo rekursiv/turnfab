@@ -29,6 +29,11 @@ public class ToolManager {
     private McpServerConfig mcpServerCfg;
     private McpServerConfig.Server jbMcpMetaDef;
     private ToolContextConfig toolCfg;
+    /**
+     * The server names the last {@link #loadTools()} tried to connect. Kept because loading a session is
+     * a replace, not an add: what the session did not ask for has to be closed, not just left running.
+     */
+    private List<String> enabledNames;
 
     public void init() {
         mcpServerCfg = mcpServerCfgMgr.load();
@@ -56,9 +61,10 @@ public class ToolManager {
     }
 
     public void loadTools() throws Exception {
-        if (mcpServerCfg==null) return;
-        if (jbMcpMetaDef==null) return;
-        if (toolCfg==null) return;
+        if (mcpServerCfg==null || jbMcpMetaDef==null || toolCfg==null) {
+            log.warning("Tool configs are not loaded, so the tool setup stays as it is.");
+            return;
+        }
 
         List<String> enabled = new ArrayList<>(mainCfg.mcpServers);
 
@@ -75,6 +81,7 @@ public class ToolManager {
             }
         }
 
+        enabledNames = List.copyOf(enabled);
         McpJetBrainsConfig jbProjects = jbProjectCfgMgr.load();
         Map<String, McpServerConfig.Server> mergedCfg = new LinkedHashMap<>(mcpServerCfg.servers);
 
@@ -141,6 +148,50 @@ public class ToolManager {
             sb.append(" ");
         }
         return sb.toString();
+    }
+
+    /**
+     * The tool setup as it stands: what the two selection lists say, plus which keys are actually
+     * connected right now. The two can disagree, and both halves matter -- the lists are what a session
+     * file has to restore, the connected keys are what the model could actually call.
+     */
+    public SessionFile.ToolSetup currentSetup() {
+        return new SessionFile.ToolSetup(
+                (mainCfg.mcpServers == null) ? List.of() : List.copyOf(mainCfg.mcpServers),
+                (mainCfg.toolContext == null) ? List.of() : List.copyOf(mainCfg.toolContext),
+                toolProvider.getMcpClientKeys());
+    }
+
+    /**
+     * Puts the tool setup back the way a session file had it: selection first, then the connect that
+     * selection drives, then a look at what the file expected to be talking to.
+     *
+     * @throws Exception if any server refuses to come up, exactly as "Load Tools" would
+     */
+    public List<String> applySetup(SessionFile.ToolSetup setup) throws Exception {
+        mainCfg.mcpServers = new ArrayList<>(setup.mcpServers());
+        mainCfg.toolContext = new ArrayList<>(setup.toolContext());
+        enabledNames = null;
+        loadTools();
+
+        // If loadTools bailed out, enabledNames is still null and nothing gets closed: it is better to
+        // keep the tools that are up than to tear them all down over a config that didn't load.
+        if (enabledNames != null) {
+            for (String key : toolProvider.getMcpClientKeys()) {
+                if (!enabledNames.contains(key)) {
+                    log.info("Closing MCP server '" + key + "'; not part of this session's setup.");
+                    toolProvider.closeMcpClient(key);
+                }
+            }
+        }
+
+        List<String> live = toolProvider.getMcpClientKeys();
+        for (String expected : setup.connected()) {
+            if (!live.contains(expected)) {
+                log.warning("This session used MCP server '" + expected + "'; it is not available now.");
+            }
+        }
+        return live;
     }
 
     private String getMcpInst(McpClient mcpClient) {

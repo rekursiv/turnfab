@@ -1,5 +1,4 @@
 
-persist memory to disk
 
 === Setup tab  ===
 

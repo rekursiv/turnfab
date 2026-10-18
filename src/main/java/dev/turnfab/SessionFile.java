@@ -15,31 +15,33 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Instant;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 
 /**
- * A whole session in a single {@code .md} file: YAML frontmatter carrying the ChatMemory, with the raw
- * markdown transcript as the body. Saving one of these and loading it back is meant to leave the app
- * where it was left off, so the file has to hold everything the running app holds: the message window,
- * the turn counter, and the system prompt that gets stamped onto every request.
+ * A whole session in a single {@code .md} file: YAML frontmatter carrying everything the session is made
+ * of, with the raw markdown transcript as the body. Loading one is meant to leave the app where it left
+ * off, so the file holds the message window, the turn counter, the system prompt, the tool setup that was
+ * connected, and whether the model was thinking.
  * <p>
- * The messages ride along as JSON, not YAML: LangChain4j already serializes every message type faithfully
+ * Payloads ride along as JSON, not YAML: LangChain4j already serializes every message type faithfully
  * ({@link ChatMessageSerializer}), including thinking, tool requests and tool results, so YAML's job here
- * is to be an envelope around one opaque string rather than to re-invent a schema for each message type.
- * That string is pretty-printed first so it lands in a literal block scalar and stays legible.
+ * is to be an envelope around opaque strings rather than to re-invent a schema for each message type.
+ * Those strings are pretty-printed first, so they land in literal block scalars and stay legible.
  * <p>
  * Two rules keep the envelope from ever fighting the transcript:
  * <ul>
  *     <li>The opening delimiter is only ever recognized on line 1, and closes at the next line that is
  *     exactly {@code ---}, so a horizontal rule inside the markdown cannot be mistaken for one.</li>
  *     <li>Every save re-reads what it just wrote and compares, so a session file is never silently
- *     written wrong: if the memory or the prompt failed to survive YAML's scalar rules, the save fails
- *     loudly instead of leaving a file that loads back as something else.</li>
+ *     written wrong: if anything failed to survive YAML's scalar rules, the save fails loudly instead of
+ *     leaving behind a file that loads back as something else.</li>
  * </ul>
  */
 public class SessionFile {
 
-	public static final int SCHEMA_VERSION = 1;
+	/** 1: memory, turn, prompt. 2: tool setup and the thinking flag. */
+	public static final int SCHEMA_VERSION = 2;
 	private static final String DELIM = "---";
 
 	/**
@@ -51,19 +53,38 @@ public class SessionFile {
 			.enable(YAMLGenerator.Feature.LITERAL_BLOCK_STYLE)
 			.build());
 
-	/** Used only to re-indent the messages JSON, so it breaks into lines instead of one long one. */
+	/** Used to write the JSON payloads and to re-indent them so they break into lines, not one long one. */
 	private static final ObjectMapper JSON = new ObjectMapper();
 
 	/**
-	 * Everything one session is made of. {@code savedAt} is written on save and read on load, so the
-	 * convenience constructor below leaves it {@code null} rather than making callers guess.
+	 * The tool half of a session. Which MCP servers and tool contexts were selected is what makes a
+	 * session reload the same way; which keys were actually connected afterwards is what the model could
+	 * call, and is kept to report on rather than to restore, since a server is only reachable if it is
+	 * still configured. Deliberately no URLs and no headers: those live in the config files where they
+	 * belong, and a session file is a transcript someone might share.
+	 */
+	public record ToolSetup(List<String> mcpServers, List<String> toolContext, List<String> connected) {
+
+		public ToolSetup {
+			mcpServers = (mcpServers == null) ? List.of() : List.copyOf(mcpServers);
+			toolContext = (toolContext == null) ? List.of() : List.copyOf(toolContext);
+			connected = (connected == null) ? List.of() : List.copyOf(connected);
+		}
+	}
+
+	/**
+	 * Everything one session is made of.
+	 *
+	 * @param savedAt        written on save, read on load
+	 * @param enableThinking {@code null} when the file doesn't say, which is every file written before
+	 *                       this field existed: the current setting is then left alone rather than
+	 *                       silently flipped off
+	 * @param tools          {@code null} when the file carries no tool setup, meaning "keep what the app
+	 *                       is configured with now"
 	 */
 	public record Session(int turnNumber, String modelName, String savedAt, String systemPrompt,
-						  List<ChatMessage> messages, String markdown) {
-
-		Session(int turnNumber, String modelName, String systemPrompt, List<ChatMessage> messages, String markdown) {
-			this(turnNumber, modelName, null, systemPrompt, messages, markdown);
-		}
+						  List<ChatMessage> messages, String markdown,
+						  Boolean enableThinking, ToolSetup tools) {
 
 		public Session {
 			messages = (messages == null) ? List.of() : List.copyOf(messages);
@@ -81,7 +102,10 @@ public class SessionFile {
 		fm.put("savedAt", Instant.now().toString());
 		fm.put("turnNumber", snap.turnNumber());
 		fm.put("model", snap.modelName());
+		fm.put("enableThinking", snap.enableThinking());
 		fm.put("systemPrompt", blankIfNull(snap.systemPrompt()));
+		if (snap.tools() == null) fm.putNull("toolsJson");     // absent, so a load keeps the app's current setup
+		else fm.put("toolsJson", prettyJson(JSON.writeValueAsString(snap.tools())));
 		fm.put("messagesJson", prettyJson(messagesJson));
 
 		String body = blankIfNull(snap.markdown()).replace("\r", "");
@@ -91,7 +115,7 @@ public class SessionFile {
 		if (!head.endsWith("\n")) head = head + "\n";
 		Files.writeString(file, DELIM + "\n" + head + DELIM + "\n" + body, StandardCharsets.UTF_8);
 
-		verify(file, snap.turnNumber(), snap.systemPrompt(), messagesJson);
+		verify(file, snap, messagesJson);
 	}
 
 	/**
@@ -132,30 +156,48 @@ public class SessionFile {
 			throw new IOException("Could not decode the chat memory in " + file, unreadable);
 		}
 
+		ToolSetup tools = null;
+		JsonNode toolsNode = fm.get("toolsJson");
+		if (toolsNode != null && !toolsNode.isNull()) {
+			try {
+				tools = JSON.readValue(toolsNode.asText(), ToolSetup.class);
+			} catch (Exception unreadable) {
+				throw new IOException("Could not decode the tool setup in " + file, unreadable);
+			}
+		}
+
+		JsonNode thinking = fm.get("enableThinking");
+		Boolean enableThinking = (thinking == null || thinking.isNull()) ? null : thinking.asBoolean();
+
 		String markdown = String.join("\n", lines.subList(close + 1, lines.size()));
 		return Optional.of(new Session(fm.path("turnNumber").asInt(0),
 				textOrNull(fm.get("model")), textOrNull(fm.get("savedAt")),
-				fm.path("systemPrompt").asText(""), messages, markdown));
+				fm.path("systemPrompt").asText(""), messages, markdown, enableThinking, tools));
 	}
 
 	/** Reads the file back and asks whether the payload survived the trip through YAML. */
-	private static void verify(Path file, int turnNumber, String systemPrompt, String messagesJson)
-			throws IOException {
+	private static void verify(Path file, Session snap, String messagesJson) throws IOException {
 		Optional<Session> back = load(file);
 		if (back.isEmpty()) {
 			throw new IOException("Session written to " + file + " does not read back as a session.");
 		}
 		Session s = back.get();
-		if (s.turnNumber() != turnNumber) {
+		if (s.turnNumber() != snap.turnNumber()) {
 			throw new IOException("turnNumber did not survive the round trip through " + file);
 		}
 		// A literal block scalar is free to drop the line breaks it ends with, so this compares everything
 		// but trailing breaks: a difference there is a blank line at the end of the prompt, not the prompt.
-		if (!blankIfNull(s.systemPrompt()).stripTrailing().equals(blankIfNull(systemPrompt).stripTrailing())) {
+		if (!blankIfNull(s.systemPrompt()).stripTrailing().equals(blankIfNull(snap.systemPrompt()).stripTrailing())) {
 			throw new IOException("The system prompt did not survive the round trip through " + file);
 		}
 		if (!ChatMessageSerializer.messagesToJson(s.messages()).equals(messagesJson)) {
 			throw new IOException("The chat memory did not survive the round trip through " + file);
+		}
+		if (!Objects.equals(s.tools(), snap.tools())) {
+			throw new IOException("The tool setup did not survive the round trip through " + file);
+		}
+		if (!Objects.equals(s.enableThinking(), snap.enableThinking())) {
+			throw new IOException("enableThinking did not survive the round trip through " + file);
 		}
 	}
 
@@ -163,7 +205,7 @@ public class SessionFile {
 		try {
 			return JSON.writerWithDefaultPrettyPrinter().writeValueAsString(JSON.readTree(compactJson));
 		} catch (Exception malformed) {
-			throw new IOException("Chat memory did not serialize to parseable JSON", malformed);
+			throw new IOException("Session payload did not serialize to parseable JSON", malformed);
 		}
 	}
 

@@ -22,6 +22,7 @@ import javafx.application.Platform;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 
@@ -34,6 +35,7 @@ public class TokenJockey {
     @Inject private EventBus eb;
     @Inject private SystemConfig cfg;
     @Inject private DynamicMcpToolProvider toolProvider;
+    @Inject private ToolManager toolManager;
 
     private QwenMode qwenMode = QwenMode.INSTRUCT;
     private Bot bot;
@@ -328,12 +330,14 @@ public class TokenJockey {
      */
     public SessionFile.Session currentSession(String markdown) {
         ensureMemory();
-        return new SessionFile.Session(turnNumber, modelCfg.name, systemPrompt, chatMemory.messages(), markdown);
+        return new SessionFile.Session(turnNumber, modelCfg.name, null, systemPrompt, chatMemory.messages(), markdown,
+                cfg.enableThinking, toolManager.currentSetup());
     }
 
     /**
-     * Makes the saved session the current one. Window and journal are replaced outright rather than
-     * merged, because "continue where I left off" means the file <em>is</em> the session.
+     * Makes the saved session the current one: window and journal replaced outright rather than merged,
+     * because "continue where I left off" means the file <em>is</em> the session, then the turn counter,
+     * system prompt, thinking flag and tool setup put back the way the file had them.
      * <p>
      * Loading is meant to happen between turns: a turn already streaming would write over the restored
      * memory as its tool rounds land.
@@ -364,7 +368,28 @@ public class TokenJockey {
             log.warning("Session file carries no system prompt; continuing with: '" + systemPrompt + "'");
         }
 
+        if (snap.enableThinking() != null) {
+            cfg.enableThinking = snap.enableThinking();
+            log.info("Thinking restored: " + (cfg.enableThinking ? "on" : "off"));
+        }
+        restoreTools(snap.tools());
+
         log.info("Session loaded: " + inWindow + " message(s) in window, next turn " + (turnNumber + 1));
+    }
+
+    /**
+     * A tool setup doesn't deserialize, it reconnects, so this is the part of a load that can fail on
+     * its own: a server that is down now is not a reason to drop a session whose conversation is intact.
+     * Whatever did connect is what the next turn gets.
+     */
+    private void restoreTools(SessionFile.ToolSetup tools) {
+        if (tools == null) return;
+        try {
+            List<String> live = toolManager.applySetup(tools);
+            log.info("Tools restored (" + live.size() + " server(s)): " + String.join(", ", live));
+        } catch (Exception e) {
+            log.log(Level.WARNING, "Tool setup not restored, continuing with whatever is connected", e);
+        }
     }
 
     /**
