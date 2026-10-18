@@ -23,6 +23,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 
@@ -75,21 +76,60 @@ public class ChatController {
 
 	@FXML
 	public void onSaveMd() throws IOException {
-		File selectedFile = askUserWhereToSave();
+		File selectedFile = askUserWhereToSave("Save Markdown File As:");
 		if (selectedFile!=null) {
 			eb.post(new LogEvent("  Saving markdown to: "+selectedFile.getAbsolutePath()+"\n"));
 			Files.writeString(selectedFile.toPath(), mdRaw.toString());
 		}
 	}
 
+	/**
+	 * Transcript plus the ChatMemory that would be needed to carry on from here, in one file. Saving is
+	 * safe mid-turn -- worst case the tail is an unfinished tool call, which is trimmed on the way back
+	 * in -- but it is between turns that the snapshot is the most honest.
+	 */
+	@FXML
+	public void onSaveSession() {
+		File selectedFile = askUserWhereToSave("Save Session As:");
+		if (selectedFile==null) return;
+		eb.post(new LogEvent("  Saving session to: "+selectedFile.getAbsolutePath()+"\n"));
+		try {
+			SessionFile.save(selectedFile.toPath(), tokenJockey.currentSession(mdRaw.toString()));
+		} catch (IOException e) {
+			// The save verifies what it wrote, so this is where a file that would load back wrong ends up.
+			log.log(Level.SEVERE, "Session save failed", e);
+			eb.post(new LogEvent("  !! Session save failed: "+e.getMessage()+"\n"));
+		}
+	}
+
+	/**
+	 * Loads either flavour of file: a session file restores the memory and shows its transcript, a plain
+	 * markdown file is view-only, exactly as it always was.
+	 */
 	@FXML
 	public void onLoadMd() throws IOException {
+		if (btnSend.isDisabled()) {
+			eb.post(new LogEvent("  A turn is still running -- load between turns.\n"));
+			return;
+		}
 		File selectedFile = askUserWhatToLoad();
+		if (selectedFile==null) return;
 		eb.post(new LogEvent("  Loading "+selectedFile.getAbsolutePath()+"\n"));
-		String content = new String(Files.readAllBytes(selectedFile.toPath()));
-		msView.reset();
-		msView.load(content);
-		mdRaw = new StringBuilder(content);
+
+		SessionFile.Session loaded;
+		try {
+			loaded = SessionFile.load(selectedFile.toPath()).orElse(null);
+		} catch (IOException e) {
+			log.log(Level.SEVERE, "Session load failed", e);
+			eb.post(new LogEvent("  !! Load failed: "+e.getMessage()+"\n"));
+			return;
+		}
+		if (loaded != null) {
+			tokenJockey.loadSession(loaded);
+			showMarkdown(loaded.markdown());
+		} else {
+			showMarkdown(Files.readString(selectedFile.toPath()));
+		}
 	}
 
 	@FXML
@@ -203,10 +243,10 @@ public class ChatController {
 		return (avail > 0 && need > 0) ? avail / need : Double.NaN;
 	}
 
-	private File askUserWhereToSave() {
+	private File askUserWhereToSave(String title) {
 		FileChooser fileChooser = new FileChooser();
 		fileChooser.setInitialDirectory(new File("/projects/AI/md/"));
-		fileChooser.setTitle("Save Markdown File As:");
+		fileChooser.setTitle(title);
 		fileChooser.getExtensionFilters().addAll(new FileChooser.ExtensionFilter("Markdown Files", "*.md"));
 		String dateTimeStr = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd_HH-mm-ss"));
 		fileChooser.setInitialFileName(dateTimeStr+".md");
@@ -219,6 +259,13 @@ public class ChatController {
 		fileChooser.setTitle("Load Markdown File:");
 		fileChooser.getExtensionFilters().addAll(new FileChooser.ExtensionFilter("Markdown Files", "*.md"));
 		return fileChooser.showOpenDialog(txaToSend.getScene().getWindow());
+	}
+
+	/** Makes the transcript the contents of the pane, and {@code mdRaw} its mirror. */
+	private void showMarkdown(String content) {
+		msView.reset();
+		msView.load(content);
+		mdRaw = new StringBuilder(content);
 	}
 
 	private void showRawMarkdown() throws IOException {

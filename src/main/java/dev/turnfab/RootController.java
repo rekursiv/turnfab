@@ -37,7 +37,7 @@ public class RootController {
 
 	@FXML
 	private void initialize() {
-		tabPane.getSelectionModel().select(1);
+//		tabPane.getSelectionModel().select(1);
 	}
 
 	@Subscribe

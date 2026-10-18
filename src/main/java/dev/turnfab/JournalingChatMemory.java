@@ -115,6 +115,17 @@ public class JournalingChatMemory implements ChatMemory {
 		}
 	}
 
+	/**
+	 * Empties the window <em>and</em> the journal. Where {@link #clear()} starts a new epoch with the log
+	 * kept, this one wipes the slate: used when loading a session file, where the log that matters is the
+	 * one in the file, not whatever this process was recording beforehand.
+	 */
+	public synchronized void reset() {
+		delegate.clear();
+		journal.clear();
+		recorded.clear();
+	}
+
 	@Override
 	public CompletableFuture<Void> addAsync(List<ChatMessage> messages) {
 		return delegate.addAsync(messages).thenRun(this::record);

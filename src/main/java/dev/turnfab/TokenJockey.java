@@ -3,6 +3,8 @@ package dev.turnfab;
 import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
 import com.google.inject.Inject;
+import dev.langchain4j.data.message.AiMessage;
+import dev.langchain4j.data.message.ChatMessage;
 import dev.langchain4j.data.message.TextContent;
 import dev.langchain4j.data.message.ToolExecutionResultMessage;
 import dev.langchain4j.http.client.jdk.JdkHttpClientBuilder;
@@ -24,6 +26,7 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -70,7 +73,25 @@ public class TokenJockey {
 
 
     public void initBot() {
+        ensureMemory();
+        if (bot == null) buildBot();
+    }
+
+    /**
+     * The window has to exist before anything reads or writes it, and either {@link #beginTurn} or
+     * {@link #loadSession} can be the first thing that runs after startup, so both of them call this.
+     */
+    private void ensureMemory() {
+        if (chatMemory != null) return;
+
         modelCfg = modelCfgMgr.load();
+        chatMemory = new JournalingChatMemory(
+                TokenWindowChatMemory.withMaxTokens(calcMaxTokens(), tcEst), () -> turnNumber);
+    }
+
+    /** Everything that needs a live model, built on the memory that {@link #ensureMemory()} guarantees. */
+    private void buildBot() {
+        if (chatMemory == null) ensureMemory();
 
         OpenAiStreamingChatModel model = OpenAiStreamingChatModel.builder()
                 .modelName(modelCfg.name)
@@ -94,8 +115,7 @@ public class TokenJockey {
                 })
                 .systemMessageTransformer(_ -> systemPrompt)
                 .toolProvider(toolProvider)
-                .chatMemory(chatMemory = new JournalingChatMemory(
-                        TokenWindowChatMemory.withMaxTokens(calcMaxTokens(), tcEst), () -> turnNumber))
+                .chatMemory(chatMemory)
                 .build();
 
         log.info("Model and AI Service Ready.");
@@ -117,7 +137,7 @@ public class TokenJockey {
         }
 
         if (bot==null) {
-            initBot();
+            buildBot();
         }
 
         armCancel = false;
@@ -306,6 +326,67 @@ public class TokenJockey {
         } else {
             Platform.runLater(action);
         }
+    }
+
+    /**
+     * Everything that has to come back for this session to continue where it stopped: the window, the
+     * turn counter, the system prompt. The markdown half of a session file is the caller's, since it is
+     * the view layer that has been collecting it.
+     */
+    public SessionFile.Session currentSession(String markdown) {
+        ensureMemory();
+        return new SessionFile.Session(turnNumber, modelCfg.name, systemPrompt, chatMemory.messages(), markdown);
+    }
+
+    /**
+     * Makes the saved session the current one. Window and journal are replaced outright rather than
+     * merged, because "continue where I left off" means the file <em>is</em> the session.
+     * <p>
+     * Loading is meant to happen between turns: a turn already streaming would write over the restored
+     * memory as its tool rounds land.
+     */
+    public void loadSession(SessionFile.Session snap) {
+        ensureMemory();
+
+        List<ChatMessage> restored = trimDanglingToolRequests(snap.messages());
+        int dropped = snap.messages().size() - restored.size();
+        if (dropped > 0) {
+            log.warning("Dropped " + dropped + " unfinished tool-call message(s) from the loaded session's tail.");
+        }
+
+        chatMemory.reset();
+        // Turn number moves first, so the journal tags the restored entries with the turn they loaded on.
+        turnNumber = snap.turnNumber();
+        chatMemory.set(restored);
+
+        int inWindow = chatMemory.messages().size();
+        if (inWindow < restored.size()) {
+            log.warning("Window holds " + calcMaxTokens() + " tokens: evicted "
+                    + (restored.size() - inWindow) + " of the loaded message(s) on the way in.");
+        }
+
+        if (snap.systemPrompt() != null && !snap.systemPrompt().isBlank()) {
+            systemPrompt = snap.systemPrompt();
+        } else {
+            log.warning("Session file carries no system prompt; continuing with: '" + systemPrompt + "'");
+        }
+
+        log.info("Session loaded: " + inWindow + " message(s) in window, next turn " + (turnNumber + 1));
+    }
+
+    /**
+     * A window ending on a tool request is a half-finished exchange: providers that forbid an
+     * {@code AiMessage} with no following {@code ToolExecutionResultMessage} reject it, and there is no
+     * honest way to continue from it. Dropping the tail is the only interpretation that is always safe.
+     */
+    private static List<ChatMessage> trimDanglingToolRequests(List<ChatMessage> messages) {
+        List<ChatMessage> trimmed = new ArrayList<>(messages);
+        while (!trimmed.isEmpty()
+                && trimmed.get(trimmed.size() - 1) instanceof AiMessage ai
+                && ai.hasToolExecutionRequests()) {
+            trimmed.remove(trimmed.size() - 1);
+        }
+        return trimmed;
     }
 
     public void testJournal() {
