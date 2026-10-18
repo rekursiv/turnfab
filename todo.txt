@@ -1,4 +1,5 @@
 
+persist memory to disk
 
 === Setup tab  ===
 
@@ -10,7 +11,7 @@ Reset button?  not sure how useful this would be?
   remove all tools from DynMcpTP
   could pass in boolean resetTurn to BeginTurnEvent
 
-load MD file into separate tab, move Load MD btn from Convo tab to Setup tab
+load MD file into separate tab, move Load MD btn from Chat tab to Setup tab
 
 ToolContextManager promptSummary
   report tokens/percent instead of # chars
@@ -19,7 +20,7 @@ ToolContextManager promptSummary
 
 === Chat tab ===
 
-expand prompt area when txt pasted in
+
 
 === ideas ===
 

@@ -7,6 +7,7 @@ import com.google.common.eventbus.Subscribe;
 import com.google.inject.Inject;
 import javafx.application.Platform;
 import javafx.fxml.FXML;
+import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
@@ -29,6 +30,7 @@ import java.util.logging.Logger;
 public class ChatController {
 
 	private static final int PROMPT_MAX_ROW_COUNT = 12;
+	private static final int SIZING_PULSE_BUDGET = 8;
 
 	@Inject private Logger log;
 	@Inject private SystemConfig cfg;
@@ -49,11 +51,19 @@ public class ChatController {
 	private StringBuilder mdRaw = new StringBuilder();
 
 	private boolean sendArmed = false;
-	private int promptRowCount = 1;
+	private boolean needsSizing = false;
+	private int sizingPulses = 0;
+	private Scene watchedScene = null;
+	private final Runnable pulseHook = this::growIfOverflowing;
 
 	@FXML
 	private void initialize() {
 		stpRenderedConvo.getChildren().add(msView.getView());
+
+		txaToSend.textProperty().addListener((obs, was, is) -> requestGrow());
+		txaToSend.widthProperty().addListener((obs, was, is) -> requestGrow());
+		txaToSend.fontProperty().addListener((obs, was, is) -> requestGrow());
+		txaToSend.skinProperty().addListener((obs, was, is) -> requestGrow());
 	}
 
 	//////////////////////////////////////////////////////////
@@ -96,7 +106,6 @@ public class ChatController {
 	@FXML
 	public void onPromptKey(KeyEvent evt) {
 		if (evt.getCode() == KeyCode.ENTER) {
-			expandPromptAreaHeight();
 			int lastMinusOne = txaToSend.getText().length()-2;
 			if (txaToSend.getText().lastIndexOf('\n', lastMinusOne) == lastMinusOne) {
 				if (sendArmed) {
@@ -135,23 +144,63 @@ public class ChatController {
 	}
 
 	private void sendPrompt() {
-//		btnSend.setDisable(true);
-//		eb.post(new BeginTurnEvent(txaToSend.getText().strip()));
-		System.out.println("*****");
+		btnSend.setDisable(true);
+		eb.post(new BeginTurnEvent(txaToSend.getText().strip()));
+//		System.out.println("*****");
 		txaToSend.clear();
 		resetPromptAreaHeight();
 	}
 
 	private void resetPromptAreaHeight() {
-		promptRowCount=1;
-		txaToSend.setPrefRowCount(promptRowCount);
+		txaToSend.setPrefRowCount(1);
 	}
 
-	private void expandPromptAreaHeight() {
-		if (promptRowCount < PROMPT_MAX_ROW_COUNT) {
-			promptRowCount++;
-			txaToSend.setPrefRowCount(promptRowCount);
+	//////////////////////////////////////////////////////////
+
+	/**
+	 * Marks the prompt as needing a size check and asks to be consulted after the next layout
+	 * pass. Nothing is measured here, because geometry lies less once the pulse is over.
+	 */
+	private void requestGrow() {
+		needsSizing = true;
+		sizingPulses = SIZING_PULSE_BUDGET;
+		Scene sc = txaToSend.getScene();
+		if (sc == null || sc == watchedScene) return;
+		if (watchedScene != null) watchedScene.removePostLayoutPulseListener(pulseHook);
+		sc.addPostLayoutPulseListener(pulseHook);
+		watchedScene = sc;
+	}
+
+	/**
+	 * The pulse's layout pass is done, so the geometry is finally honest. Grow the prompt to the
+	 * row count its text needs, staying armed so the next pass verifies the answer -- and disarm
+	 * once the text fits, hits the ceiling, or the pulse budget runs out.
+	 */
+	private void growIfOverflowing() {
+		if (!needsSizing) return;
+		if (--sizingPulses < 0) { needsSizing = false; return; }
+
+		int rows = txaToSend.getPrefRowCount();
+		double fit = promptFit();
+		if (Double.isNaN(fit) || fit >= 1.0 || rows >= PROMPT_MAX_ROW_COUNT) { needsSizing = false; return; }
+
+		int needed = Math.min(PROMPT_MAX_ROW_COUNT, Math.max(rows + 1, (int) Math.ceil(rows / fit)));
+		txaToSend.setPrefRowCount(needed);
+	}
+
+	/**
+	 * Fraction of the prompt's text that fits its current height: 1.0 when all of it shows, less when
+	 * some is hidden below. The skin clips one content node inside the TextArea's scroll viewport,
+	 * so that node's height is the whole text and the viewport's height is all that's visible.
+	 * NaN when we can't see both, which leaves the prompt at whatever size it is.
+	 */
+	private double promptFit() {
+		if (!(txaToSend.lookup(".viewport") instanceof Parent vp) || vp.getChildrenUnmodifiable().isEmpty()) {
+			return Double.NaN;
 		}
+		double avail = vp.getBoundsInLocal().getHeight();
+		double need = vp.getChildrenUnmodifiable().get(0).getBoundsInLocal().getHeight();
+		return (avail > 0 && need > 0) ? avail / need : Double.NaN;
 	}
 
 	private File askUserWhereToSave() {
