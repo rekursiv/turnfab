@@ -20,15 +20,8 @@ import dev.langchain4j.service.AiServices;
 import dev.langchain4j.service.TokenStream;
 import javafx.application.Platform;
 
-import java.io.IOException;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.Paths;
-import java.time.LocalDate;
-import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 
