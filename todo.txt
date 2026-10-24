@@ -1,4 +1,9 @@
 
+disable links in MD or route to system browser
+
+find out if MSV has a setting to not put a scrollbar on long fenced code blocks
+
+
 
 === Setup tab  ===
 
@@ -11,6 +16,7 @@ Reset button?  not sure how useful this would be?
   could pass in boolean resetTurn to BeginTurnEvent
 
 load MD file into separate tab, move Load MD btn from Chat tab to Setup tab
+  if kept as-is, be sure to clear the WebView when starting a new chat (after loading an old one)
 
 ToolContextManager promptSummary
   report tokens/percent instead of # chars

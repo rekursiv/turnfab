@@ -1,3 +1,6 @@
+// jdk.jsobject is what javafx.web uses to let a page call back into the JVM. The module itself is
+// deprecated for removal, not our use of it, so it gets the same allowance the class does.
+@SuppressWarnings("removal")
 module dev.turnfab {
 	
 	exports dev.turnfab;
@@ -5,6 +8,7 @@ module dev.turnfab {
 
 	requires java.desktop;
 	requires java.logging;
+	requires jdk.jsobject;
 	requires javafx.base;
 	requires javafx.controls;
 	requires javafx.fxml;
