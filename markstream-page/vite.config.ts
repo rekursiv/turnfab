@@ -1,4 +1,5 @@
 import { fileURLToPath, URL } from 'node:url'
+import type { Plugin, ViteDevServer } from 'vite'
 import Vue from '@vitejs/plugin-vue'
 import { defineConfig } from 'vite'
 
@@ -30,10 +31,37 @@ const classicScriptPlugin = {
 // (src/main/resources/markstream), so the built page is packaged inside the
 // mdview-fx jar. Commit the generated files after building.
 //
+/**
+ * The page is `markstream-view.html`, not `index.html`, and only the build
+ * config declares that (via rollupOptions.input). In dev, Vite looks for
+ * `<root>/index.html` when you ask for `/`, finds none, and answers 404 - which
+ * looks like a dead server even though Vite is running fine. Redirect the bare
+ * root to the real page so `http://localhost:5173/` behaves like any other Vite
+ * app instead of surprising you every time.
+ */
+const devRootRedirect = (): Plugin => ({
+  name: 'mdview-dev-root-redirect',
+  apply: 'serve',
+  configureServer(server: ViteDevServer) {
+    server.middlewares.use((req, res, next) => {
+      if (req.url === '/' || req.url === '') {
+        res.writeHead(302, { Location: '/markstream-view.html' })
+        res.end()
+        return
+      }
+      next()
+    })
+  },
+})
+
 export default defineConfig(({ command }) => ({
   // Relative base so the built page works when loaded from classpath/jar URLs.
   base: command === 'build' ? './' : '/',
-  plugins: [Vue(), classicScriptPlugin],
+  plugins: [Vue(), classicScriptPlugin, devRootRedirect()],
+  server: {
+    // Go straight to the page that exists, instead of Vite's fallback 404.
+    open: '/markstream-view.html',
+  },
   resolve: {
     alias: {
       // main.ts uses an in-DOM template, so use the full Vue build

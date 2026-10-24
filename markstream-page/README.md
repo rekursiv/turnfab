@@ -47,18 +47,20 @@ To preview the page in a regular browser during development: `pnpm dev`.
 - Sticky-bottom auto-scroll uses markstream-vue's `useStickToBottom`
   composable: the page follows new content while pinned to the bottom, stops
   following when the user scrolls up (wheel, touch, keyboard, or scrollbar),
-  and resumes when the user scrolls back near the bottom (built-in threshold:
-  64px).
+  and resumes when the user scrolls back near the bottom (built-in threshold: 10)
 - `msLoad` renders an already-complete document immediately ("recovering
   history" mode: `smooth-streaming=false`, `final=true`) and lands at the
   newest content. A later `msAppend` switches back to streaming mode, so a
   new stream appends after the loaded history.
-- Mermaid and KaTeX are *optional* peers of markstream-vue and are **not**
-  installed here, so math and mermaid diagrams are not rendered and no web
-  workers are spawned at all. Their worker clients are opt-in subpath imports
-  (`markstream-vue/workers/*`). If you want them, install the peers (`katex`,
-  `mermaid`) and wire the corresponding worker/loader from the markstream-vue
-  docs — web workers are the one feature whose support in the JavaFX WebView
-  port is not guaranteed, so test in the actual app, not just a browser.
+- Currency vs math: a `$` that reads as a money amount is rewritten to the
+  `\$` escape before the renderer parses it (`src/currency-guard.ts`), so one
+  reply can contain both `$E = mc^2$` and "two tickets: $312 and $289". Dollars
+  inside code fences and code spans are left alone. To see it work without
+  running the app: `pnpm dev`, then the sample buttons in the bottom bar
+  (`import.meta.env.DEV` folds them out of a production build).
+  Note: this page is `markstream-view.html`, not `index.html`. Before the root
+  redirect was added, `http://localhost:5173/` answered 404 while Vite was
+  running quite happily, because dev only serves `<root>/index.html`. The page
+  lives at `http://localhost:5173/markstream-view.html` either way.
 - The default markstream theme follows the `dark` class on `<html>`; brand
   themes (e.g. `data-theme="claude"`) can be set by extending `msSetTheme`.

@@ -31,7 +31,7 @@ public class TurnfabApp extends GuiceApplication {
 			Scene scene = new Scene(root);
 			scene.getStylesheets().add(getClass().getResource("application.css").toExternalForm());
 			primaryStage.setScene(scene);
-			primaryStage.setTitle("Turnfab V1.03");
+			primaryStage.setTitle("Turnfab V1.04");
 		    primaryStage.addEventHandler(WindowEvent.WINDOW_SHOWN, (evt)->{if (SplashScreen.getSplashScreen()!=null) SplashScreen.getSplashScreen().close();});
 			primaryStage.show();
 		} catch(Exception e) {

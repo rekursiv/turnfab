@@ -1,8 +1,10 @@
-import { createApp, nextTick, ref } from 'vue'
+import { computed, createApp, nextTick, ref } from 'vue'
 import MarkdownRender from 'markstream-vue'
 import { useStickToBottom } from 'markstream-vue/utils'
 import 'markstream-vue/index.css'
 import 'katex/dist/katex.min.css'
+import { escapeCurrencyDollars } from './currency-guard'
+import { AST_CASES, SAMPLES, type Sample } from './dev-samples'
 
 //
 // Bridge between the JavaFX side and the Vue app.
@@ -36,6 +38,22 @@ const app = createApp({
     // disabled for already-complete content, which should render immediately.
     const smoothStreaming = ref<boolean | 'auto'>('auto')
     let streaming = false
+
+    // What the renderer actually sees: `content` stays the model's own words
+    // (that string is what the Java side mirrors into saved .md files), while
+    // this view hides the dollars that would otherwise be read as TeX delimiters.
+    //
+    // `?raw=1` (dev only) switches the guard off, so the same text can be shown
+    // both ways and compared. It exists because a clean render proves nothing
+    // about the renderer once the guard is in front of it.
+    const rawMode = import.meta.env.DEV
+      && typeof window !== 'undefined'
+      && new URLSearchParams(window.location.search).has('raw')
+    if (rawMode) {
+      console.warn('[markstream] raw mode: currency guard is OFF')
+    }
+    const displayContent = computed(() =>
+      rawMode ? content.value : escapeCurrencyDollars(content.value))
 
     // #app is the scroll container (see markstream-view.html): element
     // 'scroll' events are reliable here, unlike document-viewport scroll
@@ -112,11 +130,104 @@ const app = createApp({
       })
     }
 
-    return { content, finalDoc, smoothStreaming, contentRoot }
+    // --- dev-only hand-testing kit (dropped from the production build) --------
+
+    // Vite folds import.meta.env.DEV to false for a build, so the panel markup
+    // below is dropped and the timer can never fire in the WebView. The sample
+    // strings themselves do stay in the bundle (a few hundred bytes, inert).
+    const samples = SAMPLES
+    const draft = ref(SAMPLES[1].text)
+    let streamTimer: ReturnType<typeof window.setInterval> | undefined
+
+    function loadSample(s: Sample) {
+      draft.value = s.text
+      window.msLoad(s.text)
+    }
+
+    function loadDraft() {
+      window.msLoad(draft.value)
+    }
+
+    function clearAll() {
+      window.msReset()
+    }
+
+    /** Push the draft out in small pieces, like a model answering. */
+    function streamDraft() {
+      window.msReset()
+      const text = draft.value
+      let i = 0
+      if (streamTimer !== undefined) {
+        window.clearInterval(streamTimer)
+      }
+      streamTimer = window.setInterval(() => {
+        window.msAppend(text.slice(i, i + 12))
+        i += 12
+        if (i >= text.length) {
+          window.msComplete()
+          window.clearInterval(streamTimer)
+        }
+      }, 25)
+    }
+
+    /**
+     * Sends the report cases straight to the parser and prints what it produced.
+     * Rendering proves only that text looks wrong; the node tree is what shows a
+     * math_inline node wrapping prose, which is the thing worth filing.
+     */
+    async function dumpAst() {
+      const mod = await import('markstream-vue') as unknown as {
+        getMarkdown?: (id?: string) => unknown
+        parseMarkdownToStructure?: (md: string, inst: unknown, opts?: unknown) => unknown
+      }
+      if (typeof mod.getMarkdown !== 'function' || typeof mod.parseMarkdownToStructure !== 'function') {
+        console.error('[markstream] markstream-vue does not re-export getMarkdown/parseMarkdownToStructure.'
+          + ' Add the parser package and import it here instead.')
+        return
+      }
+      const inst = mod.getMarkdown('currency-report')
+      for (const c of AST_CASES) {
+        const nodes = mod.parseMarkdownToStructure(c.text, inst, { final: true })
+        const json = JSON.stringify(nodes)
+        const hits = json.match(/"math_inline"/g)?.length ?? 0
+        console.log(`=== ${c.name} ===\ninput: ${c.text}\nmath_inline count: ${hits}\nAST: ${json}\n`)
+      }
+    }
+
+    return {
+      content,
+      displayContent,
+      finalDoc,
+      smoothStreaming,
+      contentRoot,
+      samples,
+      rawMode,
+      draft,
+      loadSample,
+      loadDraft,
+      clearAll,
+      streamDraft,
+      dumpAst,
+    }
   },
   template:
     '<div ref="contentRoot">' +
-    '  <MarkdownRender mode="chat" :content="content" :final="finalDoc" :smooth-streaming="smoothStreaming" />' +
+    '  <MarkdownRender mode="chat" :content="displayContent" :final="finalDoc" :smooth-streaming="smoothStreaming" />' +
+    (import.meta.env.DEV
+      ? '<div style="position:fixed;left:0;right:0;bottom:0;z-index:9;border-top:1px solid #b0a98f;' +
+        'background:#fffdf5;padding:6px 10px;box-shadow:0 -2px 8px rgb(0 0 0 / 15%);font:12px system-ui">' +
+        '<div v-if="rawMode" style="color:#a00;font-weight:600">raw mode: currency guard is OFF</div>' +
+        '<div style="display:flex;flex-wrap:wrap;gap:6px;align-items:center">' +
+        '<button v-for="s in samples" :key="s.name" :title="s.note" @click="loadSample(s)">{{ s.name }}</button>' +
+        '<span style="flex:1"></span>' +
+        '<button @click="streamDraft">stream draft</button>' +
+        '<button @click="loadDraft">load draft</button>' +
+        '<button @click="clearAll">clear</button>' +
+        '<button title="Print the parsed node tree for the four report cases to the browser console" @click="dumpAst">dump AST</button>' +
+        '</div>' +
+        '<textarea v-model="draft" rows="5" style="width:100%;margin-top:6px;font:12px ui-monospace,monospace"></textarea>' +
+        '</div>'
+      : '') +
     '</div>',
 })
 
