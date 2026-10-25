@@ -37,6 +37,7 @@ public class ChatController {
 	@Inject private SystemConfig cfg;
 	@Inject private EventBus eb;
 	@Inject private GuiceFXMLLoader fxmlLoader;
+	@Inject private MarkstreamView msView;
 
 	@Inject private DynamicMcpToolProvider toolProvider;
 	@Inject private TokenJockey tokenJockey;
@@ -48,7 +49,6 @@ public class ChatController {
 	@FXML private Label lblCtxUsage;
 	@FXML private Label lblTokPerSec;
 
-	private MarkstreamView msView = new MarkstreamView();
 	private StringBuilder mdRaw = new StringBuilder();
 
 	private boolean sendArmed = false;

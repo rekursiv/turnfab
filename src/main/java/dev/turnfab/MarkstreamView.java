@@ -51,6 +51,7 @@ import java.util.stream.Stream;
  * which opens them in the system browser, and a location guard that catches whatever the hook
  * cannot see and puts the page back if it was ever replaced.
  */
+@SuppressWarnings("removal")
 public class MarkstreamView {
 
   /** Classpath location of the built markstream page. */
@@ -72,7 +73,8 @@ public class MarkstreamView {
         // Nothing gets to open a window that nobody would show.
         window.open = function () { return null; };
         function onClickLink(e) {
-          if (e.defaultPrevented) { return; }
+          // Nothing is skipped because of defaultPrevented: in the capture phase it reads false
+          // here in any case, and a link some other script has already cancelled is still a link.
           var target = null;
           var path = (typeof e.composedPath === 'function') ? e.composedPath() : [];
           for (var i = 0; i < path.length; i++) {
@@ -81,17 +83,22 @@ public class MarkstreamView {
           if (!target && e.target && e.target.closest) { target = e.target.closest('a'); }
           if (!target) { return; }
           var href = target.getAttribute('href');
-          if (!href) { return; }
-          var url = null;
-          try { url = new URL(href, document.baseURI).href; } catch (bad) { url = null; }
-          // The click belongs to us now: no navigation, whatever the anchor claims.
+          if (href === null) { return; }
+          if (!window.msLinks) {
+            // Nobody to hand the click to. Better to let it through: the location guard will
+            // announce it and put the page back, which beats a link that seems to work and does
+            // nothing. If this branch is ever taken, the bridge went away under a working hook.
+            return;
+          }
+          // From here the click is ours: no navigation, whatever the anchor claims. What to do
+          // with it is decided in Java, which has the log. This side's only job is to report that
+          // a link was clicked and what it points at, even when the answer is "nothing", because a
+          // quietly dropped link and a missing hook look exactly the same from the outside.
           e.preventDefault();
           e.stopPropagation();
-          if (!url) { return; }
-          // A plain '#somewhere' is just a scroll inside the page, nothing to open.
-          if (url.split('#')[0] === location.href.split('#')[0]) { return; }
-          if (window.msLinks) { window.msLinks.open(url); }
-          else { console.warn('[markstream] no link bridge, blocked ' + url); }
+          var url = null;
+          try { url = new URL(href, document.baseURI).href; } catch (bad) { url = null; }
+          if (url === null) { window.msLinks.blocked(href); } else { window.msLinks.open(url); }
         }
         // Both, because a middle click arrives as 'auxclick' and would otherwise get through.
         document.addEventListener('click', onClickLink, true);
@@ -130,6 +137,20 @@ public class MarkstreamView {
   private StringBuilder served = new StringBuilder();
   /** Set while a hijacked page is being reloaded, cleared once the content is served again. */
   private boolean restoring = false;
+
+  /**
+   * Both halves of the callback bridge, held for as long as the view lives: the object the page
+   * calls, and the wrapper that was handed the registration.
+   *
+   * <p>Neither can be a temporary. WebKit keeps its end of a {@code setMember} registration alive
+   * through these references, and the wrapper that {@code executeScript("window")} returns is
+   * otherwise only ever a local - so an unreferenced bridge can be collected by a garbage
+   * collection in the middle of a session, leaving the page holding a property that points at
+   * nothing. Every click after that is answered with silence, the page itself carries on working,
+   * and only a restart clears it.
+   */
+  private final LinkBridge linkBridge = new LinkBridge();
+  private netscape.javascript.JSObject pageWindow;
 
   public MarkstreamView() {
     borderPane.setCenter(webView);
@@ -223,20 +244,31 @@ public class MarkstreamView {
    * <p>{@code netscape.javascript.JSObject} is how a WebView lets a page call back into the JVM,
    * and it is deprecated for removal since JDK 24. It still works, and the page keeps its click
    * hook even if this one call fails, so what would be lost is the external open rather than the
-   * page lock - which is why it is still the choice here. The name is written out in full so the
-   * suppression can sit on this method instead of on the file.
+   * page lock - which is why it is still the choice here. The name is written out in full rather
+   * than imported so the removal allowance can be given to the class rather than to the file.
+   *
+   * <p>The wrapper this returns is kept in {@link #pageWindow} instead of being used and dropped,
+   * for the reason given on {@link #linkBridge}.
    */
-  @SuppressWarnings("removal")
   private void wireLinks() {
     try {
-      ((netscape.javascript.JSObject) engine.executeScript("window"))
-          .setMember("msLinks", new LinkBridge());
+      pageWindow = null;
+      pageWindow = (netscape.javascript.JSObject) engine.executeScript("window");
+      pageWindow.setMember("msLinks", linkBridge);
     } catch (RuntimeException e) {
-      // The hook still swallows the click, so failing here costs the external open and not the
-      // page itself: a silent browser rather than a hijacked one.
-      log.log(Level.WARNING, "Link bridge not installed, links will be blocked instead of opened", e);
+      log.log(Level.WARNING, "Link bridge not installed into the page", e);
+    }
+    // The bridge before the hook, and only when the page confirms it. A hook without a bridge
+    // swallows clicks that nobody was ever going to open, which is the one way this can fail with
+    // no trace at all. Without the hook the click does what a click normally does, and the
+    // location guard says so in the log and puts the page back.
+    if (!"object".equals(String.valueOf(engine.executeScript("typeof window.msLinks")))) {
+      log.warning("No link bridge in the page, so no click hook either: links will navigate and be blocked by the guard");
+      return;
     }
     engine.executeScript(LINK_HOOK_JS);
+    log.info("Link wiring: bridge=object hook="
+        + engine.executeScript("typeof window.__msLinkHook"));
   }
 
   /**
@@ -285,15 +317,20 @@ public class MarkstreamView {
    * view, which is the only way the chat is guaranteed to still be here afterwards.
    */
   private void openLink(String url) {
+    if (isOurPage(url)) {
+      // The page's own address, with a fragment on it or not. A plain '#somewhere' is a scroll,
+      // and there is no browser that has anything to show for the rest. Logged, because a click
+      // that ends here has to be told apart from a click that ended in nowhere.
+      log.info("Staying inside the page for " + url);
+      return;
+    }
     String scheme = schemeOf(url);
     if (scheme.equals("http") || scheme.equals("https") || scheme.equals("mailto")
         || scheme.equals("file")) {
-      if (!isOurPage(url)) {
-        openExternally(url);
-      }
+      openExternally(url);
       return;
     }
-    log.warning("Ignored a link with nothing to open it: " + url);
+    log.warning("Ignored a link with nothing that could open it: " + url);
   }
 
   /** The {@code scheme:} a URL opens with, or the empty string when it has none. */
@@ -312,37 +349,59 @@ public class MarkstreamView {
   }
 
   /**
-   * Hands the URL to the operating system. AWT's browse call is free to block until the browser
-   * gets back to it, and the FX thread is not where that should happen.
+   * Hands the URL to the operating system: the desktop first, a helper process second.
+   *
+   * <p>The desktop gets first offer because it is what the platform actually recommends, and it
+   * answers with an exception when it cannot, which is a better report than launching something
+   * may or may not have opened. The helper is there for the sessions where there is no desktop to
+   * ask, which is also the case on a machine with no AWT desktop at all.
+   *
+   * <p>Both are asked off the FX thread. The browse call documents that it may block for as long
+   * as the browser takes to answer, and the thread that draws the UI is not where that belongs.
    */
   private void openExternally(String url) {
     Thread opener = new Thread(() -> {
-      try {
-        if (Desktop.isDesktopSupported()
-            && Desktop.getDesktop().isSupported(Desktop.Action.BROWSE)) {
-          Desktop.getDesktop().browse(URI.create(url));
-          return;
-        }
-      } catch (IOException
-          | IllegalArgumentException
-          | SecurityException
-          | UnsupportedOperationException e) {
-        log.log(Level.FINE, "Desktop.browse could not open " + url, e);
+      if (!browseWithDesktop(url)) {
+        browseWithHelper(url);
       }
-      browseWithHelper(url);
     }, "open-link");
     opener.setDaemon(true);
     opener.start();
   }
 
-  /** No desktop session to work with (a minimal Linux install, a headless box): ask the shell. */
+  /**
+   * @return true when the desktop was able to take the URL, so there is nothing left to ask.
+   */
+  private boolean browseWithDesktop(String url) {
+    try {
+      if (!Desktop.isDesktopSupported()
+          || !Desktop.getDesktop().isSupported(Desktop.Action.BROWSE)) {
+        return false;
+      }
+      Desktop.getDesktop().browse(URI.create(url));
+      log.info("Opened " + url + " in the system browser");
+      return true;
+    } catch (IOException
+        | IllegalArgumentException
+        | UnsupportedOperationException e) {
+      // Not a failure yet, since the helper gets the same URL. Fine rather than warning, because
+      // the one line this whole path costs on an ordinary click is the one in the helper.
+      log.log(Level.FINE, "The desktop has no answer for " + url, e);
+      return false;
+    }
+  }
+
+  /** The fallback for a session with no desktop to ask, whatever opener the environment ships. */
   private void browseWithHelper(String url) {
     String os = System.getProperty("os.name", "").toLowerCase(Locale.ROOT);
+    // Rundll32 on Windows rather than 'cmd /c start': cmd reparses the command line it is given,
+    // and an & inside a URL is a command separator to it.
     ProcessBuilder builder = os.contains("win")
         ? new ProcessBuilder("rundll32", "url.dll,FileProtocolHandler", url)
         : os.contains("mac") ? new ProcessBuilder("open", url) : new ProcessBuilder("xdg-open", url);
     try {
       builder.start();
+      log.info("Asked " + builder.command().getFirst() + " to open " + url);
     } catch (IOException e) {
       log.log(Level.WARNING, "Nothing could open " + url, e);
     }
@@ -451,9 +510,32 @@ public class MarkstreamView {
      * @param url absolute URL of the clicked link
      */
     public void open(String url) {
-      if (url != null) {
+      // Nothing is allowed to leave this method as an exception. WebKit reports it to the page as
+      // a script error, and a script error is a good way to explain a page that goes on not
+      // answering clicks, so the failure has to be a log line rather than a broken script context.
+      try {
+        if (url == null || url.isEmpty()) {
+          return;
+        }
+        // Fine rather than info: what a click is worth on the ordinary path is the one line the
+        // opener logs when the URL actually leaves for the browser. This is here for the days the
+        // click reaches Java and nothing after it does, and for those days the level gets raised.
+        log.fine("Link clicked: " + url);
         openLink(url);
+      } catch (Throwable refused) {
+        log.log(Level.WARNING, "Could not take the link to " + url, refused);
       }
+    }
+
+    /**
+     * A click on an anchor whose {@code href} the page could not make sense of, so there is
+     * nothing to hand to a browser. All that is left is to say so: the point of this method is
+     * that no click is ever answered with silence.
+     *
+     * @param href the raw attribute value that would not resolve
+     */
+    public void blocked(String href) {
+      log.warning("Clicked link that resolved to nothing: [" + href + "]");
     }
   }
 

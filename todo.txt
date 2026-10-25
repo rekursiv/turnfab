@@ -1,9 +1,11 @@
 
-disable links in MD or route to system browser
+
 
 find out if MSV has a setting to not put a scrollbar on long fenced code blocks
 
-
+save MD/session:
+  put dir alongside other tf dirs
+  name file (or dir) to distinguish md/session
 
 === Setup tab  ===
 
