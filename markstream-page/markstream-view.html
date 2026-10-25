@@ -42,6 +42,16 @@
         --ms-font-sans: "Segoe UI Emoji", "Apple Color Emoji", ui-sans-serif,
           system-ui, sans-serif;
       }
+
+      /*
+       * "code header" toggle hook: the Vue wrapper adds .hide-code-headers to
+       * its root div when the dev-panel button switches headers off. The #app
+       * id prefix wins specificity against the library's own display rules for
+       * the header row, regardless of stylesheet import order.
+       */
+      #app .hide-code-headers .code-block-header {
+        display: none;
+      }
     </style>
   </head>
   <body>

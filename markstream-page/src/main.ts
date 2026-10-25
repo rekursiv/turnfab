@@ -55,6 +55,19 @@ const app = createApp({
     const displayContent = computed(() =>
       rawMode ? content.value : escapeCurrencyDollars(content.value))
 
+    // --- code block surface knobs -------------------------------------------
+    // Nested-scroll fix: a <pre> captures the mouse wheel only while its own
+    // scroll port can move. The library default (500px max-height) turns every
+    // long block into a nested scroller that eats the wheel until it hits its
+    // own end; CodeBlockOptions.maxHeight must be a positive finite number, so
+    // "no limit" means a value no real block will ever reach. The same option
+    // is honored by both code surfaces (enhanced and pre).
+    const codeBlockOptions = { maxHeight: 1_000_000 }
+    // Toggle knob: adds .hide-code-headers to the wrapper div; the CSS rule in
+    // markstream-view.html hides the shell header (icon + title + copy bar).
+    // Headers stay ON by default.
+    const showCodeHeaders = ref(false)
+
     // #app is the scroll container (see markstream-view.html): element
     // 'scroll' events are reliable here, unlike document-viewport scroll
     // events in this WebView.
@@ -200,6 +213,8 @@ const app = createApp({
       finalDoc,
       smoothStreaming,
       contentRoot,
+      codeBlockOptions,
+      showCodeHeaders,
       samples,
       rawMode,
       draft,
@@ -211,8 +226,10 @@ const app = createApp({
     }
   },
   template:
-    '<div ref="contentRoot">' +
-    '  <MarkdownRender mode="chat" :content="displayContent" :final="finalDoc" :smooth-streaming="smoothStreaming" />' +
+    '<div ref="contentRoot" :class="{ \'hide-code-headers\': !showCodeHeaders }">' +
+    // render-code-blocks-as-pre: plain <pre><code> output (PreCodeNode) instead of the
+    // enhanced code surface — lighter, no syntax highlighting or copy/diff controls.
+    '  <MarkdownRender mode="chat" :content="displayContent" :final="finalDoc" :smooth-streaming="smoothStreaming" :code-block-options="codeBlockOptions" render-code-blocks-as-pre />' +
     (import.meta.env.DEV
       ? '<div style="position:fixed;left:0;right:0;bottom:0;z-index:9;border-top:1px solid #b0a98f;' +
         'background:#fffdf5;padding:6px 10px;box-shadow:0 -2px 8px rgb(0 0 0 / 15%);font:12px system-ui">' +
@@ -223,6 +240,7 @@ const app = createApp({
         '<button @click="streamDraft">stream draft</button>' +
         '<button @click="loadDraft">load draft</button>' +
         '<button @click="clearAll">clear</button>' +
+        '<button title="show/hide the code block header bar" @click="showCodeHeaders = !showCodeHeaders">code header: {{ showCodeHeaders ? "on" : "off" }}</button>' +
         '<button title="Print the parsed node tree for the four report cases to the browser console" @click="dumpAst">dump AST</button>' +
         '</div>' +
         '<textarea v-model="draft" rows="5" style="width:100%;margin-top:6px;font:12px ui-monospace,monospace"></textarea>' +

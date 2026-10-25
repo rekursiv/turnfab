@@ -1,7 +1,8 @@
 
+put prompt from setup in convo
 
-
-find out if MSV has a setting to not put a scrollbar on long fenced code blocks
+tool call/response: maybe change fenced blocks to inline code blocks?
+  put response in blockquote
 
 save MD/session:
   put dir alongside other tf dirs
@@ -46,8 +47,6 @@ For multi-block messages use @UserMessage List<Content> (text + images) — same
 === rendering issues ===
 
 WebView: every emoji has a box after it that overlaps the first letter that comes next (JavaFX upgrade??)
-
-tool call/response: maybe change fenced blocks to inline code blocks?
 
 rendering thinking in markdown can really screw up the parser, any way to render that section plaintext?
   when model is thinking about code, it can output something like "curTask==null" and the "==" activates hiliting
