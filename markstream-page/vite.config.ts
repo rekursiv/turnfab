@@ -70,8 +70,7 @@ export default defineConfig(({ command }) => ({
     },
   },
   build: {
-    // The JavaFX 25 WebView ships WebKit 622 (Safari 18 era); ES2020 is safely supported.
-    target: 'es2020',
+    target: 'es2023',
     outDir: fileURLToPath(new URL('../src/main/resources/dev/turnfab/markstream', import.meta.url)),
     // outDir lives outside this project's root; opt in explicitly.
     emptyOutDir: true,
