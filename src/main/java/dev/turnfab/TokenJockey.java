@@ -140,12 +140,8 @@ public class TokenJockey {
         currentToolIndex = -1;
 
         sendStream("\n\n## ==Turn "+turnNumber+"==\n");
-        if (evt.getUserPromptSummary()!=null && !evt.getUserPromptSummary().isBlank()) {
-            sendStream(evt.getUserPromptSummary());
-            sendStream(evt.getUserPrompt());
-        } else {
-            sendStream(evt.getUserPrompt());
-        }
+        if (evt.getUserPromptSummary()!=null && !evt.getUserPromptSummary().isBlank()) sendStream(evt.getUserPromptSummary());
+        else sendStream(evt.getUserPrompt());
 
         // The thinking toggle is picked up every turn from the shared SystemConfig singleton,
         // so flipping it in the Setup window takes effect on the next turn without any rebuild.

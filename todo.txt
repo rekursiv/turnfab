@@ -1,5 +1,4 @@
 
-
 tool call/response: maybe change fenced blocks to inline code blocks?
   put response in blockquote
 
