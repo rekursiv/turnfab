@@ -46,7 +46,8 @@ public class TokenJockey {
     // trajectory, including whatever has already evicted.
     private JournalingChatMemory chatMemory;
 
-    private Section currentSection = Section.NONE;
+    private Section rootSection = Section.NONE;
+    private Section subSection = Section.NONE;
     private int currentToolIndex = -1;
     private int toolCallChunks = 0;
     private int turnNumber = 0;
@@ -136,7 +137,8 @@ public class TokenJockey {
         }
 
         armCancel = false;
-        currentSection = Section.NONE;
+        rootSection = Section.NONE;
+        subSection = Section.NONE;
         currentToolIndex = -1;
 
         sendStream("\n\n## ==Turn "+turnNumber+"==\n");
@@ -163,10 +165,13 @@ public class TokenJockey {
                 .onPartialThinkingWithContext((PartialThinking partialThinking, PartialThinkingContext context) -> {
                     if (partialThinking.text() == null || partialThinking.text().isEmpty()) return;
                     recomputeStatsIfPending();
-                    if (currentSection != Section.THINKING) {
+                    if (subSection != Section.THINKING) {
                         closeSection();
-                        sendStream("\n\n==Thinking:==\n");
-                        currentSection = Section.THINKING;
+                        subSection = Section.THINKING;
+                    }
+                    if (rootSection != Section.THINKING) {
+                        sendStream("\n\n==Thinking:==\n\n");
+                        rootSection = Section.THINKING;
                     }
                     sendStream(partialThinking.text());
                     outputTokens += tcEst.estimateTokenCountInText(partialThinking.text());
@@ -180,11 +185,14 @@ public class TokenJockey {
                 .onPartialResponseWithContext((PartialResponse partialResponse, PartialResponseContext context) -> {
                     if (partialResponse.text() == null || partialResponse.text().isEmpty()) return;
                     recomputeStatsIfPending();
-                    if (currentSection == Section.TOOL_CALL) return; // don't steal section mid tool-call streaming
-                    if (currentSection != Section.RESPONSE) {
+                    if (subSection == Section.TOOL_CALL) return; // don't steal section mid tool-call streaming
+                    if (subSection != Section.RESPONSE) {
                         closeSection();
-                        sendStream("\n\n==Response:==\n");
-                        currentSection = Section.RESPONSE;
+                        subSection = Section.RESPONSE;
+                    }
+                    if (rootSection != Section.RESPONSE) {
+                        sendStream("\n==Response:==\n");
+                        rootSection = Section.RESPONSE;
                     }
                     sendStream(partialResponse.text());
                     outputTokens += tcEst.estimateTokenCountInText(partialResponse.text());
@@ -197,14 +205,14 @@ public class TokenJockey {
                 })
                 .onPartialToolCall(partialToolCall -> {
                     recomputeStatsIfPending();
-                    if (currentSection != Section.TOOL_CALL
+                    if (subSection != Section.TOOL_CALL
                             || partialToolCall.index() != currentToolIndex) {
-                        if (currentSection == Section.TOOL_CALL) {
-                            sendStream("`"); // close the previous call's fenced block
+                        if (subSection == Section.TOOL_CALL) {
+                            sendStream("`"); // close the previous call's code block
                         }
                         closeSection();
-                        sendStream("\n\n==Tool Call:==   *"+partialToolCall.id()+" : "+partialToolCall.name()+"*   `");
-                        currentSection = Section.TOOL_CALL;
+                        sendStream("\n==Tool Call:==   *"+partialToolCall.id()+" : "+partialToolCall.name()+"*   `");
+                        subSection = Section.TOOL_CALL;
                         currentToolIndex = partialToolCall.index();
                         toolCallChunks = 0;
                     }
@@ -219,11 +227,11 @@ public class TokenJockey {
                     // The model finished streaming this tool-calling round: every partial
                     // callback for it has already been delivered. Reset so the next round
                     // opens fresh sections instead of continuing stale ones.
-                    if (currentSection == Section.TOOL_CALL) {
-                        sendStream("`"); // close the last call's fenced block
+                    if (subSection == Section.TOOL_CALL) {
+                        sendStream("`"); // close the last call's code block
                     }
                     closeSection();
-                    currentSection = Section.NONE;
+                    subSection = Section.NONE;
                     currentToolIndex = -1;
                     // Stats recompute is deferred: tool results only land in chat memory after
                     // every onToolExecuted has fired. recomputeStatsIfPending() picks it up at
@@ -232,14 +240,15 @@ public class TokenJockey {
                 .onToolExecuted(execution -> {
                     flushStream(false);
                     sendStream("> Tool Result:   "+execution.request().id()+" : "+execution.request().name());
-                    if (execution.duration().toSeconds()>1)	sendStream("    took "+execution.duration().toSeconds()+" seconds*  \n");
-                    else sendStream("\n");
-                    if (execution.hasFailed()) sendStream("`"+execution.result()+"`\n");
+                    if (execution.duration().toSeconds()>1)	sendStream("    took "+execution.duration().toSeconds()+" seconds");
+                    if (execution.hasFailed()) sendStream("   `"+execution.result()+"`");
+                    sendStream("\n\n");
                     flushStream(false);
                     statsRecomputePending = true;
                 })
                 .onCompleteResponse(response -> {
-                    currentSection = Section.NONE;
+                    rootSection = Section.NONE;
+                    subSection = Section.NONE;
                     currentToolIndex = -1;
 //					log.info("'"+response.aiMessage().text()+"'");
 //					log.info("finishReason="+response.metadata().finishReason()+",  "+response.metadata().tokenUsage());
@@ -249,7 +258,8 @@ public class TokenJockey {
                     flushStream(true);
                 })
                 .onError(error -> {
-                    currentSection = Section.NONE;
+                    rootSection = Section.NONE;
+                    subSection = Section.NONE;
                     currentToolIndex = -1;
                     error.printStackTrace();
                     flushStream(true);
@@ -279,9 +289,9 @@ public class TokenJockey {
      * so the next section's header doesn't get absorbed into it.
      */
     private void closeSection() {
-        if (currentSection != Section.NONE) {
+        if (subSection != Section.NONE) {
             flushStream(false);
-            sendStream("\n");
+            sendStream("\n\n");
         }
     }
 

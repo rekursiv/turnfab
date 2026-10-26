@@ -1,5 +1,5 @@
 
-TokenJockey: change state machine so that "Thinking" header is not emitted after every tool call
+AGENTS.md?
 
 === Setup tab  ===
 
