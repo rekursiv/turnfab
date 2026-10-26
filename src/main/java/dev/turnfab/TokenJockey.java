@@ -200,10 +200,10 @@ public class TokenJockey {
                     if (currentSection != Section.TOOL_CALL
                             || partialToolCall.index() != currentToolIndex) {
                         if (currentSection == Section.TOOL_CALL) {
-                            sendStream("\n```\n"); // close the previous call's fenced block
+                            sendStream("`"); // close the previous call's fenced block
                         }
                         closeSection();
-                        sendStream("\n\n==Tool Call:==   *"+partialToolCall.id()+" : "+partialToolCall.name()+"*\n```json\n");
+                        sendStream("\n\n==Tool Call:==   *"+partialToolCall.id()+" : "+partialToolCall.name()+"*   `");
                         currentSection = Section.TOOL_CALL;
                         currentToolIndex = partialToolCall.index();
                         toolCallChunks = 0;
@@ -220,7 +220,7 @@ public class TokenJockey {
                     // callback for it has already been delivered. Reset so the next round
                     // opens fresh sections instead of continuing stale ones.
                     if (currentSection == Section.TOOL_CALL) {
-                        sendStream("\n```\n"); // close the last call's fenced block
+                        sendStream("`"); // close the last call's fenced block
                     }
                     closeSection();
                     currentSection = Section.NONE;
@@ -231,9 +231,9 @@ public class TokenJockey {
                 })
                 .onToolExecuted(execution -> {
                     flushStream(false);
-                    sendStream("\n==Tool Result:==   *"+execution.request().id()+" : "+execution.request().name());
+                    sendStream("> Tool Result:   "+execution.request().id()+" : "+execution.request().name());
                     if (execution.duration().toSeconds()>1)	sendStream("    took "+execution.duration().toSeconds()+" seconds*  \n");
-                    else sendStream("*\n");
+                    else sendStream("\n");
                     if (execution.hasFailed()) sendStream("`"+execution.result()+"`\n");
                     flushStream(false);
                     statsRecomputePending = true;

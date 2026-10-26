@@ -1,10 +1,5 @@
 
-tool call/response: maybe change fenced blocks to inline code blocks?
-  put response in blockquote
-
-save MD/session:
-  put dir alongside other tf dirs
-  name file (or dir) to distinguish md/session
+TokenJockey: change state machine so that "Thinking" header is not emitted after every tool call
 
 === Setup tab  ===
 
@@ -16,8 +11,9 @@ Reset button?  not sure how useful this would be?
   remove all tools from DynMcpTP
   could pass in boolean resetTurn to BeginTurnEvent
 
-load MD file into separate tab, move Load MD btn from Chat tab to Setup tab
-  if kept as-is, be sure to clear the WebView when starting a new chat (after loading an old one)
+work out how to handle loading sessions vs. loading MD
+  sometimes it would be useful to load MD file into separate tab (move Load MD btn from Chat tab to Setup tab)
+  when loading a session, should the old chat be cleared from MarkdownView?
 
 ToolContextManager promptSummary
   report tokens/percent instead of # chars
@@ -26,7 +22,7 @@ ToolContextManager promptSummary
 
 === Chat tab ===
 
-
+save HTML
 
 === ideas ===
 

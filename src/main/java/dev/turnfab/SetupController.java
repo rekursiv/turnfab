@@ -131,7 +131,7 @@ public class SetupController {
 	@FXML
 	public void onSendPrompt() {
 		eb.post(new BeginTurnEvent(txaSysPrompt.getText(), toolManager.getPrompt()+txaUserPrompt.getText(),
-				toolManager.getPromptSummary()+txaUserPrompt.getText()));
+				toolManager.getPromptSummary()+"\n"+txaUserPrompt.getText()));
 	}
 
 	@FXML

@@ -76,7 +76,7 @@ public class ChatController {
 
 	@FXML
 	public void onSaveMd() throws IOException {
-		File selectedFile = askUserWhereToSave("Save Markdown File As:");
+		File selectedFile = askUserWhereToSave("_MD", "Save Markdown File As:");
 		if (selectedFile!=null) {
 			eb.post(new LogEvent("  Saving markdown to: "+selectedFile.getAbsolutePath()+"\n"));
 			Files.writeString(selectedFile.toPath(), mdRaw.toString());
@@ -90,7 +90,7 @@ public class ChatController {
 	 */
 	@FXML
 	public void onSaveSession() {
-		File selectedFile = askUserWhereToSave("Save Session As:");
+		File selectedFile = askUserWhereToSave("_SESSION", "Save Session As:");
 		if (selectedFile==null) return;
 		eb.post(new LogEvent("  Saving session to: "+selectedFile.getAbsolutePath()+"\n"));
 		try {
@@ -243,19 +243,19 @@ public class ChatController {
 		return (avail > 0 && need > 0) ? avail / need : Double.NaN;
 	}
 
-	private File askUserWhereToSave(String title) {
+	private File askUserWhereToSave(String fileNameSuffix, String title) {
 		FileChooser fileChooser = new FileChooser();
-		fileChooser.setInitialDirectory(new File("/projects/AI/md/"));
+		fileChooser.setInitialDirectory(new File("../turnfab_sessions"));
 		fileChooser.setTitle(title);
 		fileChooser.getExtensionFilters().addAll(new FileChooser.ExtensionFilter("Markdown Files", "*.md"));
 		String dateTimeStr = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd_HH-mm-ss"));
-		fileChooser.setInitialFileName(dateTimeStr+".md");
+		fileChooser.setInitialFileName(dateTimeStr+fileNameSuffix+".md");
 		return fileChooser.showSaveDialog(txaToSend.getScene().getWindow());
 	}
 
 	private File askUserWhatToLoad() {
 		FileChooser fileChooser = new FileChooser();
-		fileChooser.setInitialDirectory(new File("/projects/AI/md/"));
+		fileChooser.setInitialDirectory(new File("../turnfab_sessions"));
 		fileChooser.setTitle("Load Markdown File:");
 		fileChooser.getExtensionFilters().addAll(new FileChooser.ExtensionFilter("Markdown Files", "*.md"));
 		return fileChooser.showOpenDialog(txaToSend.getScene().getWindow());
