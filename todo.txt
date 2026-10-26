@@ -42,8 +42,10 @@ For multi-block messages use @UserMessage List<Content> (text + images) — same
 
 WebView: every emoji has a box after it that overlaps the first letter that comes next (JavaFX upgrade??)
 
-rendering thinking in markdown can really screw up the parser, any way to render that section plaintext?
-  when model is thinking about code, it can output something like "curTask==null" and the "==" activates hiliting
+== in thinking trace (LOW PRIO, same bug class as currency-guard):
+  guard only partialThinking.text(), never headers — headers ride the same
+  stream, so a global escape eats them. ZWSP between the = chars (invisible,
+  survives code-shaped text unlike \==). Needs to hold a trailing '=' across chunks.
 
 === Markstream Update ====
 

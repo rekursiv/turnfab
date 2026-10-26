@@ -185,7 +185,10 @@ public class TokenJockey {
                 .onPartialResponseWithContext((PartialResponse partialResponse, PartialResponseContext context) -> {
                     if (partialResponse.text() == null || partialResponse.text().isEmpty()) return;
                     recomputeStatsIfPending();
-                    if (subSection == Section.TOOL_CALL) return; // don't steal section mid tool-call streaming
+                    if (subSection == Section.TOOL_CALL) {
+                        log.warning("Partial response emitted during tool call: "+partialResponse.text());
+                        return; // don't steal section mid tool-call streaming
+                    }
                     if (subSection != Section.RESPONSE) {
                         closeSection();
                         subSection = Section.RESPONSE;
@@ -258,6 +261,9 @@ public class TokenJockey {
                     flushStream(true);
                 })
                 .onError(error -> {
+                    if (subSection == Section.TOOL_CALL) {
+                        sendStream("`"); // close the last call's code block
+                    }
                     rootSection = Section.NONE;
                     subSection = Section.NONE;
                     currentToolIndex = -1;
