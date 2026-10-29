@@ -2,6 +2,7 @@ package dev.turnfab;
 
 import com.google.common.eventbus.EventBus;
 import com.google.inject.Inject;
+import dev.langchain4j.agent.tool.ToolSpecification;
 import dev.langchain4j.mcp.client.McpClient;
 import dev.langchain4j.service.tool.AiServiceTool;
 import dev.langchain4j.service.tool.ToolProviderResult;
@@ -26,6 +27,9 @@ public class ToolManager {
     private final ConfigManager<ToolContextConfig> toolCfgMgr =
             ConfigManager.yaml(ToolContextConfig.class, "../turnfab_config/tool_context.yaml");
 
+    /** The exact tool definitions currently registered, cached so token estimates do not have to list tools. */
+    private List<ToolSpecification> cachedToolSpecs = List.of();
+
     private McpServerConfig mcpServerCfg;
     private McpServerConfig.Server jbMcpMetaDef;
     private ToolContextConfig toolCfg;
@@ -43,6 +47,7 @@ public class ToolManager {
         jbMcpMetaDef = mcpServerCfg.servers.remove("jetbrains");
 
        toolCfg = toolCfgMgr.load();
+       refreshToolSpecifications();
     }
 
     public List<String> getMcpServerList() {
@@ -114,6 +119,7 @@ public class ToolManager {
         }
 
         toolProvider.setToolSpecificationMapper(new TurnfabToolSpecMapper());
+        refreshToolSpecifications();
     }
 
 
@@ -138,6 +144,27 @@ public class ToolManager {
     /** Hand-edited YAML can carry an explicit null where a tool list was expected. */
     private static Set<String> toSet(java.util.List<String> list) {
         return (list == null) ? Set.of() : Set.copyOf(list);
+    }
+
+    /**
+     * The tool specifications the provider should currently expose, cached so every token estimate does not
+     * pay for another tool listing.
+     */
+    public List<ToolSpecification> currentToolSpecifications() {
+        return cachedToolSpecs;
+    }
+
+    private void refreshToolSpecifications() {
+        try {
+            cachedToolSpecs = toolProvider.provideTools(null).aiServiceTools().stream()
+                    .map(AiServiceTool::toolSpecification)
+                    .toList();
+            log.info("Cached " + cachedToolSpecs.size() + " tool specification(s) for token accounting.");
+        } catch (Exception e) {
+            cachedToolSpecs = List.of();
+            log.log(Level.WARNING,
+                    "Could not cache the current tool specifications; tool tokens will be counted as zero.", e);
+        }
     }
 
     public String getEnabledTools() {

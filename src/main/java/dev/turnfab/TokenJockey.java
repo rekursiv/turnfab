@@ -42,6 +42,10 @@ public class TokenJockey {
     private String systemPrompt = "";
     private TokenCountEstimator tcEst = new OpenAiTokenCountEstimator("o200K_BASE"); // hack to trigger this.encoding = ENCODING_REGISTRY.getEncoding(O200K_BASE);
 
+    /** Counts reasoning already stored in assistant messages, plus the current tool-definition overhead. */
+    private final ReasoningAndToolAwareTokenCountEstimator windowEstimator =
+            new ReasoningAndToolAwareTokenCountEstimator(tcEst);
+
     // The window is what the model sees; JournalingChatMemory also keeps the full session
     // trajectory, including whatever has already evicted.
     private JournalingChatMemory chatMemory;
@@ -70,6 +74,7 @@ public class TokenJockey {
 
     public void initBot() {
         ensureMemory();
+        refreshToolAwareness();
         if (bot == null) buildBot();
     }
 
@@ -83,7 +88,7 @@ public class TokenJockey {
         modelCfg = modelCfgMgr.load();
         chatMemory = new JournalingChatMemory(
 //                TokenWindowChatMemory.withMaxTokens(calcMaxTokens(), tcEst), () -> turnNumber);
-                    TokenWindowChatMemory.withMaxTokens(100000, tcEst), () -> turnNumber);
+                    TokenWindowChatMemory.withMaxTokens(100000, windowEstimator), () -> turnNumber);
     }
 
     /** Everything that needs a live model, built on the memory that {@link #ensureMemory()} guarantees. */
@@ -150,9 +155,10 @@ public class TokenJockey {
         // The thinking toggle is picked up every turn from the shared SystemConfig singleton,
         // so flipping it in the Setup window takes effect on the next turn without any rebuild.
         qwenMode = cfg.enableThinking ? QwenMode.THINKING : QwenMode.INSTRUCT;
+        refreshToolAwareness();
 
         // reset streaming stats
-        inputTokens = tcEst.estimateTokenCountInMessages(chatMemory.messages());
+        inputTokens = windowEstimator.estimateTokenCountInMessages(chatMemory.messages());
         outputTokens = 0;
         streamStartNanos = System.nanoTime();
         lastLabelUpdateNanos = 0;
@@ -286,7 +292,7 @@ public class TokenJockey {
     private void recomputeStatsIfPending() {
         if (!statsRecomputePending) return;
         statsRecomputePending = false;
-        inputTokens = tcEst.estimateTokenCountInMessages(chatMemory.messages());
+        inputTokens = windowEstimator.estimateTokenCountInMessages(chatMemory.messages());
         outputTokens = 0;
         streamStartNanos = System.nanoTime();
         lastLabelUpdateNanos = 0;
@@ -329,6 +335,19 @@ public class TokenJockey {
 
     }
 
+    /**
+     * Synchronizes the window estimator with the tool definitions the provider currently exposes. The tool
+     * cache is refreshed by {@link ToolManager} when tools are loaded or restored, so this only copies the
+     * current cached definitions into the estimator.
+     */
+    private void refreshToolAwareness() {
+        try {
+            windowEstimator.setToolSpecifications(toolManager.currentToolSpecifications());
+        } catch (Exception e) {
+            log.log(Level.WARNING, "Tool token estimate not refreshed; continuing with the previous estimate.", e);
+        }
+    }
+
     private int calcMaxTokens() {
         return (int) (modelCfg.length*(modelCfg.trim_context_percent/100.0f));
     }
@@ -363,6 +382,9 @@ public class TokenJockey {
     public void loadSession(SessionFile.Session snap) {
         ensureMemory();
 
+        restoreTools(snap.tools());
+        refreshToolAwareness();
+
         List<ChatMessage> restored = trimDanglingToolRequests(snap.messages());
         int dropped = snap.messages().size() - restored.size();
         if (dropped > 0) {
@@ -390,7 +412,6 @@ public class TokenJockey {
             cfg.enableThinking = snap.enableThinking();
             log.info("Thinking restored: " + (cfg.enableThinking ? "on" : "off"));
         }
-        restoreTools(snap.tools());
 
         log.info("Session loaded: " + inWindow + " message(s) in window, next turn " + (turnNumber + 1));
     }
