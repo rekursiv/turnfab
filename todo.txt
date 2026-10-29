@@ -1,4 +1,6 @@
 
+debug end-of-code-block slowdown in WebView
+
 unify logging: slf4j does not log to TextArea
 
 update markstream-vue, test without currency-guard

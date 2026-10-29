@@ -87,8 +87,7 @@ public class TokenJockey {
 
         modelCfg = modelCfgMgr.load();
         chatMemory = new JournalingChatMemory(
-//                TokenWindowChatMemory.withMaxTokens(calcMaxTokens(), tcEst), () -> turnNumber);
-                    TokenWindowChatMemory.withMaxTokens(100000, windowEstimator), () -> turnNumber);
+                TokenWindowChatMemory.withMaxTokens(calcMaxTokens(), windowEstimator), () -> turnNumber);
     }
 
     /** Everything that needs a live model, built on the memory that {@link #ensureMemory()} guarantees. */
