@@ -101,6 +101,7 @@ public class TokenJockey {
                 .logResponses(cfg.logResponses)
                 .returnThinking(true)
                 .sendThinking(true, "reasoning")
+                .listeners(new TokenAuditListener(tcEst, log))
                 .build();
 
 
