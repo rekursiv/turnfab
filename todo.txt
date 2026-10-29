@@ -1,4 +1,12 @@
 
+unify logging: slf4j does not log to TextArea
+
+update markstream-vue, test without currency-guard
+
+update LC4J
+
+fix TokenCountEstimator
+
 AGENTS.md?
 
 === Setup tab  ===
