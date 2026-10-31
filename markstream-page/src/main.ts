@@ -62,11 +62,18 @@ const app = createApp({
     // own end; CodeBlockOptions.maxHeight must be a positive finite number, so
     // "no limit" means a value no real block will ever reach. The same option
     // is honored by both code surfaces (enhanced and pre).
-    const codeBlockOptions = { maxHeight: 1_000_000 }
+
+    // Line numbers are the expensive part of the pre surface: with numbers and
+    // wrap the renderer gives every logical line its own <span> so the gutter
+    // stays aligned across wrapped rows (PreCodeNode.wrapsPlainCodeLines).
+    // Without numbers the block collapses to a single text node, so a 100-line
+    // fence costs 1 element instead of 100. Dropping the gutter also moves code
+    // about 5ch to the left, which is what a transcript wants anyway.
+    const codeBlockOptions = { maxHeight: 8192, disableLineNumbers: true }
     // Toggle knob: adds .hide-code-headers to the wrapper div; the CSS rule in
     // markstream-view.html hides the shell header (icon + title + copy bar).
     // Headers stay ON by default.
-    const showCodeHeaders = ref(false)
+    const showCodeHeaders = ref(true)
 
     // #app is the scroll container (see markstream-view.html): element
     // 'scroll' events are reliable here, unlike document-viewport scroll
