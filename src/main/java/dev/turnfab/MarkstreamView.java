@@ -506,6 +506,36 @@ public class MarkstreamView {
   }
 
   /**
+   * Replaces the page's markup with {@code html}, the reverse of {@link #getHtml()}: what the
+   * view shows now is what the string says.
+   *
+   * <p>A static replacement rather than a re-arming of the view, for two reasons the caller has
+   * to know about. The fragment parser runs no scripts, so the markstream renderer that lived in
+   * the replaced document is simply gone: the view displays, and stops streaming, so {@code
+   * ready} goes false until the page is really loaded again by a {@code load} of its own - the
+   * same way the link bridge survives, nothing here can bring the renderer back. And the document
+   * is patched in place, not navigated, so the location never moves and the guard stays silent.
+   * The link hook is unaffected by the difference, because it listens on {@code document}: a link
+   * inside pasted markup is a clicked link like any other, and still goes to the browser.
+   *
+   * @param html the markup to show, typically an earlier {@link #getHtml()} round trip
+   */
+  public void setHtml(String html) {
+    if (html == null) {
+      return;
+    }
+    if (!ready) {
+      log.warning("Markstream page not loaded yet, cannot set its HTML");
+      return;
+    }
+    engine.executeScript(
+        "(function () { document.documentElement.innerHTML = " + jsStringLiteral(html)
+            + "; })();");
+    ready = false;
+    log.info("Page markup replaced with " + html.length() + " characters of HTML");
+  }
+
+  /**
    * Encodes {@code s} as a JSON string literal (quoted, with {@code "}, {@code \} and control
    * characters escaped) so it can be inlined into a JavaScript string argument.
    */
