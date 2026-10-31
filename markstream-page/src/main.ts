@@ -236,7 +236,15 @@ const app = createApp({
     '<div ref="contentRoot" :class="{ \'hide-code-headers\': !showCodeHeaders }">' +
     // render-code-blocks-as-pre: plain <pre><code> output (PreCodeNode) instead of the
     // enhanced code surface — lighter, no syntax highlighting or copy/diff controls.
-    '  <MarkdownRender mode="chat" :content="displayContent" :final="finalDoc" :smooth-streaming="smoothStreaming" :code-block-options="codeBlockOptions" render-code-blocks-as-pre />' +
+
+    // EXPERIMENT (the knob, not the two props it replaced): the renderer keeps a
+    // moving window of ~50 live nodes around the viewport in chat mode, so scrolling
+    // mounts and unmounts code blocks as you go. "false" mounts the transcript once
+    // and leaves scrolling as pure paint.
+    // If a long session eventually starts degrading, try replacing :node-virtual="false"
+    // with :max-live-nodes="2000" (or even higher number)
+    '  <MarkdownRender mode="chat" :content="displayContent" :final="finalDoc" :smooth-streaming="smoothStreaming" ' +
+      ':code-block-options="codeBlockOptions" :node-virtual="false" render-code-blocks-as-pre />' +
     (import.meta.env.DEV
       ? '<div style="position:fixed;left:0;right:0;bottom:0;z-index:9;border-top:1px solid #b0a98f;' +
         'background:#fffdf5;padding:6px 10px;box-shadow:0 -2px 8px rgb(0 0 0 / 15%);font:12px system-ui">' +
