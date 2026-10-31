@@ -68,11 +68,12 @@ val copyLibs = tasks.register<Copy>("copyLibs") {
     //    !file.name.contains("javafx")
     //})
 
-    into(layout.buildDirectory.dir("libs/${appName}_lib"))
+    into(layout.projectDirectory.dir("../turnfab_launch/${appName}_lib"))
 }
 
 tasks.named<Jar>("jar") {
     archiveFileName.set("${appName}.jar")
+    destinationDirectory.set(layout.projectDirectory.dir("../turnfab_launch"))
     dependsOn(copyLibs) // Ensures lib folder is created every time you build
 
     manifest {
