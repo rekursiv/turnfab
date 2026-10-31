@@ -484,6 +484,28 @@ public class MarkstreamView {
   }
 
   /**
+   * Returns the current markup of the page: whatever the renderer has built right now, not the
+   * markdown that produced it. Worth knowing before the string is trusted: the streaming content
+   * sits inside a shadow tree, and serialization does not reach into a shadow root, so this is
+   * the outside of the document rather than the transcript - for that, the {@code served} buffer
+   * carries the exact source. Take the snapshot after {@link #complete()}, while the stream is
+   * finished rather than mid-render.
+   *
+   * @return the outer HTML of the document, or an empty string when the page is not loaded
+   */
+  public String getHtml() {
+    if (!ready) {
+      log.warning("Markstream page not loaded yet, cannot return its HTML");
+      return "";
+    }
+    // The IIFE is the syntax, not decoration: executeScript evaluates the text as a classic
+    // script, where a top-level return is a SyntaxError, and the completion value it hands back
+    // to Java is the return of the function.
+    return (String)
+        engine.executeScript("(function () { return document.documentElement.outerHTML; })();");
+  }
+
+  /**
    * Encodes {@code s} as a JSON string literal (quoted, with {@code "}, {@code \} and control
    * characters escaped) so it can be inlined into a JavaScript string argument.
    */
