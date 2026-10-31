@@ -10,8 +10,8 @@
     "dev": "vite"
   },
   "dependencies": {
-    "katex": "^0.19.0",
-    "markstream-vue": "^2.0.20"
+    "katex": "^0.19.1",
+    "markstream-vue": "^2.0.21"
   },
   "devDependencies": {
     "@vitejs/plugin-vue": "^6.0.10",
