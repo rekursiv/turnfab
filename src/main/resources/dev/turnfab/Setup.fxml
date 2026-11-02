@@ -135,22 +135,22 @@
       </HBox>
       <HBox>
          <children>
+            <Button mnemonicParsing="false" onAction="#onBeginChat" text="Begin Chat">
+               <HBox.margin>
+                  <Insets bottom="4.0" left="4.0" right="4.0" top="4.0" />
+               </HBox.margin>
+            </Button>
             <Button mnemonicParsing="false" onAction="#onLoadTools" text="Load Tools">
                <HBox.margin>
-                  <Insets bottom="4.0" left="4.0" right="4.0" top="4.0" />
-               </HBox.margin>
-            </Button>
-            <Button fx:id="btnSendPrompt" disable="true" mnemonicParsing="false" onAction="#onSendPrompt" text="Send Prompt">
-               <HBox.margin>
-                  <Insets bottom="4.0" left="40.0" right="4.0" top="4.0" />
-               </HBox.margin>
-            </Button>
-            <Button fx:id="btnShowFullPrompt" disable="true" mnemonicParsing="false" onAction="#onShowFullPrompt" text="Show Full Prompt">
-               <HBox.margin>
-                  <Insets bottom="4.0" left="4.0" right="4.0" top="4.0" />
+                  <Insets bottom="4.0" left="80.0" right="4.0" top="4.0" />
                </HBox.margin>
             </Button>
             <Button fx:id="btnShowTools" disable="true" mnemonicParsing="false" onAction="#onShowTools" text="Show Tools">
+               <HBox.margin>
+                  <Insets bottom="4.0" left="4.0" right="4.0" top="4.0" />
+               </HBox.margin>
+            </Button>
+            <Button fx:id="btnShowFullPrompt" disable="true" mnemonicParsing="false" onAction="#onShowFullPrompt" text="Show Full Prompt">
                <HBox.margin>
                   <Insets bottom="4.0" left="4.0" right="4.0" top="4.0" />
                </HBox.margin>

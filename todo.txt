@@ -3,18 +3,13 @@
 
 === Setup tab  ===
 
-re-think btns:
-  rename "Send Prompt" -> "Begin Chat", have that also load tools
-  un-grey-doubt send prompt btn, but keep - provides "preview" for user if desired
+"Begin Chat" btn:
+  should this "reset" the chat back to turn #1 and reset MarkdownView?
+    if so, warn user
 
-
-What to do when "Load Tools" btn pushed?
-  skip reset btn, selecting a new setup requires another click of Load Tools btn
-    (but then to reset the same setup, requires loading new then old...)
-  grey doubt setup ChoiceBox, until Reset btn pushed (see below)
-Reset button?  not sure how useful this would be?
-  remove all tools from DynMcpTP
-  could pass in boolean resetTurn to BeginTurnEvent
+changing the tool setup requires clicking "Load Tools" again to activate
+  show this in GUI somehow
+  load tools -> update tools (many names need changing...)
 
 drag-drop tool context
 
@@ -34,6 +29,8 @@ ToolContextManager promptSummary
 wire up save/load HTML
 
 === Tools ===
+
+remote shell tool
 
 debug issue with read_file truncating content in the middle
 

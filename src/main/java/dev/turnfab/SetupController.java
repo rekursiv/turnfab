@@ -34,7 +34,6 @@ public class SetupController {
 	@Inject private EventBus eb;
 	@Inject private ToolManager toolManager;
 
-	@FXML private Button btnSendPrompt;
 	@FXML private Button btnShowFullPrompt;
 	@FXML private Button btnShowTools;
 	@FXML private CheckBox ckbSaveAs;
@@ -59,7 +58,8 @@ public class SetupController {
 
 	private StringBuilder systemPrompt = new StringBuilder();
 
-
+	private boolean loadSetupArmed = true;
+	private boolean toolsLoaded = false;
 
 	@FXML
 	private void initialize() throws IOException {
@@ -100,19 +100,7 @@ public class SetupController {
 
 	@FXML
 	public void onLoadTools() {
-		writeGuiToSetup();
-        try {
-            toolManager.loadTools();
-        } catch (Exception e) {
-            txaToolPreview.setText(e.getMessage());
-			return;
-        }
-		txaToolPreview.setText(toolManager.getEnabledTools());
-		txaTcSummary.clear();
-		txaTcSummary.appendText(toolManager.getPromptSummary());
-		btnShowFullPrompt.setDisable(false);
-		btnSendPrompt.setDisable(false);
-		btnShowTools.setDisable(false);
+		loadTools();
 	}
 
 	@FXML
@@ -121,6 +109,12 @@ public class SetupController {
 		if (ckbSaveAs.isSelected()) {
 			setupCfgMgr.saveToFile("../turnfab_config/setups/"+txfSaveAs.getText()+".yaml", setupCfg);
 			chbSetup.getItems().add(txfSaveAs.getText()+".yaml");
+
+			// we want the file we just saved to appear in the ChoiceBox,
+			// but there is no need to actually re-load the file
+			loadSetupArmed = false;
+			chbSetup.getSelectionModel().select(txfSaveAs.getText()+".yaml");
+			loadSetupArmed = true;
 		} else {
 			setupCfgMgr.saveToFile("../turnfab_config/setups/"+chbSetup.getValue(), setupCfg);
 		}
@@ -146,9 +140,14 @@ public class SetupController {
 	}
 
 	@FXML
-	public void onSendPrompt() {
-		eb.post(new BeginTurnEvent(txaSysPrompt.getText(), toolManager.getPrompt()+txaUserPrompt.getText(),
-				toolManager.getPromptSummary()+"\n"+txaUserPrompt.getText()));
+	public void onBeginChat() {
+		if (!toolsLoaded) {
+			toolsLoaded = loadTools();
+		}
+		if (toolsLoaded) {
+			eb.post(new BeginTurnEvent(txaSysPrompt.getText(), toolManager.getPrompt()+txaUserPrompt.getText(),
+					toolManager.getPromptSummary()+"\n"+txaUserPrompt.getText()));
+		}
 	}
 
 	@FXML
@@ -203,21 +202,42 @@ public class SetupController {
 		}
 	}
 
-	private void onSelectSetup(String fileName){
-		log.info(fileName);
+	private boolean loadTools() {
+		writeGuiToSetup();
 		try {
-			// copyInto rather than loadInto: the source instance is built in full before
-			// setupCfg is touched, so a malformed file can't leave it half-updated
-			setupCfgMgr.copyInto(setupCfgMgr.loadFromFile("../turnfab_config/setups/"+fileName), setupCfg);
+			toolManager.loadTools();
 		} catch (Exception e) {
-			try {
-				// load() also creates the missing file with defaults, which is what we want here
-				setupCfgMgr.copyInto(setupCfgMgr.load(), setupCfg);
-			} catch (Exception e2) {
-				log.log(Level.WARNING, "Could not load default setup", e2);
-			}
+			txaToolPreview.setText(e.getMessage());
+			return false;
 		}
-		writeSetupToGui();
+		txaToolPreview.setText(toolManager.getEnabledTools());
+		txaTcSummary.clear();
+		txaTcSummary.appendText(toolManager.getPromptSummary());
+		btnShowFullPrompt.setDisable(false);
+		btnShowTools.setDisable(false);
+		return true;
+	}
+
+	private void onSelectSetup(String fileName){
+//		log.info("Setup file selected: "+fileName);
+		if (loadSetupArmed) {
+			try {
+				// copyInto rather than loadInto: the source instance is built in full before
+				// setupCfg is touched, so a malformed file can't leave it half-updated
+				setupCfgMgr.copyInto(setupCfgMgr.loadFromFile("../turnfab_config/setups/"+fileName), setupCfg);
+//				log.info("Setup file loaded: "+fileName);
+			} catch (Exception e) {
+				try {
+					// load() also creates the missing file with defaults, which is what we want here
+					setupCfgMgr.copyInto(setupCfgMgr.load(), setupCfg);
+				} catch (Exception e2) {
+					log.log(Level.WARNING, "Could not load default setup", e2);
+				}
+//				log.info("Default setup loaded");
+			}
+			writeSetupToGui();
+			toolsLoaded = false;
+		}
 	}
 
 	private void onSelectSystemPrompt(String fileName){
@@ -230,8 +250,6 @@ public class SetupController {
 	}
 
 	private void writeSetupToGui() {
-		log.info("Writing setup to GUI: "+setupCfg.addDateToSystemPrompt);  /////
-
 		ckbAddDate.setSelected(setupCfg.addDateToSystemPrompt);
 		chbSysPrompts.getSelectionModel().select(setupCfg.systemPromptFileName);
 		ckbThink.setSelected(setupCfg.enableThinking);
