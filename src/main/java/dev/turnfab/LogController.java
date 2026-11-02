@@ -23,9 +23,11 @@ public class LogController {
 
 	@Subscribe
 	public void onLog(LogEvent evt) {
-		Platform.runLater(()->taLog.appendText(evt.getMsg()));
+		Platform.runLater(()->{
+			if (taLog==null) return;	// events fired before this tab's FXML is loaded; posting them anyway would feed the uncaught handler in a loop
+			taLog.appendText(evt.getMsg());
+		});
 	}
 	
 }
-
 

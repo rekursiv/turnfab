@@ -80,6 +80,10 @@ public class TurnfabGuice extends AbstractModule {
 		EbLogHandler logCon = new EbLogHandler(eventBus);
 		logCon.setLevel(Level.ALL);
 		LogManager.getLogManager().getLogger("").addHandler(logCon);
+
+		// catch exceptions that never reach a Logger: uncaught threads, printStackTrace().
+		// has to come after the ConsoleHandler above, which binds to System.err when built.
+		CatchAll.install(eventBus);
 		
 		// setup logging to file
 		if (systemCfg.logToFile) {

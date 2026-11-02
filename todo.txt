@@ -1,10 +1,12 @@
 
 
-unify logging: slf4j does not log to TextArea
 
 === Setup tab  ===
 
-auto-load tools when no MCP?
+re-think btns:
+  rename "Send Prompt" -> "Begin Chat", have that also load tools
+  un-grey-doubt send prompt btn, but keep - provides "preview" for user if desired
+
 
 What to do when "Load Tools" btn pushed?
   skip reset btn, selecting a new setup requires another click of Load Tools btn
