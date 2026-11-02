@@ -206,9 +206,16 @@ public class SetupController {
 	private void onSelectSetup(String fileName){
 		log.info(fileName);
 		try {
-			setupCfg = setupCfgMgr.loadFromFile("../turnfab_config/setups/"+fileName);
+			// copyInto rather than loadInto: the source instance is built in full before
+			// setupCfg is touched, so a malformed file can't leave it half-updated
+			setupCfgMgr.copyInto(setupCfgMgr.loadFromFile("../turnfab_config/setups/"+fileName), setupCfg);
 		} catch (Exception e) {
-			setupCfg = setupCfgMgr.load();  // load defaults if no file exists
+			try {
+				// load() also creates the missing file with defaults, which is what we want here
+				setupCfgMgr.copyInto(setupCfgMgr.load(), setupCfg);
+			} catch (Exception e2) {
+				log.log(Level.WARNING, "Could not load default setup", e2);
+			}
 		}
 		writeSetupToGui();
 	}

@@ -4,17 +4,19 @@ unify logging: slf4j does not log to TextArea
 
 === Setup tab  ===
 
-!!! ConfigManager overwrites singleton shared instance of setupCfg
-
 auto-load tools when no MCP?
+
+What to do when "Load Tools" btn pushed?
+  skip reset btn, selecting a new setup requires another click of Load Tools btn
+    (but then to reset the same setup, requires loading new then old...)
+  grey doubt setup ChoiceBox, until Reset btn pushed (see below)
+Reset button?  not sure how useful this would be?
+  remove all tools from DynMcpTP
+  could pass in boolean resetTurn to BeginTurnEvent
 
 drag-drop tool context
 
 sys prompt can be edited, could add interface to save (overwriting selected or save to new file, filename TextField?)
-
-Reset button?  not sure how useful this would be?
-  remove all tools from DynMcpTP
-  could pass in boolean resetTurn to BeginTurnEvent
 
 work out how to handle loading sessions vs. loading MD
   sometimes it would be useful to load MD file into separate tab (move Load MD btn from Chat tab to Setup tab)
@@ -27,7 +29,16 @@ ToolContextManager promptSummary
 
 === Chat tab ===
 
-save HTML
+wire up save/load HTML
+
+=== Tools ===
+
+debug issue with read_file truncating content in the middle
+
+find a way to bring up tool calls later if needed (show ID, save in buffer, recall by ID?)
+  perhaps a separate tab that keeps track of tool calls
+
+build a better patch?
 
 === ideas ===
 
@@ -35,11 +46,7 @@ AGENTS.md?
 
 system notification onCompleteResponse, make easy to disable
 
-find a way to bring up tool calls later if needed (show ID, save in buffer, recall by ID?)
-
 calc an average tok/sec for a turn, display it at turn's end
-
-build a better patch?
 
 === notes ===
 

@@ -145,6 +145,12 @@ public class ConfigManager<T> {
 		return mapper.readValue(sb.toString(), modelType);
 	}
 
+	/** Clean-slate copy: target ends up holding exactly source's state, in place. */
+	public void copyInto(T source, T target) throws Exception {
+		if (mapper==null) mapper = new ObjectMapper();
+		mapper.updateValue(target, source);
+	}
+
 	
 	
 	@SuppressWarnings("unused")

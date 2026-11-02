@@ -124,7 +124,6 @@ public class TokenJockey {
     }
 
     public void armCancel() {
-        log.info("Thinking enabled: " + setupCfg.enableThinking);
         armCancel = true;
     }
 
