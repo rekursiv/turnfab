@@ -34,7 +34,7 @@ public class ChatController {
 	private static final int SIZING_PULSE_BUDGET = 8;
 
 	@Inject private Logger log;
-	@Inject private SystemConfig cfg;
+//	@Inject private SystemConfig cfg;
 	@Inject private EventBus eb;
 	@Inject private GuiceFXMLLoader fxmlLoader;
 	@Inject private MarkstreamView msView;

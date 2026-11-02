@@ -21,10 +21,10 @@ import com.google.inject.spi.TypeListener;
 public class TurnfabGuice extends AbstractModule {
 
 	protected final EventBus eventBus = new EventBus();
-	protected final ConfigManager<SystemConfig> cfgMgr =
+	protected final ConfigManager<SystemConfig> sysCfgMgr =
 			new ConfigManager<>(SystemConfig.class, "../turnfab_config/system.yaml", new ObjectMapper(new YAMLFactory()));
-	protected SystemConfig config;
-	
+	protected SystemConfig systemCfg;
+
 	@Override
 	protected void configure() {
 		setupConfig();
@@ -44,9 +44,10 @@ public class TurnfabGuice extends AbstractModule {
 	}
 	
 	protected void setupConfig() {
-		config = cfgMgr.load();
-		bind(new TypeLiteral<ConfigManager<SystemConfig>>() {}).toInstance(cfgMgr);
-		bind(SystemConfig.class).toInstance(config);
+		systemCfg = sysCfgMgr.load();
+		bind(new TypeLiteral<ConfigManager<SystemConfig>>() {}).toInstance(sysCfgMgr);
+		bind(SystemConfig.class).toInstance(systemCfg);
+		bind(SetupConfig.class).in(Singleton.class);
 	}
 
 	protected void setupEventBus() {
@@ -68,7 +69,7 @@ public class TurnfabGuice extends AbstractModule {
 		LogManager.getLogManager().reset();
 
 		// setup logging to console
-		if (config.logToConsole) {
+		if (systemCfg.logToConsole) {
 			Handler ch = new ConsoleHandler();
 			ch.setFormatter(new ConsoleFormatter());
 			ch.setLevel(Level.ALL);
@@ -81,7 +82,7 @@ public class TurnfabGuice extends AbstractModule {
 		LogManager.getLogManager().getLogger("").addHandler(logCon);
 		
 		// setup logging to file
-		if (config.logToFile) {
+		if (systemCfg.logToFile) {
 			try {
 				LogManager.getLogManager().getLogger("").addHandler(new FileHandler("log/ModelTest-%u-%g.log", 0, 10));
 			} catch (SecurityException e) {
@@ -92,7 +93,7 @@ public class TurnfabGuice extends AbstractModule {
 		}
 
 		// log config errors
-		cfgMgr.logErrorsIfAny();
+		sysCfgMgr.logErrorsIfAny();
 		
 		
 	}

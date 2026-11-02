@@ -10,37 +10,73 @@
    <children>
       <HBox>
          <children>
-            <CheckBox fx:id="ckbThink" mnemonicParsing="false" onAction="#onCkbThink" text="Enable Thinking">
+            <Label prefWidth="100.0" text="Setup:">
+               <HBox.margin>
+                  <Insets bottom="8.0" left="8.0" right="8.0" top="8.0" />
+               </HBox.margin>
+            </Label>
+            <ChoiceBox fx:id="chbSetup" prefWidth="150.0">
                <HBox.margin>
                   <Insets bottom="4.0" left="4.0" right="4.0" top="4.0" />
                </HBox.margin>
-            </CheckBox>
-            <CheckBox fx:id="ckbLogReq" mnemonicParsing="false" text="Log Requests">
+            </ChoiceBox>
+            <Button mnemonicParsing="false" onAction="#onSaveSetup" text="Save Setup">
                <HBox.margin>
-                  <Insets bottom="4.0" left="40.0" right="4.0" top="4.0" />
+                  <Insets bottom="4.0" left="80.0" right="4.0" top="4.0" />
+               </HBox.margin>
+            </Button>
+            <CheckBox fx:id="ckbSaveAs" mnemonicParsing="false" onAction="#onSaveAs" text="As:">
+               <HBox.margin>
+                  <Insets bottom="8.0" left="8.0" right="8.0" top="8.0" />
                </HBox.margin>
             </CheckBox>
-            <CheckBox fx:id="ckbLogRes" mnemonicParsing="false" text="Log Responses">
+            <TextField fx:id="txfSaveAs" disable="true">
                <HBox.margin>
                   <Insets bottom="4.0" left="4.0" right="4.0" top="4.0" />
                </HBox.margin>
-            </CheckBox>
+            </TextField>
+            <Label text=".yaml">
+               <HBox.margin>
+                  <Insets bottom="4.0" left="2.0" right="8.0" top="12.0" />
+               </HBox.margin>
+            </Label>
          </children>
+         <VBox.margin>
+            <Insets bottom="4.0" left="4.0" right="4.0" top="4.0" />
+         </VBox.margin>
       </HBox>
       <HBox>
          <VBox.margin>
             <Insets bottom="4.0" left="4.0" right="4.0" top="4.0" />
          </VBox.margin>
          <children>
-            <Label text="System Prompt:">
+            <Label prefWidth="100.0" text="System Prompt:">
                <HBox.margin>
-                  <Insets bottom="4.0" left="8.0" right="8.0" top="4.0" />
+                  <Insets bottom="8.0" left="8.0" right="8.0" top="8.0" />
                </HBox.margin>
             </Label>
-            <ChoiceBox fx:id="chbSysPrompts" prefWidth="150.0" />
+            <ChoiceBox fx:id="chbSysPrompts" prefWidth="150.0">
+               <HBox.margin>
+                  <Insets bottom="4.0" left="4.0" right="4.0" top="4.0" />
+               </HBox.margin></ChoiceBox>
             <CheckBox fx:id="ckbAddDate" mnemonicParsing="false" onAction="#onCkbAddDate" text="Add Date to System Prompt">
                <HBox.margin>
-                  <Insets bottom="4.0" left="40.0" right="4.0" top="4.0" />
+                  <Insets bottom="8.0" left="40.0" right="8.0" top="8.0" />
+               </HBox.margin>
+            </CheckBox>
+            <CheckBox fx:id="ckbThink" mnemonicParsing="false" onAction="#onCkbThink" text="Enable Thinking">
+               <HBox.margin>
+                  <Insets bottom="8.0" left="80.0" right="8.0" top="8.0" />
+               </HBox.margin>
+            </CheckBox>
+            <CheckBox fx:id="ckbLogReq" mnemonicParsing="false" text="Log Requests">
+               <HBox.margin>
+                  <Insets bottom="8.0" left="40.0" right="8.0" top="8.0" />
+               </HBox.margin>
+            </CheckBox>
+            <CheckBox fx:id="ckbLogRes" mnemonicParsing="false" text="Log Responses">
+               <HBox.margin>
+                  <Insets bottom="8.0" left="8.0" right="8.0" top="8.0" />
                </HBox.margin>
             </CheckBox>
          </children>
@@ -120,11 +156,6 @@
                </HBox.margin>
             </Button>
             <Button mnemonicParsing="false" onAction="#onClearPrompt" text="Clear Prompt">
-               <HBox.margin>
-                  <Insets bottom="4.0" left="80.0" right="4.0" top="4.0" />
-               </HBox.margin>
-            </Button>
-            <Button mnemonicParsing="false" onAction="#onSaveCfg" text="Save Config">
                <HBox.margin>
                   <Insets bottom="4.0" left="80.0" right="4.0" top="4.0" />
                </HBox.margin>

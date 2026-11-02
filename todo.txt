@@ -1,13 +1,14 @@
 
 
-
 unify logging: slf4j does not log to TextArea
-
-AGENTS.md?
 
 === Setup tab  ===
 
-global config in SystemConfig, dir /setups/ with multiple SetupConfigs, select from Setup GUI
+!!! ConfigManager overwrites singleton shared instance of setupCfg
+
+auto-load tools when no MCP?
+
+drag-drop tool context
 
 sys prompt can be edited, could add interface to save (overwriting selected or save to new file, filename TextField?)
 
@@ -29,6 +30,8 @@ ToolContextManager promptSummary
 save HTML
 
 === ideas ===
+
+AGENTS.md?
 
 system notification onCompleteResponse, make easy to disable
 

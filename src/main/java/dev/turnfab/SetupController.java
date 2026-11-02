@@ -2,6 +2,8 @@ package dev.turnfab;
 
 import com.cathive.fx.guice.FXMLController;
 import com.cathive.fx.guice.GuiceFXMLLoader;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import com.google.common.eventbus.EventBus;
 import com.google.inject.Inject;
 import javafx.collections.FXCollections;
@@ -28,18 +30,20 @@ public class SetupController {
 
 	@Inject	private Logger log;
 	@Inject private GuiceFXMLLoader fxmlLoader;
-	@Inject private ConfigManager<SystemConfig> cfgMgr;
-	@Inject private SystemConfig cfg;
+	@Inject private SetupConfig setupCfg;
 	@Inject private EventBus eb;
 	@Inject private ToolManager toolManager;
 
 	@FXML private Button btnSendPrompt;
 	@FXML private Button btnShowFullPrompt;
 	@FXML private Button btnShowTools;
+	@FXML private CheckBox ckbSaveAs;
+	@FXML private TextField txfSaveAs;
 	@FXML private CheckBox ckbThink;
 	@FXML private CheckBox ckbLogReq;
 	@FXML private CheckBox ckbLogRes;
 	@FXML private CheckBox ckbAddDate;
+	@FXML private ChoiceBox<String> chbSetup;
 	@FXML private ChoiceBox<String> chbSysPrompts;
 	@FXML private TextArea txaSysPrompt;
 	@FXML private TextArea txaToolPreview;
@@ -51,16 +55,15 @@ public class SetupController {
 	@FXML private ListView<String> lsvToolCtxAvail;
 	@FXML private ListView<String> lsvToolCtxSel;
 
+	private ConfigManager<SetupConfig> setupCfgMgr;
+
 	private StringBuilder systemPrompt = new StringBuilder();
+
+
 
 	@FXML
 	private void initialize() throws IOException {
 		toolManager.init();
-
-    	ckbThink.setSelected(cfg.enableThinking);
-		ckbLogReq.setSelected(cfg.logRequests);
-		ckbLogRes.setSelected(cfg.logResponses);
-		ckbAddDate.setSelected(cfg.addDateToSystemPrompt);
 
 		chbSysPrompts.itemsProperty().setValue(FXCollections.observableArrayList());
 		String sysPromptDir = System.getProperty("user.dir")+"/../turnfab_config/system_prompts/";
@@ -69,15 +72,9 @@ public class SetupController {
 		});
 		chbSysPrompts.valueProperty().addListener(
 				(_, _, newValue) -> onSelectSystemPrompt(newValue));
-		chbSysPrompts.getSelectionModel().select(cfg.systemPromptFileName);
 
 		clvMcpServers.itemsProperty().setValue(FXCollections.observableArrayList());
 		clvMcpServers.getItems().addAll(toolManager.getMcpServerList());
-		if (cfg.mcpServers!=null) {
-			for (String enabled : cfg.mcpServers) {
-				clvMcpServers.getCheckModel().check(enabled);
-			}
-		}
 
 		lsvToolCtxAvail.itemsProperty().setValue(FXCollections.observableArrayList());
 		lsvToolCtxAvail.getItems().addAll(toolManager.getToolContextList());
@@ -87,23 +84,23 @@ public class SetupController {
 		});
 
 		lsvToolCtxSel.itemsProperty().setValue(FXCollections.observableArrayList());
-		if (cfg.toolContext!=null) lsvToolCtxSel.getItems().addAll(cfg.toolContext);
 
-		txaUserPrompt.setText(cfg.userPrompt);
+		setupCfgMgr = new ConfigManager<>(SetupConfig.class, "../turnfab_config/setups/default.yaml", new ObjectMapper(new YAMLFactory()));
+		chbSetup.itemsProperty().setValue(FXCollections.observableArrayList());
+		String setupDir = System.getProperty("user.dir")+"/../turnfab_config/setups/";
+		Files.list(Paths.get(setupDir)).forEach(file -> {
+			chbSetup.getItems().add(file.getFileName().toString());
+		});
+		chbSetup.valueProperty().addListener(
+				(_, _, newValue) -> onSelectSetup(newValue));
+		chbSetup.getSelectionModel().select("default.yaml");
 	}
 
-	private void onSelectSystemPrompt(String fileName){
-		cfg.systemPromptFileName = fileName;
-        try {
-            loadSystemPromptFromFile(fileName);
-        } catch (IOException e) {
-            log.log(Level.WARNING, "Could not load system prompt file " + fileName, e);
-        }
-    }
+
 
 	@FXML
 	public void onLoadTools() {
-		writeGuiToCfg();
+		writeGuiToSetup();
         try {
             toolManager.loadTools();
         } catch (Exception e) {
@@ -116,6 +113,26 @@ public class SetupController {
 		btnShowFullPrompt.setDisable(false);
 		btnSendPrompt.setDisable(false);
 		btnShowTools.setDisable(false);
+	}
+
+	@FXML
+	public void onSaveSetup() throws Exception {
+		writeGuiToSetup();
+		if (ckbSaveAs.isSelected()) {
+			setupCfgMgr.saveToFile("../turnfab_config/setups/"+txfSaveAs.getText()+".yaml", setupCfg);
+			chbSetup.getItems().add(txfSaveAs.getText()+".yaml");
+		} else {
+			setupCfgMgr.saveToFile("../turnfab_config/setups/"+chbSetup.getValue(), setupCfg);
+		}
+	}
+
+	@FXML
+	public void onSaveAs() {
+		if (ckbSaveAs.isSelected()) {
+			txfSaveAs.setDisable(false);
+		} else {
+			txfSaveAs.setDisable(true);
+		}
 	}
 
 	@FXML
@@ -137,12 +154,6 @@ public class SetupController {
 	@FXML
 	public void onClearPrompt() {
 		txaUserPrompt.clear();
-	}
-
-	@FXML
-	public void onSaveCfg() throws Exception {
-		writeGuiToCfg();
-		cfgMgr.save(cfg);
 	}
 
 	@FXML
@@ -179,12 +190,12 @@ public class SetupController {
 
 	@FXML
 	public void onCkbThink(){
-		cfg.enableThinking = ckbThink.isSelected();
+		setupCfg.enableThinking = ckbThink.isSelected();
+		log.info("Thinking enabled: " + setupCfg.enableThinking);
 	}
 
 	@FXML
-	public void onCkbAddDate(){
-		cfg.addDateToSystemPrompt = ckbAddDate.isSelected();
+	public void onCkbAddDate() {
 		txaSysPrompt.clear();
 		txaSysPrompt.appendText(systemPrompt.toString());
 		if (ckbAddDate.isSelected()) {
@@ -192,12 +203,53 @@ public class SetupController {
 		}
 	}
 
-	private void writeGuiToCfg() {
-		cfg.mcpServers = clvMcpServers.getCheckModel().getCheckedItems();
-		cfg.toolContext = lsvToolCtxSel.getItems();
-		cfg.logRequests = ckbLogReq.isSelected();
-		cfg.logResponses = ckbLogRes.isSelected();
-		cfg.userPrompt = txaUserPrompt.getText();
+	private void onSelectSetup(String fileName){
+		log.info(fileName);
+		try {
+			setupCfg = setupCfgMgr.loadFromFile("../turnfab_config/setups/"+fileName);
+		} catch (Exception e) {
+			setupCfg = setupCfgMgr.load();  // load defaults if no file exists
+		}
+		writeSetupToGui();
+	}
+
+	private void onSelectSystemPrompt(String fileName){
+		setupCfg.systemPromptFileName = fileName;
+		try {
+			loadSystemPromptFromFile(fileName);
+		} catch (IOException e) {
+			log.log(Level.WARNING, "Could not load system prompt file " + fileName, e);
+		}
+	}
+
+	private void writeSetupToGui() {
+		log.info("Writing setup to GUI: "+setupCfg.addDateToSystemPrompt);  /////
+
+		ckbAddDate.setSelected(setupCfg.addDateToSystemPrompt);
+		chbSysPrompts.getSelectionModel().select(setupCfg.systemPromptFileName);
+		ckbThink.setSelected(setupCfg.enableThinking);
+		ckbLogReq.setSelected(setupCfg.logRequests);
+		ckbLogRes.setSelected(setupCfg.logResponses);
+
+		clvMcpServers.getCheckModel().clearChecks();
+		if (setupCfg.mcpServers!=null) {
+			for (String enabled : setupCfg.mcpServers) {
+				clvMcpServers.getCheckModel().check(enabled);
+			}
+		}
+
+		lsvToolCtxSel.getItems().clear();
+		if (setupCfg.toolContext!=null) lsvToolCtxSel.getItems().addAll(setupCfg.toolContext);
+		txaUserPrompt.setText(setupCfg.userPrompt);
+	}
+
+	private void writeGuiToSetup() {
+		setupCfg.mcpServers = clvMcpServers.getCheckModel().getCheckedItems();
+		setupCfg.toolContext = lsvToolCtxSel.getItems();
+		setupCfg.logRequests = ckbLogReq.isSelected();
+		setupCfg.logResponses = ckbLogRes.isSelected();
+		setupCfg.userPrompt = txaUserPrompt.getText();
+		setupCfg.addDateToSystemPrompt = ckbAddDate.isSelected();
 	}
 
 	private void loadSystemPromptFromFile(String fileName) throws IOException {

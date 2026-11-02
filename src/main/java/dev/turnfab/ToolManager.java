@@ -16,7 +16,7 @@ public class ToolManager {
 
     @Inject private Logger log;
     @Inject private EventBus eb;
-    @Inject private SystemConfig mainCfg;
+    @Inject private SetupConfig setupCfg;
     @Inject private DynamicMcpToolProvider toolProvider;
     @Inject private ToolContextManager ctxMgr;
 
@@ -71,10 +71,10 @@ public class ToolManager {
             return;
         }
 
-        List<String> enabled = new ArrayList<>(mainCfg.mcpServers);
+        List<String> enabled = new ArrayList<>(setupCfg.mcpServers);
 
-        if (mainCfg.toolContext!=null) {
-            for (String tc : mainCfg.toolContext) {
+        if (setupCfg.toolContext!=null) {
+            for (String tc : setupCfg.toolContext) {
                 List<ToolContextConfig.Context> ctx = toolCfg.context.get(tc);
                 if (ctx == null) {
                     log.warning("No tool context found for " + tc);
@@ -112,8 +112,8 @@ public class ToolManager {
         }
 
         ctxMgr.resetPrompt();
-        if (mainCfg.toolContext!=null) {
-            for (String tc : mainCfg.toolContext) {
+        if (setupCfg.toolContext!=null) {
+            for (String tc : setupCfg.toolContext) {
                 ctxMgr.buildPrompt(toolCfg.context.get(tc));
             }
         }
@@ -184,8 +184,8 @@ public class ToolManager {
      */
     public SessionFile.ToolSetup currentSetup() {
         return new SessionFile.ToolSetup(
-                (mainCfg.mcpServers == null) ? List.of() : List.copyOf(mainCfg.mcpServers),
-                (mainCfg.toolContext == null) ? List.of() : List.copyOf(mainCfg.toolContext),
+                (setupCfg.mcpServers == null) ? List.of() : List.copyOf(setupCfg.mcpServers),
+                (setupCfg.toolContext == null) ? List.of() : List.copyOf(setupCfg.toolContext),
                 toolProvider.getMcpClientKeys());
     }
 
@@ -196,8 +196,8 @@ public class ToolManager {
      * @throws Exception if any server refuses to come up, exactly as "Load Tools" would
      */
     public List<String> applySetup(SessionFile.ToolSetup setup) throws Exception {
-        mainCfg.mcpServers = new ArrayList<>(setup.mcpServers());
-        mainCfg.toolContext = new ArrayList<>(setup.toolContext());
+        setupCfg.mcpServers = new ArrayList<>(setup.mcpServers());
+        setupCfg.toolContext = new ArrayList<>(setup.toolContext());
         enabledNames = null;
         loadTools();
 

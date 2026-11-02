@@ -33,7 +33,7 @@ public class TokenJockey {
 
     @Inject private Logger log;
     @Inject private EventBus eb;
-    @Inject private SystemConfig cfg;
+    @Inject private SetupConfig setupCfg;
     @Inject private DynamicMcpToolProvider toolProvider;
     @Inject private ToolManager toolManager;
 
@@ -101,8 +101,8 @@ public class TokenJockey {
                 .httpClientBuilder(new JdkHttpClientBuilder()
                         .httpClientBuilder(java.net.http.HttpClient.newBuilder()
                                 .version(java.net.http.HttpClient.Version.HTTP_1_1)))
-                .logRequests(cfg.logRequests)
-                .logResponses(cfg.logResponses)
+                .logRequests(setupCfg.logRequests)
+                .logResponses(setupCfg.logResponses)
                 .returnThinking(true)
                 .sendThinking(true, "reasoning")
                 .listeners(new TokenAuditListener(tcEst, log))
@@ -124,6 +124,7 @@ public class TokenJockey {
     }
 
     public void armCancel() {
+        log.info("Thinking enabled: " + setupCfg.enableThinking);
         armCancel = true;
     }
 
@@ -153,7 +154,7 @@ public class TokenJockey {
 
         // The thinking toggle is picked up every turn from the shared SystemConfig singleton,
         // so flipping it in the Setup window takes effect on the next turn without any rebuild.
-        qwenMode = cfg.enableThinking ? QwenMode.THINKING : QwenMode.INSTRUCT;
+        qwenMode = setupCfg.enableThinking ? QwenMode.THINKING : QwenMode.INSTRUCT;
         refreshToolAwareness();
 
         // reset streaming stats
@@ -367,7 +368,7 @@ public class TokenJockey {
     public SessionFile.Session currentSession(String markdown) {
         ensureMemory();
         return new SessionFile.Session(turnNumber, modelCfg.name, null, systemPrompt, chatMemory.messages(), markdown,
-                cfg.enableThinking, toolManager.currentSetup());
+                setupCfg.enableThinking, toolManager.currentSetup());
     }
 
     /**
@@ -408,8 +409,8 @@ public class TokenJockey {
         }
 
         if (snap.enableThinking() != null) {
-            cfg.enableThinking = snap.enableThinking();
-            log.info("Thinking restored: " + (cfg.enableThinking ? "on" : "off"));
+            setupCfg.enableThinking = snap.enableThinking();
+            log.info("Thinking restored: " + (setupCfg.enableThinking ? "on" : "off"));
         }
 
         log.info("Session loaded: " + inWindow + " message(s) in window, next turn " + (turnNumber + 1));
