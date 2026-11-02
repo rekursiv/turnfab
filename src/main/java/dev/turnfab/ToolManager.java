@@ -34,8 +34,8 @@ public class ToolManager {
     private McpServerConfig.Server jbMcpMetaDef;
     private ToolContextConfig toolCfg;
     /**
-     * The server names the last {@link #loadTools()} tried to connect. Kept because loading a session is
-     * a replace, not an add: what the session did not ask for has to be closed, not just left running.
+     * The server names the last {@link #loadTools()} successfully applied. Loading a session is a replace,
+     * not an add: what the session did not ask for has to be closed, not just left running.
      */
     private List<String> enabledNames;
 
@@ -67,6 +67,7 @@ public class ToolManager {
 
     public void loadTools() throws Exception {
         if (mcpServerCfg==null || jbMcpMetaDef==null || toolCfg==null) {
+            enabledNames = null;
             log.warning("Tool configs are not loaded, so the tool setup stays as it is.");
             return;
         }
@@ -86,7 +87,6 @@ public class ToolManager {
             }
         }
 
-        enabledNames = List.copyOf(enabled);
         McpJetBrainsConfig jbProjects = jbProjectCfgMgr.load();
         Map<String, McpServerConfig.Server> mergedCfg = new LinkedHashMap<>(mcpServerCfg.servers);
 
@@ -108,8 +108,15 @@ public class ToolManager {
         // For each enabled name, look it up and register it.
         for (String name : enabled) {
             McpServerConfig.Server s = mergedCfg.get(name);
-            if (s != null) addServer(name, s);
+            if (s != null) {
+                addServer(name, s);
+            } else {
+                log.warning("No MCP server definition found for enabled server '" + name + "'.");
+            }
         }
+
+        enabledNames = List.copyOf(enabled);
+        closeServersNotEnabled(enabledNames);
 
         ctxMgr.resetPrompt();
         if (setupCfg.toolContext!=null) {
@@ -144,6 +151,19 @@ public class ToolManager {
     /** Hand-edited YAML can carry an explicit null where a tool list was expected. */
     private static Set<String> toSet(java.util.List<String> list) {
         return (list == null) ? Set.of() : Set.copyOf(list);
+    }
+
+    /**
+     * Closes live MCP clients that the current selection does not ask for. The provider's key list is
+     * iterated from a snapshot, so closing each stale client does not disturb the iteration.
+     */
+    private void closeServersNotEnabled(List<String> enabled) {
+        for (String key : toolProvider.getMcpClientKeys()) {
+            if (!enabled.contains(key)) {
+                log.info("Closing MCP server '" + key + "'; not enabled by the current tool setup.");
+                toolProvider.closeMcpClient(key);
+            }
+        }
     }
 
     /**
@@ -204,12 +224,7 @@ public class ToolManager {
         // If loadTools bailed out, enabledNames is still null and nothing gets closed: it is better to
         // keep the tools that are up than to tear them all down over a config that didn't load.
         if (enabledNames != null) {
-            for (String key : toolProvider.getMcpClientKeys()) {
-                if (!enabledNames.contains(key)) {
-                    log.info("Closing MCP server '" + key + "'; not part of this session's setup.");
-                    toolProvider.closeMcpClient(key);
-                }
-            }
+            closeServersNotEnabled(enabledNames);
         }
 
         List<String> live = toolProvider.getMcpClientKeys();

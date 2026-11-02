@@ -31,7 +31,9 @@ dependencies {
     implementation(libs.langchain4j.http.client.jdk)
     implementation(libs.langchain4j.mcp)
 
-    runtimeOnly("org.slf4j:slf4j-simple:2.0.18")
+    // SLF4J -> java.util.logging bridge, so LangChain4J's logs land in the same
+    // LogManager that EbLogHandler is listening on. Must stay alone: no other provider.
+    runtimeOnly("org.slf4j:slf4j-jdk14:2.0.18")
 }
 
 extraJavaModuleInfo {
