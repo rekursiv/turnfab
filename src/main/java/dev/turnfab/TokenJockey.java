@@ -66,7 +66,7 @@ public class TokenJockey {
     private boolean armCancel = false;
     private enum Section { NONE, THINKING, RESPONSE, TOOL_CALL }
 
-    private final ConfigManager<ModelConfig> modelCfgMgr = ConfigManager.yaml(ModelConfig.class, "../config/McpServers.yaml");
+    private final ConfigManager<ModelConfig> modelCfgMgr = ConfigManager.yaml(ModelConfig.class, "../turnfab_config/model.yaml");
     private ModelConfig modelCfg = new ModelConfig();
 
 

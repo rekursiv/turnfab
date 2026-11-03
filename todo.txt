@@ -23,14 +23,14 @@ ToolContextManager promptSummary
   report tokens/percent instead of # chars
   total up tokens/percent, append to end
 
+which model to use should also be part of the setup
+  start with cfg file, then wire into GUI
 
 === Chat tab ===
 
 wire up save/load HTML
 
 === Tools ===
-
-remote shell tool
 
 debug issue with read_file truncating content in the middle
 
@@ -52,6 +52,9 @@ calc an average tok/sec for a turn, display it at turn's end
 For multi-block messages use @UserMessage List<Content> (text + images) — same code path, same no-substitution guarantee.
 
 === rendering issues ===
+
+currency-guard still needs work: docker/shell content with $VAR etc. still triggers KaTeX
+  see 2026-11-03_13-24-28_SESSION-fix-vllm.md
 
 WebView: every emoji has a box after it that overlaps the first letter that comes next (JavaFX upgrade??)
 
