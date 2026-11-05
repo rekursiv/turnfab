@@ -13,6 +13,29 @@ public class TurnfabToolSpecMapper implements BiFunction<McpClient, ToolSpecific
 
         if (!mc.key().equals("tavily") && !mc.key().equals("github")) {
             switch (original.name()) {
+                case "read_file" -> b.name(mc.key()+"-read_file")
+                        .description("""
+                        Reads a file in the project directory or from any project dependency or other project source root.
+                        Can read sources inside Jar/Jrt files and decompile Java class files inside Jar/Jrt files or on disk.
+                        Returns numbered lines (1-indexed) as text.
+
+                        Truncation: this tool does NOT return a contiguous slice when it has to cut.
+                        It returns floor(limit/2) contiguous lines starting at offset, and then it JUMPS to the
+                        final ceil(limit/2) lines of the file. The "N lines truncated" marker is the gap between
+                        those two blocks, not a note about the requested range. The tail block is anchored to the
+                        end of the file, not to the window that was asked for, so a read from the middle of a
+                        large file shows a short leading block followed by the last few lines of the file. Those
+                        are two unrelated regions; never read them as one continuous passage, and never conclude
+                        that the file ends where the leading block stops.
+                        When offset is close enough to the end of the file, the two blocks touch and you get a
+                        single continuous range with no marker.
+
+                        Working with this:
+                        - Ask for limit = 2x the lines you actually need, and read only the leading block.
+                        - When the file is small enough to need no truncation, limit is just a line count.
+                        - limit=1 returns the final line plus the count of omitted lines, which is a cheap way
+                          to learn the total line count of a file.
+                        """);
                 case "create_new_file" -> b.name(mc.key()+"-create_new_file")
                         .description("""
                         Creates a new file with the given content, or fully replaces an existing file's \
