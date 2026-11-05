@@ -118,6 +118,7 @@ public class SetupController {
 		chbSetup.valueProperty().addListener(
 				(_, _, newValue) -> onSelectSetup(newValue));
 		chbSetup.getSelectionModel().select("default.yaml");
+		hideMarker();
 	}
 
 

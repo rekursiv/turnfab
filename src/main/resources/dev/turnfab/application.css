@@ -3,3 +3,11 @@
 .root {
   -fx-font-family: Roboto;
 }
+
+/* Modena gives a layout pane that sits directly in a TitledPane's content -fx-padding: 0.8em, about
+   10px, while a control in that same spot gets 0. Invisible until something is overlaid on the content:
+   Setup.fxml puts the tool-context drag marker in a StackPane there, and 10px of phantom padding moved
+   every overlay coordinate off. Zero it here so it doesn't depend on remembering per file. */
+.titled-pane > .content > StackPane {
+  -fx-padding: 0;
+}

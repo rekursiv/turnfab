@@ -11,8 +11,6 @@ changing the tool setup requires clicking "Load Tools" again to activate
   show this in GUI somehow
   load tools -> update tools (many names need changing...)
 
-drag-drop tool context
-
 sys prompt can be edited, could add interface to save (overwriting selected or save to new file, filename TextField?)
 
 work out how to handle loading sessions vs. loading MD
@@ -33,6 +31,7 @@ wire up save/load HTML
 === Tools ===
 
 debug issue with read_file truncating content in the middle
+  can be seen in "Services" view in IntelliJ - remember to "Record Responses"
 
 find a way to bring up tool calls later if needed (show ID, save in buffer, recall by ID?)
   perhaps a separate tab that keeps track of tool calls
