@@ -3,6 +3,7 @@
 <?import javafx.geometry.*?>
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
+<?import javafx.scene.shape.*?>
 <?import javafx.scene.text.*?>
 <?import org.controlsfx.control.*?>
 
@@ -94,36 +95,22 @@
             </TitledPane>
             <TitledPane animated="false" collapsible="false" prefWidth="150.0" text="Selected Tool Context" HBox.hgrow="NEVER">
                <content>
-                  <ListView fx:id="lsvToolCtxSel" />
+                  <StackPane>
+                     <ListView fx:id="lsvToolCtxSel">
+                        <tooltip>
+                           <Tooltip text="Double-click or drag out to remove. Drag within or in to set the order the prompt is built in." wrapText="true" />
+                     </tooltip></ListView>
+                     <!-- unmanaged, so the layout never gets a say in its height: showMarker() sets y and width -->
+                     <Rectangle fx:id="rectInsertion" arcHeight="0.0" arcWidth="0.0" fill="#0b66c3" height="2.0" managed="false" mouseTransparent="true" stroke="TRANSPARENT" width="150.0" x="0.0" y="0.0" />
+                  </StackPane>
                </content>
             </TitledPane>
-            <VBox HBox.hgrow="NEVER">
-               <children>
-                  <Button mnemonicParsing="false" onAction="#onTcAdd" prefWidth="80.0" text="Add">
-                     <VBox.margin>
-                        <Insets top="40.0" />
-                     </VBox.margin>
-                  </Button>
-                  <Button mnemonicParsing="false" onAction="#onTcRemove" prefWidth="80.0" text="Remove">
-                     <VBox.margin>
-                        <Insets top="5.0" />
-                     </VBox.margin>
-                  </Button>
-                  <Button mnemonicParsing="false" onAction="#onTcUp" prefWidth="80.0" text="Up">
-                     <VBox.margin>
-                        <Insets top="20.0" />
-                     </VBox.margin>
-                  </Button>
-                  <Button mnemonicParsing="false" onAction="#onTcDown" prefWidth="80.0" text="Down">
-                     <VBox.margin>
-                        <Insets top="5.0" />
-                     </VBox.margin>
-                  </Button>
-               </children>
-            </VBox>
             <TitledPane animated="false" collapsible="false" prefWidth="150.0" text="Available Tool Context" HBox.hgrow="NEVER">
                <content>
-                  <ListView fx:id="lsvToolCtxAvail" />
+                  <ListView fx:id="lsvToolCtxAvail">
+                     <tooltip>
+                        <Tooltip text="Double-click or drag in to use. Alphabetical, since order here does not matter." wrapText="true" />
+                     </tooltip></ListView>
                </content>
             </TitledPane>
             <TitledPane animated="false" collapsible="false" text="Tool Preview" HBox.hgrow="ALWAYS">

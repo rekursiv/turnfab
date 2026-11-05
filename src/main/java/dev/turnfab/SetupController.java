@@ -9,8 +9,19 @@ import com.google.inject.Inject;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
+import javafx.geometry.Bounds;
+import javafx.geometry.Point2D;
+import javafx.scene.Node;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
+import javafx.scene.input.ClipboardContent;
+import javafx.scene.input.DataFormat;
+import javafx.scene.input.Dragboard;
+import javafx.scene.input.DragEvent;
+import javafx.scene.input.MouseButton;
+import javafx.scene.input.MouseEvent;
+import javafx.scene.input.TransferMode;
+import javafx.scene.shape.Rectangle;
 import javafx.stage.Stage;
 import org.controlsfx.control.CheckListView;
 
@@ -20,6 +31,10 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -54,6 +69,14 @@ public class SetupController {
 	@FXML private ListView<String> lsvToolCtxAvail;
 	@FXML private ListView<String> lsvToolCtxSel;
 
+	/** The two-pixel line that marks the row boundary a drag would drop into; sits over the ordered list. */
+	@FXML private Rectangle rectInsertion;
+
+	/** Only ever set mid-drag, and only for a drag that started in one of the two tool context lists. */
+	private String draggedName;
+	private ListView<String> draggedFrom;
+	private int draggedIntoIndex;
+
 	private ConfigManager<SetupConfig> setupCfgMgr;
 
 	private StringBuilder systemPrompt = new StringBuilder();
@@ -77,13 +100,14 @@ public class SetupController {
 		clvMcpServers.getItems().addAll(toolManager.getMcpServerList());
 
 		lsvToolCtxAvail.itemsProperty().setValue(FXCollections.observableArrayList());
-		lsvToolCtxAvail.getItems().addAll(toolManager.getToolContextList());
+		lsvToolCtxSel.itemsProperty().setValue(FXCollections.observableArrayList());
+		syncAvailable();
 		lsvToolCtxAvail.getSelectionModel().selectedItemProperty().addListener(
 				(_, _, newValue) -> {
 			if (newValue != null) txaToolPreview.setText(toolManager.getToolContextPreview(newValue));
 		});
 
-		lsvToolCtxSel.itemsProperty().setValue(FXCollections.observableArrayList());
+		installToolContextTransfer();
 
 		setupCfgMgr = new ConfigManager<>(SetupConfig.class, "../turnfab_config/setups/default.yaml", new ObjectMapper(new YAMLFactory()));
 		chbSetup.itemsProperty().setValue(FXCollections.observableArrayList());
@@ -155,37 +179,162 @@ public class SetupController {
 		txaUserPrompt.clear();
 	}
 
-	@FXML
-	public void onTcAdd() {
-		String sel = lsvToolCtxAvail.getSelectionModel().getSelectedItem();
-		if (sel!=null) lsvToolCtxSel.getItems().add(sel);
-	}
+	/**
+	 * Tool context transfer.
+	 *
+	 * The two lists used to trade contexts through four buttons. Double-click does the trading now, and a
+	 * drag does it too, with one extra promise: in the ordered list, the drop position is the position the
+	 * context gets built into the prompt at.
+	 */
+	private void installToolContextTransfer() {
+		lsvToolCtxAvail.setOnMouseClicked(e -> {
+			if (e.getClickCount() == 2 && e.getButton() == MouseButton.PRIMARY) {
+				moveIntoSelected(lsvToolCtxAvail.getSelectionModel().getSelectedItem(), lsvToolCtxSel.getItems().size());
+			}
+		});
+		lsvToolCtxSel.setOnMouseClicked(e -> {
+			if (e.getClickCount() == 2 && e.getButton() == MouseButton.PRIMARY) {
+				moveIntoAvailable(lsvToolCtxSel.getSelectionModel().getSelectedItem());
+			}
+		});
 
-	@FXML
-	public void onTcRemove() {
-		String sel = lsvToolCtxSel.getSelectionModel().getSelectedItem();
-		if (sel!=null) lsvToolCtxSel.getItems().remove(sel);
-	}
-
-	@FXML
-	public void onTcUp() {
-		ObservableList<String> items = lsvToolCtxSel.getItems();
-		int idx = lsvToolCtxSel.getSelectionModel().getSelectedIndex();
-		if (idx > 0) {
-			items.add(idx - 1, items.remove(idx));
-			lsvToolCtxSel.getSelectionModel().select(idx - 1);
+		for (ListView<String> list : List.of(lsvToolCtxAvail, lsvToolCtxSel)) {
+			list.setOnDragDetected(e -> beginDrag(list, e));
+			list.setOnDragOver(e -> dragHovered(list, e));
+			list.setOnDragDropped(e -> dropInto(list, e));
+			list.setOnDragExited(e -> hideMarker());
+			list.setOnDragDone(e -> endDrag());
 		}
 	}
 
-	@FXML
-	public void onTcDown() {
-		ObservableList<String> items = lsvToolCtxSel.getItems();
-		int idx = lsvToolCtxSel.getSelectionModel().getSelectedIndex();
-		if (idx >= 0 && idx < items.size() - 1) {
-			items.add(idx + 1, items.remove(idx));
-			lsvToolCtxSel.getSelectionModel().select(idx + 1);
+	/** Picks the row under the pointer, whether or not it happens to be the selected one. */
+	private void beginDrag(ListView<String> list, MouseEvent e) {
+		String name = nameUnderCursor(list, e.getSceneX(), e.getSceneY());
+		if (name == null) return;
+		draggedName = name;
+		draggedFrom = list;
+		Dragboard db = list.startDragAndDrop(TransferMode.MOVE);
+		if (db == null) {
+			endDrag();
+			return;
 		}
+		ClipboardContent content = new ClipboardContent();
+		content.put(DataFormat.PLAIN_TEXT, name);
+		db.setContent(content);
+		e.consume();
 	}
+
+	private void dragHovered(ListView<String> list, DragEvent e) {
+		if (draggedName == null) return;                            // somebody else's drag, most likely dragged text
+		if (list == draggedFrom && list == lsvToolCtxAvail) return; // reordering the alphabetical column buys nothing
+		DropTarget target = dropTargetAt(list, e.getSceneY());
+		draggedIntoIndex = target.index();
+		if (list == lsvToolCtxSel) showMarker(list, target);
+		else hideMarker();
+		e.acceptTransferModes(TransferMode.MOVE);
+		e.consume();
+	}
+
+	private void dropInto(ListView<String> list, DragEvent e) {
+		boolean moved = draggedName != null && (list == lsvToolCtxSel || list != draggedFrom);
+		if (moved) {
+			if (list == lsvToolCtxSel) moveIntoSelected(draggedName, draggedIntoIndex);
+			else moveIntoAvailable(draggedName);
+		}
+		e.setDropCompleted(moved);
+		e.consume();
+		endDrag();
+	}
+
+	private void endDrag() {
+		draggedName = null;
+		draggedFrom = null;
+		hideMarker();
+	}
+
+	/** Into the ordered list, at the spot given; a position past the end simply appends. */
+	private void moveIntoSelected(String name, int index) {
+		if (name == null) return;
+		ObservableList<String> sel = lsvToolCtxSel.getItems();
+		int from = sel.indexOf(name);
+		if (from >= 0 && from < index) index--;   // lifting it out of above slides the rest up
+		sel.remove(name);
+		index = Math.max(0, Math.min(index, sel.size()));
+		sel.add(index, name);
+		lsvToolCtxSel.getSelectionModel().select(index);
+		syncAvailable();
+	}
+
+	/** Out of the ordered list and back among the choices, where its position means nothing. */
+	private void moveIntoAvailable(String name) {
+		if (name == null) return;
+		lsvToolCtxSel.getItems().remove(name);
+		syncAvailable();
+	}
+
+	/**
+	 * What is left to choose from: every context the tool config defines, less the ones already picked.
+	 * Nothing in this list is read in order, so it is sorted.
+	 */
+	private void syncAvailable() {
+		List<String> avail = new ArrayList<>(toolManager.getToolContextList());
+		avail.removeAll(lsvToolCtxSel.getItems());
+		Collections.sort(avail);
+		lsvToolCtxAvail.getItems().setAll(avail);
+	}
+
+	private String nameUnderCursor(ListView<String> list, double sceneX, double sceneY) {
+		for (Node row : visibleRows(list)) {
+			Bounds b = row.localToScene(row.getBoundsInLocal());
+			if (!b.contains(sceneX, sceneY)) continue;
+			int idx = ((IndexedCell<?>) row).getIndex();
+			return (idx >= 0) ? list.getItems().get(idx) : null;
+		}
+		return null;
+	}
+
+	/** The rows on screen right now, top to bottom. Empty placeholder cells are not rows. */
+	private List<Node> visibleRows(ListView<String> list) {
+		List<Node> rows = new ArrayList<>();
+		for (Node n : list.lookupAll(".list-cell")) {
+			if (n instanceof IndexedCell<?> cell && !cell.isEmpty() && cell.getIndex() >= 0) rows.add(n);
+		}
+		rows.sort(Comparator.comparingDouble(n -> n.localToScene(n.getBoundsInLocal()).getMinY()));
+		return rows;
+	}
+
+	/**
+	 * The row boundary the pointer sits closest to, as both a position to insert at and a line to show
+	 * there. Scene y because it is the one coordinate the individual cells agree on once the list scrolls.
+	 */
+	private DropTarget dropTargetAt(ListView<String> list, double sceneY) {
+		List<Node> rows = visibleRows(list);
+		if (rows.isEmpty()) return new DropTarget(0, list.localToScene(0, 0).getY());
+		for (Node row : rows) {
+			Bounds b = row.localToScene(row.getBoundsInLocal());
+			int idx = ((IndexedCell<?>) row).getIndex();
+			if (sceneY <= b.getMinY()) return new DropTarget(idx, b.getMinY());
+			if (sceneY > b.getMaxY()) continue;
+			boolean below = sceneY > b.getMinY() + b.getHeight() / 2;
+			return new DropTarget(below ? idx + 1 : idx, below ? b.getMaxY() : b.getMinY());
+		}
+		Node last = rows.get(rows.size() - 1);
+		Bounds b = last.localToScene(last.getBoundsInLocal());
+		return new DropTarget(((IndexedCell<?>) last).getIndex() + 1, b.getMaxY());
+	}
+
+	private void showMarker(ListView<String> list, DropTarget target) {
+		rectInsertion.setY(list.sceneToLocal(new Point2D(0, target.markerSceneY())).getY());
+		rectInsertion.setWidth(list.getWidth());
+		rectInsertion.setVisible(true);
+	}
+
+	private void hideMarker() {
+		rectInsertion.setVisible(false);
+	}
+
+	/** Where a hover says the drop belongs. */
+	private record DropTarget(int index, double markerSceneY) { }
 
 	@FXML
 	public void onCkbThink(){
@@ -265,12 +414,15 @@ public class SetupController {
 
 		lsvToolCtxSel.getItems().clear();
 		if (setupCfg.toolContext!=null) lsvToolCtxSel.getItems().addAll(setupCfg.toolContext);
+		syncAvailable();
 		txaUserPrompt.setText(setupCfg.userPrompt);
 	}
 
 	private void writeGuiToSetup() {
 		setupCfg.mcpServers = clvMcpServers.getCheckModel().getCheckedItems();
-		setupCfg.toolContext = lsvToolCtxSel.getItems();
+		// a snapshot, not the live list: writeSetupToGui() clears that list, and would be clearing it through
+		// this reference
+		setupCfg.toolContext = new ArrayList<>(lsvToolCtxSel.getItems());
 		setupCfg.logRequests = ckbLogReq.isSelected();
 		setupCfg.logResponses = ckbLogRes.isSelected();
 		setupCfg.userPrompt = txaUserPrompt.getText();
