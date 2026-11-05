@@ -99,9 +99,15 @@
                      <ListView fx:id="lsvToolCtxSel">
                         <tooltip>
                            <Tooltip text="Double-click or drag out to remove. Drag within or in to set the order the prompt is built in." wrapText="true" />
-                     </tooltip></ListView>
+                     </tooltip>
+                        <StackPane.margin>
+                           <Insets />
+                        </StackPane.margin></ListView>
                      <!-- unmanaged, so the layout never gets a say in its height: showMarker() sets y and width -->
                      <Rectangle fx:id="rectInsertion" arcHeight="0.0" arcWidth="0.0" fill="#0b66c3" height="2.0" managed="false" mouseTransparent="true" stroke="TRANSPARENT" width="150.0" x="0.0" y="0.0" />
+                     <padding>
+                        <Insets top="0.0" />
+                     </padding>
                   </StackPane>
                </content>
             </TitledPane>

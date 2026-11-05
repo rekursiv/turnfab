@@ -229,7 +229,7 @@ public class SetupController {
 		if (list == draggedFrom && list == lsvToolCtxAvail) return; // reordering the alphabetical column buys nothing
 		DropTarget target = dropTargetAt(list, e.getSceneY());
 		draggedIntoIndex = target.index();
-		if (list == lsvToolCtxSel) showMarker(list, target);
+		if (list == lsvToolCtxSel) showMarker(target);
 		else hideMarker();
 		e.acceptTransferModes(TransferMode.MOVE);
 		e.consume();
@@ -304,28 +304,45 @@ public class SetupController {
 	}
 
 	/**
-	 * The row boundary the pointer sits closest to, as both a position to insert at and a line to show
-	 * there. Scene y because it is the one coordinate the individual cells agree on once the list scrolls.
+	 * The row boundary the pointer sits closest to: the position to insert at, and the row edge the marker
+	 * belongs on. Measured off the rows themselves, since that is the one reference that neither the list's
+	 * own insets nor the container around it can shift.
 	 */
 	private DropTarget dropTargetAt(ListView<String> list, double sceneY) {
 		List<Node> rows = visibleRows(list);
-		if (rows.isEmpty()) return new DropTarget(0, list.localToScene(0, 0).getY());
+		if (rows.isEmpty()) {
+			Bounds area = list.localToScene(list.getBoundsInLocal());
+			return new DropTarget(0, area.getMinX(), area.getMinY(), area.getWidth());
+		}
 		for (Node row : rows) {
 			Bounds b = row.localToScene(row.getBoundsInLocal());
 			int idx = ((IndexedCell<?>) row).getIndex();
-			if (sceneY <= b.getMinY()) return new DropTarget(idx, b.getMinY());
+			if (sceneY <= b.getMinY()) return edge(idx, b, false);
 			if (sceneY > b.getMaxY()) continue;
 			boolean below = sceneY > b.getMinY() + b.getHeight() / 2;
-			return new DropTarget(below ? idx + 1 : idx, below ? b.getMaxY() : b.getMinY());
+			return edge(below ? idx + 1 : idx, b, below);
 		}
 		Node last = rows.get(rows.size() - 1);
 		Bounds b = last.localToScene(last.getBoundsInLocal());
-		return new DropTarget(((IndexedCell<?>) last).getIndex() + 1, b.getMaxY());
+		return edge(((IndexedCell<?>) last).getIndex() + 1, b, true);
 	}
 
-	private void showMarker(ListView<String> list, DropTarget target) {
-		rectInsertion.setY(list.sceneToLocal(new Point2D(0, target.markerSceneY())).getY());
-		rectInsertion.setWidth(list.getWidth());
+	/** One row wide, resting on one of that row's edges: where a drop at that edge belongs. */
+	private static DropTarget edge(int index, Bounds row, boolean below) {
+		return new DropTarget(index, row.getMinX(), below ? row.getMaxY() : row.getMinY(), row.getWidth());
+	}
+
+	/**
+	 * Parks the marker on the boundary. Transformed through the marker's own parent instead of through the
+	 * ListView, so the only thing this has to believe is that a row is where that row's own bounds say it
+	 * is; the list's insets, its scrollbar gutter and the titled pane wrapped around it all cancel out.
+	 */
+	private void showMarker(DropTarget target) {
+		Node overlay = rectInsertion.getParent();
+		Point2D p = overlay.sceneToLocal(target.lineX(), target.lineY());
+		rectInsertion.setX(p.getX());
+		rectInsertion.setY(p.getY());
+		rectInsertion.setWidth(target.lineWidth());
 		rectInsertion.setVisible(true);
 	}
 
@@ -333,8 +350,8 @@ public class SetupController {
 		rectInsertion.setVisible(false);
 	}
 
-	/** Where a hover says the drop belongs. */
-	private record DropTarget(int index, double markerSceneY) { }
+	/** Where a hover says the drop belongs: the position to insert at, and the line to draw it on. */
+	private record DropTarget(int index, double lineX, double lineY, double lineWidth) { }
 
 	@FXML
 	public void onCkbThink(){
