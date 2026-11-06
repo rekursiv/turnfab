@@ -93,6 +93,14 @@
                   <CheckListView fx:id="clvMcpServers" />
                </content>
             </TitledPane>
+            <TitledPane animated="false" collapsible="false" prefWidth="150.0" text="Available Tool Context" HBox.hgrow="NEVER">
+               <content>
+                  <ListView fx:id="lsvToolCtxAvail">
+                     <tooltip>
+                        <Tooltip text="Double-click or drag in to use. Alphabetical, since order here does not matter." wrapText="true" />
+                     </tooltip></ListView>
+               </content>
+            </TitledPane>
             <TitledPane animated="false" collapsible="false" prefWidth="150.0" text="Selected Tool Context" HBox.hgrow="NEVER">
                <content>
                   <StackPane>
@@ -111,15 +119,7 @@
                   </StackPane>
                </content>
             </TitledPane>
-            <TitledPane animated="false" collapsible="false" prefWidth="150.0" text="Available Tool Context" HBox.hgrow="NEVER">
-               <content>
-                  <ListView fx:id="lsvToolCtxAvail">
-                     <tooltip>
-                        <Tooltip text="Double-click or drag in to use. Alphabetical, since order here does not matter." wrapText="true" />
-                     </tooltip></ListView>
-               </content>
-            </TitledPane>
-            <TitledPane animated="false" collapsible="false" text="Tool Preview" HBox.hgrow="ALWAYS">
+            <TitledPane fx:id="tpToolPreview" animated="false" collapsible="false" prefHeight="200.0" text="Tool Preview" HBox.hgrow="ALWAYS">
                <content>
                   <TextArea fx:id="txaToolPreview" editable="false" wrapText="true" />
                </content>

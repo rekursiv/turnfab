@@ -1,5 +1,7 @@
 
 
+clean up turnfab_sessions
+  archive dir?
 
 === Setup tab  ===
 
@@ -26,15 +28,20 @@ which model to use should also be part of the setup
 
 === Chat tab ===
 
+split screen mode:
+  only questions and responses in top pane
+  only thinking and tool calls in bottom pane
+    probably want to keep existing mode, how to switch between?
+
 wire up save/load HTML
 
 === Tools ===
 
-debug issue with read_file truncating content in the middle
-  can be seen in "Services" view in IntelliJ - remember to "Record Responses"
+fix read_file in JB
 
 find a way to bring up tool calls later if needed (show ID, save in buffer, recall by ID?)
   perhaps a separate tab that keeps track of tool calls
+    can be seen in "Services" view in IntelliJ - remember to "Record Responses"
 
 build a better patch?
 

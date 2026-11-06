@@ -66,6 +66,7 @@ public class SetupController {
 
 	@FXML private CheckListView<String> clvMcpServers = new CheckListView<>();
 
+	@FXML private TitledPane tpToolPreview;
 	@FXML private ListView<String> lsvToolCtxAvail;
 	@FXML private ListView<String> lsvToolCtxSel;
 
@@ -102,10 +103,19 @@ public class SetupController {
 		lsvToolCtxAvail.itemsProperty().setValue(FXCollections.observableArrayList());
 		lsvToolCtxSel.itemsProperty().setValue(FXCollections.observableArrayList());
 		syncAvailable();
+
 		lsvToolCtxAvail.getSelectionModel().selectedItemProperty().addListener(
-				(_, _, newValue) -> {
-			if (newValue != null) txaToolPreview.setText(toolManager.getToolContextPreview(newValue));
-		});
+				(_, _, newValue) -> onToolContextSelect(newValue));
+		lsvToolCtxAvail.focusedProperty().addListener(
+				(obs, oldVal, newVal) -> {
+					if (newVal) onToolContextSelect(lsvToolCtxAvail.getSelectionModel().getSelectedItem());
+				});
+		lsvToolCtxSel.getSelectionModel().selectedItemProperty().addListener(
+				(_, _, newValue) -> onToolContextSelect(newValue));
+		lsvToolCtxSel.focusedProperty().addListener(
+				(obs, oldVal, newVal) -> {
+					if (newVal) onToolContextSelect(lsvToolCtxSel.getSelectionModel().getSelectedItem());
+				});
 
 		installToolContextTransfer();
 
@@ -178,6 +188,16 @@ public class SetupController {
 	@FXML
 	public void onClearPrompt() {
 		txaUserPrompt.clear();
+	}
+
+	private void onToolContextSelect(String name) {
+		if (name==null) {
+			tpToolPreview.setText("Tool Preview");
+			txaToolPreview.setText("");
+		} else {
+			tpToolPreview.setText("Tool Preview: "+name);
+			txaToolPreview.setText(toolManager.getToolContextPreview(name));
+		}
 	}
 
 	/**
@@ -375,9 +395,11 @@ public class SetupController {
 			toolManager.loadTools();
 		} catch (Exception e) {
 			txaToolPreview.setText(e.getMessage());
+			tpToolPreview.setText("Tool Preview: ERROR");
 			return false;
 		}
 		txaToolPreview.setText(toolManager.getEnabledTools());
+		tpToolPreview.setText("Tool Preview: Enabled Tools");
 		txaTcSummary.clear();
 		txaTcSummary.appendText(toolManager.getPromptSummary());
 		btnShowFullPrompt.setDisable(false);

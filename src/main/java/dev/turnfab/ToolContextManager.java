@@ -83,6 +83,9 @@ public class ToolContextManager {
                 int depth =  Integer.parseInt(block.arg2);
                 listDirTree(mcpClient, dirPath, depth);
                 break;
+            case "testReadFile":
+                partialReadFileTest(mcpClient, "src/main/java/dev/turnfab/ConfigManager.java");
+                break;
             default:
                 log.warning("Unknown Tool Name " + block.toolName);
         }
@@ -166,7 +169,6 @@ public class ToolContextManager {
             return;
         }
 
-//        StringBuilder prompt = new StringBuilder();
         appendBoth(mcpClient.key());
         appendBoth("-read_file: file_path = ");
         appendBoth(filePath);
@@ -196,6 +198,31 @@ public class ToolContextManager {
     /////////////
     ///
     ///
+
+    private void partialReadFileTest(McpClient mcpClient, String filePath) {
+        if (mcpClient == null) {
+            appendBoth("\n\n*** MCP Client is null ***\n\n");
+            return;
+        }
+
+        appendBoth(mcpClient.key());
+        appendBoth("-read_file: file_path = ");
+        appendBoth(filePath);
+        ToolExecutionRequest request = ToolExecutionRequest.builder()
+                .name("read_file")
+                .arguments("{\"file_path\": \""+filePath+"\", \"offset\": 54, \"limit\": 40}")
+                .build();
+        ToolExecutionResult res = mcpClient.executeTool(request);
+        prompt.append("\n```\n");
+        prompt.append(res.resultText());
+        prompt.append("\n```\n\n");
+
+        promptSummary.append(":  ");
+        promptSummary.append(res.resultText().length());
+        promptSummary.append(" characters");
+        promptSummary.append("\n");
+
+    }
 
     public String getAllTabPaths(McpClient mcpClient) {
         if (mcpClient==null) {
