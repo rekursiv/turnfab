@@ -50,7 +50,6 @@ public class SetupController {
 	@Inject private ToolManager toolManager;
 
 	@FXML private Button btnShowFullPrompt;
-	@FXML private Button btnShowTools;
 	@FXML private CheckBox ckbSaveAs;
 	@FXML private TextField txfSaveAs;
 	@FXML private CheckBox ckbThink;
@@ -403,7 +402,6 @@ public class SetupController {
 		txaTcSummary.clear();
 		txaTcSummary.appendText(toolManager.getPromptSummary());
 		btnShowFullPrompt.setDisable(false);
-		btnShowTools.setDisable(false);
 		return true;
 	}
 
