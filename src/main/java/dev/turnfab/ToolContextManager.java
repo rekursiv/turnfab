@@ -173,7 +173,7 @@ public class ToolContextManager {
         appendBoth("-read_file: file_path = ");
         appendBoth(filePath);
         ToolExecutionRequest request = ToolExecutionRequest.builder()
-                .name("read_file")
+                .name("turnfab_read_file")
                 .arguments("{\"file_path\": \""+filePath+"\"}")
                 .build();
         ToolExecutionResult res = mcpClient.executeTool(request);
@@ -209,7 +209,7 @@ public class ToolContextManager {
         appendBoth("-read_file: file_path = ");
         appendBoth(filePath);
         ToolExecutionRequest request = ToolExecutionRequest.builder()
-                .name("read_file")
+                .name("turnfab_read_file")
                 .arguments("{\"file_path\": \""+filePath+"\", \"offset\": 54, \"limit\": 40}")
                 .build();
         ToolExecutionResult res = mcpClient.executeTool(request);
