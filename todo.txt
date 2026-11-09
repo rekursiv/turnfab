@@ -37,14 +37,6 @@ wire up save/load HTML
 
 === Tools ===
 
-jetbrains_plugin:
-  test apply_patch
-  The read_file text still advertises “Path to file/directory”
-  fix list_directory_tree
-  add `edit_file` with `str_replace` semantics
-  ide_about tool
-
-
 find a way to bring up tool calls later if needed (show ID, save in buffer, recall by ID?)
   perhaps a separate tab that keeps track of tool calls
     can be seen in "Services" view in IntelliJ - remember to "Record Responses"

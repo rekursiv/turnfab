@@ -132,6 +132,10 @@ public class DynamicMcpToolProvider extends McpToolProvider {
                 .key(config.key())
                 .transport(transport)
                 .protocolVersion(config.protocolVersion())
+                // Some servers, notably the GitHub MCP server, answer a successful tool call
+                // with a non-text content block. The default converter throws on those, which
+                // loses the whole result; see LenientMcpToolResultConverter.
+                .toolResultConverter(new LenientMcpToolResultConverter())
                 .build();
 
         List<ToolSpecification> tools;
