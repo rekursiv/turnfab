@@ -395,6 +395,7 @@ public class SetupController {
 		} catch (Exception e) {
 			txaToolPreview.setText(e.getMessage());
 			tpToolPreview.setText("Tool Preview: ERROR");
+			e.printStackTrace();
 			return false;
 		}
 		txaToolPreview.setText(toolManager.getEnabledTools());

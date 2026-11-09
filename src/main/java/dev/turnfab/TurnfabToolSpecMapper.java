@@ -14,6 +14,7 @@ public class TurnfabToolSpecMapper implements BiFunction<McpClient, ToolSpecific
             switch (original.name()) {
                 case "turnfab_read_file" -> b.name(mc.key()+"-read_file");
                 case "turnfab_apply_patch" -> b.name(mc.key()+"-apply_patch");
+                case "turnfab_list_directory_tree" -> b.name(mc.key()+"-list_directory_tree");
                 case "create_new_file" -> b.name(mc.key()+"-create_new_file")
                         .description("""
                         Creates a new file with the given content, or fully replaces an existing file's \

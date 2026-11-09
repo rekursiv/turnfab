@@ -103,21 +103,19 @@ public class ToolContextManager {
         appendBoth(dirPath);
         appendBoth(", max_depth = "+maxDepth);
         ToolExecutionRequest request = ToolExecutionRequest.builder()
-                .name("list_directory_tree")
+                .name("turnfab_list_directory_tree")
                 .arguments("{\"directoryPath\": \""+dirPath+"\", \"maxDepth\": "+maxDepth+"}")
                 .build();
         ToolExecutionResult res = mcpClient.executeTool(request);
         prompt.append("\n");
-
-        @SuppressWarnings("unchecked")
-        Map<String, String> rmap = (Map<String, String>) res.result();
-        prompt.append(rmap.get("tree"));
+        prompt.append(res.resultText());
         prompt.append("\n\n");
 
         promptSummary.append(":  ");
-        promptSummary.append(rmap.get("tree").length());
+        promptSummary.append(res.resultText().length());
         promptSummary.append(" characters");
         promptSummary.append("\n");
+
     }
 
     private void readAllTabs(McpClient mcpClient) throws Exception {
