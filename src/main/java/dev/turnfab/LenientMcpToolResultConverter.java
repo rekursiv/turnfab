@@ -40,18 +40,17 @@ public class LenientMcpToolResultConverter implements McpToolResultConverter {
         if (content != null) {
             for (Map<String, Object> item : content) {
                 if (item == null) continue;
-                Object type = item.get("type");
-                if ("text".equals(type)) {
-                    text.add(value(item.get("text")));
-                } else if ("resource".equals(type)) {
-                    text.add(renderResource(item.get("resource")));
-                } else if ("resource_link".equals(type)) {
-                    text.add("[resource: " + value(item.get("uri")) + "]");
-                } else if ("image".equals(type) || "audio".equals(type)) {
-                    text.add("[" + type + ", mime type: " + value(item.get("mimeType")) + "]");
-                } else {
-                    log.warning("Unrecognized MCP content item of type '" + type + "'; reporting it in place.");
-                    text.add("[unsupported content type: " + value(type) + "]");
+                String type = String.valueOf(item.get("type"));
+                switch (type) {
+                    case "text" -> text.add(value(item.get("text")));
+                    case "resource" -> text.add(renderResource(item.get("resource")));
+                    case "resource_link" -> text.add("[resource: " + value(item.get("uri")) + "]");
+                    case "image", "audio" ->
+                            text.add("[" + type + ", mime type: " + value(item.get("mimeType")) + "]");
+                    default -> {
+                        log.warning("Unrecognized MCP content item of type '" + type + "'; reporting it in place.");
+                        text.add("[unsupported content type: " + type + "]");
+                    }
                 }
             }
         }

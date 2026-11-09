@@ -45,6 +45,20 @@ import dev.langchain4j.service.tool.ToolProviderResult;
  *       builder options are ever needed, this class has to change.</li>
  * </ul>
  *
+ * <p>Result conversion: every client built by {@link #addServer(ServerConfig)} installs a
+ * {@link LenientMcpToolResultConverter}. The converter langchain4j ships accepts only
+ * {@code content[]} items of type {@code text} and throws on any other type, which fails the whole
+ * call. That is not hypothetical: the official GitHub MCP server answers a successful file read
+ * with {@code [text, embedded resource]}, and the file contents themselves are in the resource
+ * block. With the lenient converter, a server that answers with content this application cannot
+ * read degrades to a placeholder plus a log warning instead of losing the result.
+ *
+ * <p>Two things that do <em>not</em> go through the converter and are therefore unaffected by it:
+ * responses that carry {@code structuredContent}, which the client parses on its own path, and
+ * clients registered through {@link #addMcpClient(McpClient)}, which are built elsewhere and keep
+ * the default converter. If a raw-added server ever fails on a non-text content block, the
+ * converter has to be supplied where that client is constructed.
+ *
  * <p>Additional filters and the specification mapper set through the inherited setters remain
  * in effect. Note that the inherited {@code setFilter}/{@code resetFilters} replace the whole
  * filter chain, dropping this class's config-driven tool policy along with anything else added
