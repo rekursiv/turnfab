@@ -90,9 +90,11 @@ public class SetupController {
 
 		chbSysPrompts.itemsProperty().setValue(FXCollections.observableArrayList());
 		String sysPromptDir = System.getProperty("user.dir")+"/../turnfab_config/system_prompts/";
-		Files.list(Paths.get(sysPromptDir)).forEach(file -> {
-			chbSysPrompts.getItems().add(file.getFileName().toString());
-		});
+		try (var stream = Files.list(Paths.get(sysPromptDir))) {
+			stream.filter(Files::isRegularFile)
+					.filter(file -> file.getFileName().toString().endsWith(".md"))
+					.forEach(file -> chbSysPrompts.getItems().add(file.getFileName().toString()));
+		}
 		chbSysPrompts.valueProperty().addListener(
 				(_, _, newValue) -> onSelectSystemPrompt(newValue));
 
@@ -121,9 +123,11 @@ public class SetupController {
 		setupCfgMgr = new ConfigManager<>(SetupConfig.class, "../turnfab_config/setups/default.yaml", new ObjectMapper(new YAMLFactory()));
 		chbSetup.itemsProperty().setValue(FXCollections.observableArrayList());
 		String setupDir = System.getProperty("user.dir")+"/../turnfab_config/setups/";
-		Files.list(Paths.get(setupDir)).forEach(file -> {
-			chbSetup.getItems().add(file.getFileName().toString());
-		});
+		try (var stream = Files.list(Paths.get(setupDir))) {
+			stream.filter(Files::isRegularFile)
+					.filter(file -> file.getFileName().toString().endsWith(".yaml"))
+					.forEach(file -> chbSetup.getItems().add(file.getFileName().toString()));
+		}
 		chbSetup.valueProperty().addListener(
 				(_, _, newValue) -> onSelectSetup(newValue));
 		chbSetup.getSelectionModel().select("default.yaml");
