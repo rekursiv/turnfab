@@ -137,6 +137,9 @@ public class MarkstreamView {
   private StringBuilder served = new StringBuilder();
   /** Set while a hijacked page is being reloaded, cleared once the content is served again. */
   private boolean restoring = false;
+  /** Turn the live details in {@link #served} belong to, or the next live turn for loaded history. */
+  private int nextLiveTurn = 1;
+  private int pendingTurnNumber = 0;
 
   /**
    * Both halves of the callback bridge, held for as long as the view lives: the object the page
@@ -191,9 +194,15 @@ public class MarkstreamView {
               if (restoring) {
                 restoring = false;
                 String transcript = served.toString();
+                int turnForRestore = pendingTurnNumber != 0 ? pendingTurnNumber : nextLiveTurn;
                 if (!transcript.isEmpty()) {
-                  engine.executeScript("msLoad(" + jsStringLiteral(transcript) + ");");
+                  loadSession(transcript, turnForRestore);
                 }
+                beginTurn(turnForRestore);
+                pendingTurnNumber = 0;
+              } else if (pendingTurnNumber != 0) {
+                beginTurn(pendingTurnNumber);
+                pendingTurnNumber = 0;
               }
             });
     guardLocation();
@@ -464,6 +473,28 @@ public class MarkstreamView {
   }
 
   /**
+   * Starts a live turn: details tagged for earlier turns collapse, details streamed for this turn
+   * open. Must be called before the first {@link #append(String)} for the turn.
+   *
+   * @param turnNumber live turn number
+   */
+  public void beginTurn(int turnNumber) {
+    nextLiveTurn = turnNumber;
+    if (!ready) {
+      pendingTurnNumber = turnNumber;
+      log.warning("Markstream page not loaded yet, turn " + turnNumber + " deferred until the view is ready");
+      return;
+    }
+
+    try {
+      engine.executeScript("msBeginTurn(" + turnNumber + ");");
+    } catch (RuntimeException ex) {
+      ready = false;
+      log.log(Level.WARNING, "MarkstreamView.beginTurn failed", ex);
+    }
+  }
+
+  /**
    * Loads a complete document (e.g. a saved chat session) all at once. The page renders it in
    * history-recovery mode (no streaming pacing, final parse) and jumps to the newest content.
    * Subsequent {@link #append} calls start a fresh stream that continues after the loaded
@@ -481,6 +512,32 @@ public class MarkstreamView {
     }
     engine.executeScript("msLoad(" + jsStringLiteral(fullText) + ");");
     served = new StringBuilder(fullText);
+    nextLiveTurn = Integer.MAX_VALUE;
+  }
+
+  /**
+   * Loads transcript history without treating newly appearing details blocks as live output. The
+   * caller passes the next live turn number, so old turn-tagged details stay closed.
+   *
+   * @param fullText complete markdown document
+   * @param nextTurn live turn number that this transcript is not part of yet
+   */
+  public void loadSession(String fullText, int nextTurn) {
+    if (fullText == null) {
+      return;
+    }
+    nextLiveTurn = nextTurn;
+    if (!ready) {
+      log.warning("Markstream page not loaded yet, cannot load session content");
+      return;
+    }
+    try {
+      engine.executeScript("msLoadHistory(" + jsStringLiteral(fullText) + ", " + nextTurn + ");");
+      served = new StringBuilder(fullText);
+    } catch (RuntimeException ex) {
+      ready = false;
+      log.log(Level.WARNING, "MarkstreamView.loadSession failed", ex);
+    }
   }
 
   /**

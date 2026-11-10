@@ -1,4 +1,4 @@
-import { computed, createApp, nextTick, ref } from 'vue'
+import { computed, createApp, nextTick, onMounted, ref } from 'vue'
 import MarkdownRender from 'markstream-vue'
 import { useStickToBottom } from 'markstream-vue/utils'
 import 'markstream-vue/index.css'
@@ -24,6 +24,8 @@ declare global {
     msReset: () => void
     msLoad: (text: string) => void
     msSetTheme: (theme: string) => void
+    msBeginTurn: (turn?: number) => void
+    msLoadHistory: (text: string, nextTurn: number) => void
   }
 }
 
@@ -103,6 +105,132 @@ const app = createApp({
       smoothStreaming.value = false
     }
 
+    // Details blocks are turn-tagged in the markdown, but whether one is open is
+    // page UI state: current-turn details open, history stays closed. This keeps
+    // the saved `.md` file neutral instead of storing `open` on every old block.
+    let currentTurn = 1
+    let historyMode = true
+    let detailsRoot: HTMLElement | null = document.getElementById('app')
+    let detailsObserver: MutationObserver | undefined
+    let applyingDetails = false
+    let detailsSyncQueued = false
+
+    function ensureDetailsObserver() {
+      if (!detailsRoot) {
+        detailsRoot = document.getElementById('app')
+      }
+      if (detailsObserver || !detailsRoot) {
+        return
+      }
+      detailsObserver = new MutationObserver(scheduleDetailsSync)
+      detailsObserver.observe(detailsRoot, {
+        childList: true,
+        subtree: true,
+        attributes: true,
+        attributeFilter: ['open'],
+      })
+      detailsRoot.addEventListener('toggle', onDetailsToggle, true)
+    }
+
+    function onDetailsToggle(event: Event) {
+      if (applyingDetails) {
+        return
+      }
+      const d = event.target
+      if (!(d instanceof HTMLDetailsElement)) {
+        return
+      }
+      // Remember the active turn. Stale manual state is cleared when the turn
+      // changes, but this lets the user inspect older turns while idle without
+      // the observer fighting them immediately.
+      d.dataset.userManaged = '1'
+      d.dataset.userTurn = String(currentTurn)
+    }
+
+    function clearStaleUserDetails() {
+      if (!detailsRoot) {
+        return
+      }
+      const turn = String(currentTurn)
+      for (const d of detailsRoot.querySelectorAll<HTMLDetailsElement>('details')) {
+        if (d.dataset.userManaged && d.dataset.turn !== turn) {
+          delete d.dataset.userManaged
+          delete d.dataset.userTurn
+        }
+      }
+    }
+
+    function applyDetails() {
+      if (!detailsRoot) {
+        detailsRoot = document.getElementById('app')
+      }
+      if (!detailsRoot) {
+        return
+      }
+      ensureDetailsObserver()
+      if (applyingDetails) {
+        return
+      }
+      applyingDetails = true
+      try {
+        detailsObserver?.takeRecords()
+        for (const d of detailsRoot.querySelectorAll<HTMLDetailsElement>('details')) {
+          if (!d.dataset.turn) {
+            d.dataset.turn = String(historyMode ? currentTurn - 1 : currentTurn)
+          }
+          if (d.dataset.userManaged) {
+            if (Number(d.dataset.userTurn ?? '') === currentTurn) {
+              continue
+            }
+            delete d.dataset.userManaged
+            delete d.dataset.userTurn
+          }
+          const shouldOpen = !historyMode && Number(d.dataset.turn) === currentTurn
+          if (d.open !== shouldOpen) {
+            d.open = shouldOpen
+          }
+        }
+      } finally {
+        applyingDetails = false
+      }
+    }
+
+    function scheduleDetailsSync() {
+      ensureDetailsObserver()
+      if (detailsSyncQueued) {
+        return
+      }
+      detailsSyncQueued = true
+      queueMicrotask(() => {
+        detailsSyncQueued = false
+        applyDetails()
+      })
+    }
+
+    window.msBeginTurn = (turn?: number) => {
+      const next = turn === undefined ? currentTurn + 1 : Number(turn)
+      currentTurn = Number.isFinite(next) ? next : currentTurn
+      historyMode = false
+      ensureDetailsObserver()
+      clearStaleUserDetails()
+      applyDetails()
+    }
+
+    window.msLoadHistory = (text: string, nextTurn: number) => {
+      currentTurn = Number.isFinite(nextTurn) ? nextTurn : Number.MAX_SAFE_INTEGER
+      historyMode = true
+      streaming = false
+      content.value = text
+      finalDoc.value = true
+      smoothStreaming.value = false
+      ensureDetailsObserver()
+      nextTick(() => {
+        applyDetails()
+        stick.bottomPinned.value = true
+        stick.scrollToBottom()
+      })
+    }
+
     window.msSetTheme = (theme: string) => {
       document.documentElement.classList.toggle('dark', theme === 'dark')
     }
@@ -111,16 +239,26 @@ const app = createApp({
       if (chunk.length === 0) {
         return
       }
+      if (!Number.isFinite(currentTurn) || currentTurn <= 0) {
+        currentTurn = 1
+      }
+      historyMode = false
       enterStreaming()
       content.value += chunk
       // Wait for this render pass, then follow; later paced frames are picked
       // up by the composable's ResizeObserver on the content root.
-      nextTick(() => stick.scheduleScrollToBottom())
+      nextTick(() => {
+        scheduleDetailsSync()
+        stick.scheduleScrollToBottom()
+      })
     }
 
     window.msComplete = () => {
       exitStreaming()
-      nextTick(() => stick.scheduleScrollToBottom())
+      nextTick(() => {
+        scheduleDetailsSync()
+        stick.scheduleScrollToBottom()
+      })
     }
 
     window.msReset = () => {
@@ -128,7 +266,11 @@ const app = createApp({
       content.value = ''
       finalDoc.value = false
       smoothStreaming.value = 'auto'
+      currentTurn = 1
+      historyMode = true
+      ensureDetailsObserver()
       nextTick(() => {
+        applyDetails()
         // A fresh stream starts pinned: follow from the top.
         stick.bottomPinned.value = true
         stick.scrollToBottom()
@@ -136,19 +278,16 @@ const app = createApp({
     }
 
     window.msLoad = (text: string) => {
-      streaming = false
-      content.value = text
-      // "Recovering history" mode: the content is already complete, so no
-      // pacing (it would artificially slow content the user wants to see
-      // immediately) and a final parse.
-      finalDoc.value = true
-      smoothStreaming.value = false
-      nextTick(() => {
-        // Land at the newest content.
-        stick.bottomPinned.value = true
-        stick.scrollToBottom()
-      })
+      // Plain markdown without session metadata: treat it as history so details
+      // in old transcript text do not pop open on load.
+      window.msLoadHistory(text, Number.MAX_SAFE_INTEGER)
     }
+
+    onMounted(() => {
+      detailsRoot = document.getElementById('app')
+      ensureDetailsObserver()
+      applyDetails()
+    })
 
     // --- dev-only hand-testing kit (dropped from the production build) --------
 
@@ -175,6 +314,7 @@ const app = createApp({
     /** Push the draft out in small pieces, like a model answering. */
     function streamDraft() {
       window.msReset()
+      window.msBeginTurn(1)
       const text = draft.value
       let i = 0
       if (streamTimer !== undefined) {

@@ -126,9 +126,9 @@ public class ChatController {
 		}
 		if (loaded != null) {
 			tokenJockey.loadSession(loaded);
-			showMarkdown(loaded.markdown());
+			showMarkdown(loaded.markdown(), loaded.turnNumber() + 1);
 		} else {
-			showMarkdown(Files.readString(selectedFile.toPath()));
+			showMarkdown(Files.readString(selectedFile.toPath()), Integer.MAX_VALUE);
 		}
 	}
 
@@ -181,6 +181,11 @@ public class ChatController {
 	public void onSendStream(TokenStreamEvent evt) {
 		mdRaw.append(evt.getChunk());
 		msView.append(evt.getChunk());
+	}
+
+	@Subscribe
+	public void onMarkstreamTurn(MarkstreamTurnEvent evt) {
+		msView.beginTurn(evt.getTurnNumber());
 	}
 
 	private void sendPrompt() {
@@ -261,10 +266,14 @@ public class ChatController {
 		return fileChooser.showOpenDialog(txaToSend.getScene().getWindow());
 	}
 
-	/** Makes the transcript the contents of the pane, and {@code mdRaw} its mirror. */
-	private void showMarkdown(String content) {
+	/**
+	 * Loads a whole transcript as history. The view keeps details closed unless their turn tag matches
+	 * {@code nextLiveTurn}, so plain files use a sentinel and saved sessions use the turn after the one
+	 * they were saved at.
+	 */
+	private void showMarkdown(String content, int nextLiveTurn) {
 		msView.reset();
-		msView.load(content);
+		msView.loadSession(content, nextLiveTurn);
 		mdRaw = new StringBuilder(content);
 	}
 
