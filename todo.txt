@@ -1,7 +1,6 @@
 
 
-clean up turnfab_sessions
-  archive dir?
+explore wrapping thinking and tool calls in <details> HtmlBlockNode
 
 === Setup tab  ===
 
@@ -43,8 +42,6 @@ find a way to bring up tool calls later if needed (show ID, save in buffer, reca
 
 
 === ideas ===
-
-AGENTS.md?
 
 system notification onCompleteResponse, make easy to disable
 

@@ -93,6 +93,7 @@ public class ToolManager {
         // Expand the "jetbrains" template into one server per configured project.
         if (jbMcpMetaDef != null) {
             for (McpJetBrainsConfig.Project project : jbProjects.projects) {
+//                log.info("Expanding jetbrains template for project: " + project.name);
                 McpServerConfig.Server ns = new McpServerConfig.Server();
                 ns.url = "http://127.0.0.1:"+project.port+"/stream";
                 ns.headers.put("IJ_MCP_SERVER_PROJECT_PATH", project.projectPath);
