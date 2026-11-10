@@ -147,6 +147,7 @@ public class TokenJockey {
         rootSection = Section.NONE;
         subSection = Section.NONE;
         currentToolIndex = -1;
+
         detailsOpen = false;
         if (eb != null) {
             eb.post(new MarkstreamTurnEvent(turnNumber));
@@ -179,12 +180,14 @@ public class TokenJockey {
                     recomputeStatsIfPending();
                     if (subSection != Section.THINKING) {
                         closeSection();
+                        subSection = Section.THINKING;
                     }
-                    if (rootSection != Section.THINKING || !detailsOpen) {
-                        openDetails("Thinking:");
+                    if (rootSection != Section.THINKING) {
+//                        sendStream("\n\n==Thinking:==\n\n");
+                        sendStream("\n\n<details data-turn=\"" + turnNumber + "\">\n<summary>Thinking:</summary>\n\n");
+                        detailsOpen = false;
                         rootSection = Section.THINKING;
                     }
-                    subSection = Section.THINKING;
                     sendStream(partialThinking.text());
                     outputTokens += tcEst.estimateTokenCountInText(partialThinking.text());
                     sendStats();
@@ -201,11 +204,12 @@ public class TokenJockey {
                         log.warning("Partial response emitted during tool call: "+partialResponse.text());
                         return; // don't steal section mid tool-call streaming
                     }
-                    if (subSection != Section.RESPONSE || detailsOpen) {
+                    if (subSection != Section.RESPONSE) {
                         closeSection();
                         subSection = Section.RESPONSE;
                     }
                     if (rootSection != Section.RESPONSE) {
+                        sendStream("\n</details>\n\n");
                         sendStream("\n==Response:==\n");
                         rootSection = Section.RESPONSE;
                     }
@@ -222,12 +226,14 @@ public class TokenJockey {
                     recomputeStatsIfPending();
                     if (subSection != Section.TOOL_CALL
                             || partialToolCall.index() != currentToolIndex) {
-                        openDetails("Tool Call: " + partialToolCall.id() + " : " + partialToolCall.name());
-                        sendStream("`");
+                        if (subSection == Section.TOOL_CALL) {
+                            sendStream("`"); // close the previous call's code block
+                        }
+                        closeSection();
+                        sendStream("\n==Tool Call:==   *"+partialToolCall.id()+" : "+partialToolCall.name()+"*   `");
                         subSection = Section.TOOL_CALL;
                         currentToolIndex = partialToolCall.index();
                         toolCallChunks = 0;
-                        rootSection = Section.TOOL_CALL;
                     }
                     if (toolCallChunks < MAX_TOOL_CALL_DETAIL_CHUNKS) {
                         sendStream(partialToolCall.partialArguments());
@@ -241,8 +247,9 @@ public class TokenJockey {
                     // callback for it has already been delivered. Reset so the next round
                     // opens fresh sections instead of continuing stale ones.
                     if (subSection == Section.TOOL_CALL) {
-                        closeSection(true);
+                        sendStream("`"); // close the last call's code block
                     }
+                    closeSection();
                     subSection = Section.NONE;
                     currentToolIndex = -1;
                     // Stats recompute is deferred: tool results only land in chat memory after
@@ -250,13 +257,8 @@ public class TokenJockey {
                     // the start of the next round.
                 })
                 .onToolExecuted(execution -> {
-                    closeCodeFenceIfNeeded();
-                    if (!detailsOpen || rootSection != Section.TOOL_CALL) {
-                        openDetails("Tool Result");
-                        rootSection = Section.TOOL_CALL;
-                    }
                     flushStream(false);
-                    sendStream("> Tool Result:   " + execution.request().id() + " : " + execution.request().name());
+                    sendStream("> Tool Result:   "+execution.request().id()+" : "+execution.request().name());
                     if (execution.duration().toSeconds()>1)	sendStream("    took "+execution.duration().toSeconds()+" seconds");
                     if (execution.hasFailed()) sendStream("   `"+execution.result()+"`");
                     sendStream("\n\n");
@@ -264,7 +266,6 @@ public class TokenJockey {
                     statsRecomputePending = true;
                 })
                 .onCompleteResponse(response -> {
-                    closeSection();
                     rootSection = Section.NONE;
                     subSection = Section.NONE;
                     currentToolIndex = -1;
@@ -276,7 +277,9 @@ public class TokenJockey {
                     flushStream(true);
                 })
                 .onError(error -> {
-                    closeSection();
+                    if (subSection == Section.TOOL_CALL) {
+                        sendStream("`"); // close the last call's code block
+                    }
                     rootSection = Section.NONE;
                     subSection = Section.NONE;
                     currentToolIndex = -1;
@@ -308,63 +311,10 @@ public class TokenJockey {
      * so the next section's header doesn't get absorbed into it.
      */
     private void closeSection() {
-        closeSection(false);
-    }
-
-    /**
-     * Closes the currently open markdown section. When {@code keepOpenDetails} is true, details blocks
-     * stay open: this is the tool-result path, where the call block is closed but the details wrapper
-     * still has the execution result coming into it.
-     */
-    private void closeSection(boolean keepOpenDetails) {
-        boolean hadSection = subSection != Section.NONE;
-
-        if (keepOpenDetails) {
-            closeCodeFenceIfNeeded();
-        } else {
-            closeOpenDetails();
-        }
-
-        if (hadSection) {
-            flushStream(false);
-            sendStream("\n\n");
-        }
-    }
-
-    private void closeCodeFenceIfNeeded() {
-        if (subSection == Section.TOOL_CALL) {
-            sendStream("`");
-            subSection = Section.NONE;
-            currentToolIndex = -1;
-        }
-    }
-
-    private void closeOpenDetails() {
-        if (!detailsOpen) {
-            return;
-        }
-
-        closeCodeFenceIfNeeded();
-        sendStream("\n</details>\n\n");
-        detailsOpen = false;
-        subSection = Section.NONE;
-    }
-
-    private void openDetails(String label) {
-        if (detailsOpen) {
-            closeOpenDetails();
-        } else {
-            closeCodeFenceIfNeeded();
-        }
-
         if (subSection != Section.NONE) {
             flushStream(false);
             sendStream("\n\n");
-            subSection = Section.NONE;
         }
-
-        sendStream("\n\n<details data-turn=\"" + turnNumber + "\">\n<summary>" + label + "</summary>\n\n");
-        detailsOpen = true;
     }
 
     private void flushStream(boolean endOfTurn) {
