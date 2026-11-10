@@ -19,7 +19,7 @@
       }
 
       #app {
-        height: 90%;
+        height: 92%;
         overflow-y: auto;
         padding: 2em;
         scrollbar-gutter: stable;
@@ -29,19 +29,14 @@
        * Override markstream-vue's font stack. The library defines
        * --ms-font-sans as `ui-sans-serif, system-ui, sans-serif,
        * "Apple Color Emoji", "Segoe UI Emoji"` — generic families first.
-       * In this WebView the generic sans resolves to a font that has
-       * monochrome glyphs for emoji code points, and font matching stops
-       * at the first font that has the glyph, so the color emoji fonts at
-       * the end of the list are never reached (B&W emojis). Putting the
-       * system color emoji font first fixes that; its glyph coverage is
-       * limited to emoji, so regular text still falls through to the
-       * generic families. (Higher specificity than the library's
-       * `.markstream-vue` rule, so it wins regardless of load order.)
-       */
+       &
+       * This was an attempt to fix emojis, but it didn't work,
+       * and it wiped out both italc and bold text.
       #app .markstream-vue {
         --ms-font-sans: "Segoe UI Emoji", "Apple Color Emoji", ui-sans-serif,
           system-ui, sans-serif;
       }
+       */
 
       /*
        * "code header" toggle hook: the Vue wrapper adds .hide-code-headers to

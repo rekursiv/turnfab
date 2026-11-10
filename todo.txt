@@ -1,7 +1,5 @@
 
 
-explore wrapping thinking and tool calls in <details> HtmlBlockNode
-
 === Setup tab  ===
 
 "Begin Chat" btn:
@@ -26,11 +24,6 @@ which model to use should also be part of the setup
   start with cfg file, then wire into GUI
 
 === Chat tab ===
-
-split screen mode:
-  only questions and responses in top pane
-  only thinking and tool calls in bottom pane
-    probably want to keep existing mode, how to switch between?
 
 wire up save/load HTML
 
