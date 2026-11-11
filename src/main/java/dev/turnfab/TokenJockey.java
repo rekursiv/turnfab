@@ -67,13 +67,13 @@ public class TokenJockey {
     private boolean armCancel = false;
     private enum Section { NONE, THINKING, RESPONSE, TOOL_CALL }
 
-    private final ConfigManager<ModelConfig> modelCfgMgr = ConfigManager.yaml(ModelConfig.class, "../turnfab_config/model.yaml");
+    private ConfigManager<ModelConfig> modelCfgMgr;
     private ModelConfig modelCfg = new ModelConfig();
 
 
 
 
-    public void initBot() {
+    public void initBot() { // FIXME: not used
         ensureMemory();
         refreshToolAwareness();
         if (bot == null) buildBot();
@@ -86,6 +86,7 @@ public class TokenJockey {
     private void ensureMemory() {
         if (chatMemory != null) return;
 
+        modelCfgMgr = ConfigManager.yaml(ModelConfig.class, "../turnfab_config/"+setupCfg.modelConfig);
         modelCfg = modelCfgMgr.load();
         chatMemory = new JournalingChatMemory(
                 TokenWindowChatMemory.withMaxTokens(calcMaxTokens(), windowEstimator), () -> turnNumber);

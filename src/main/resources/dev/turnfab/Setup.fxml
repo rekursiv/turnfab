@@ -51,16 +51,7 @@
             <Insets bottom="4.0" left="4.0" right="4.0" top="4.0" />
          </VBox.margin>
          <children>
-            <Label prefWidth="100.0" text="System Prompt:">
-               <HBox.margin>
-                  <Insets bottom="8.0" left="8.0" right="8.0" top="8.0" />
-               </HBox.margin>
-            </Label>
-            <ChoiceBox fx:id="chbSysPrompts" prefWidth="150.0">
-               <HBox.margin>
-                  <Insets bottom="4.0" left="4.0" right="4.0" top="4.0" />
-               </HBox.margin></ChoiceBox>
-            <CheckBox fx:id="ckbAddDate" mnemonicParsing="false" onAction="#onCkbAddDate" text="Add Date to System Prompt">
+            <CheckBox fx:id="ckbAddDate" mnemonicParsing="false" text="Add Date to System Prompt">
                <HBox.margin>
                   <Insets bottom="8.0" left="40.0" right="8.0" top="8.0" />
                </HBox.margin>
@@ -143,7 +134,7 @@
                   <Insets bottom="4.0" left="4.0" right="4.0" top="4.0" />
                </HBox.margin>
             </Button>
-            <Button fx:id="btnShowFullPrompt" disable="true" mnemonicParsing="false" onAction="#onShowFullPrompt" text="Show Full Prompt">
+            <Button mnemonicParsing="false" onAction="#onShowFullPrompt" text="Show Full Prompt">
                <HBox.margin>
                   <Insets bottom="4.0" left="4.0" right="4.0" top="4.0" />
                </HBox.margin>

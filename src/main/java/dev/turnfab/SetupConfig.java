@@ -13,7 +13,8 @@ public class SetupConfig extends ConfigBase {
 	public boolean logRequests = false;
 	public boolean logResponses = false;
 
-    public String systemPromptFileName = "chatbot.md";
+	public String modelConfig = "model_qfn.yaml";
+    public String systemPrompt = "You are a friendly, conversational chatbot.";
 	public boolean addDateToSystemPrompt = true;
 
 	public List<String> mcpServers = new ArrayList<>();

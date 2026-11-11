@@ -1,4 +1,16 @@
 
+=== Sessions ===
+
+on first save, create directory named with date/time
+  subsequent saves overwrite session and md file in same dir
+
+dir contains:
+  yaml setup file
+  json session file  (derive from journal??)
+  md file
+  (optional HTML file?)
+
+tags? subdirs? archive? notes?
 
 === Setup tab  ===
 
@@ -10,8 +22,6 @@ changing the tool setup requires clicking "Load Tools" again to activate
   show this in GUI somehow
   load tools -> update tools (many names need changing...)
 
-sys prompt can be edited, could add interface to save (overwriting selected or save to new file, filename TextField?)
-
 work out how to handle loading sessions vs. loading MD
   sometimes it would be useful to load MD file into separate tab (move Load MD btn from Chat tab to Setup tab)
   when loading a session, should the old chat be cleared from MarkdownView?
@@ -20,8 +30,7 @@ ToolContextManager promptSummary
   report tokens/percent instead of # chars
   total up tokens/percent, append to end
 
-which model to use should also be part of the setup
-  start with cfg file, then wire into GUI
+add model selection to GUI
 
 === Chat tab ===
 
@@ -48,6 +57,7 @@ For multi-block messages use @UserMessage List<Content> (text + images) — same
 
 currency-guard still needs work: docker/shell content with $VAR etc. still triggers KaTeX
   see 2026-11-03_13-24-28_SESSION-fix-vllm.md
+  explore turning off KaTex with a checkbox in setup
 
 WebView: every emoji has a box after it that overlaps the first letter that comes next (JavaFX upgrade??)
 
