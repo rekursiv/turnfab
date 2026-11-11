@@ -73,14 +73,14 @@
             <CheckBox fx:id="ckbAddDate" mnemonicParsing="false" text="Add Date" />
          </graphic>
       </TitledPane>
-      <HBox prefHeight="200.0">
+      <HBox>
          <children>
-            <TitledPane animated="false" collapsible="false" prefWidth="130.0" text="MCP Servers" HBox.hgrow="NEVER">
+            <TitledPane animated="false" collapsible="false" prefHeight="200.0" prefWidth="130.0" text="MCP Servers" HBox.hgrow="NEVER">
                <content>
                   <CheckListView fx:id="clvMcpServers" />
                </content>
             </TitledPane>
-            <TitledPane animated="false" collapsible="false" prefWidth="150.0" text="Available Tool Context" HBox.hgrow="NEVER">
+            <TitledPane animated="false" collapsible="false" prefHeight="200.0" prefWidth="150.0" text="Available Tool Context" HBox.hgrow="NEVER">
                <content>
                   <ListView fx:id="lsvToolCtxAvail">
                      <tooltip>
@@ -88,7 +88,7 @@
                      </tooltip></ListView>
                </content>
             </TitledPane>
-            <TitledPane animated="false" collapsible="false" prefWidth="150.0" text="Selected Tool Context" HBox.hgrow="NEVER">
+            <TitledPane animated="false" collapsible="false" prefHeight="200.0" prefWidth="150.0" text="Selected Tool Context" HBox.hgrow="NEVER">
                <content>
                   <StackPane>
                      <ListView fx:id="lsvToolCtxSel">
@@ -151,9 +151,10 @@
             </TextArea>
          </content>
       </TitledPane>
-      <TitledPane animated="false" collapsible="false" text="Opening User Prompt" VBox.vgrow="ALWAYS">
+      <!-- maxHeight must be unbounded or VBox clamps vgrow to prefHeight (JDK-8093274) -->
+      <TitledPane animated="false" collapsible="false" maxHeight="Infinity" text="Opening User Prompt" VBox.vgrow="ALWAYS">
          <content>
-            <TextArea fx:id="txaUserPrompt" prefRowCount="5" wrapText="true">
+            <TextArea fx:id="txaUserPrompt" prefRowCount="5" wrapText="true" VBox.vgrow="ALWAYS">
                <font>
                   <Font size="14.0" />
                </font>
