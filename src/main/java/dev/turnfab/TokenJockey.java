@@ -1,12 +1,11 @@
 package dev.turnfab;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
 import com.google.inject.Inject;
-import dev.langchain4j.data.message.AiMessage;
-import dev.langchain4j.data.message.ChatMessage;
-import dev.langchain4j.data.message.TextContent;
-import dev.langchain4j.data.message.ToolExecutionResultMessage;
+import dev.langchain4j.data.message.*;
 import dev.langchain4j.http.client.jdk.JdkHttpClientBuilder;
 import dev.langchain4j.memory.chat.TokenWindowChatMemory;
 import dev.langchain4j.model.TokenCountEstimator;
@@ -24,6 +23,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
 
 
 public class TokenJockey {
@@ -460,11 +460,26 @@ public class TokenJockey {
         return trimmed;
     }
 
-    public void testJournal() {
-        List<JournalingChatMemory.Entry> journal = chatMemory.journal();
-        for (JournalingChatMemory.Entry entry : journal) {
-            System.out.println(entry.toString());
+    public void test() {
+        if (chatMemory == null) {
+            System.out.println("chatMemory is NULL");
+            return;
         }
+        System.out.println("==== RAW ====");
+        String messagesJson = ChatMessageSerializer.messagesToJson(chatMemory.messages());
+        System.out.println(messagesJson);
+        System.out.println("==== PRETTY ====");
+        ObjectMapper JSON = new ObjectMapper();
+        try {
+            System.out.println(JSON.writerWithDefaultPrettyPrinter().writeValueAsString(JSON.readTree(messagesJson)));
+        } catch (JsonProcessingException e) {
+            throw new RuntimeException(e);
+        }
+
+//        List<JournalingChatMemory.Entry> journal = chatMemory.journal();
+//        for (JournalingChatMemory.Entry entry : journal) {
+//            System.out.println(entry.toString());
+//        }
     }
 
 }

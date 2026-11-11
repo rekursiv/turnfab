@@ -67,7 +67,8 @@ public class ChatController {
 		txaToSend.skinProperty().addListener((obs, was, is) -> requestGrow());
 	}
 
-	//////////////////////////////////////////////////////////
+
+
 
 	@FXML
 	public void onSend() {
@@ -144,6 +145,11 @@ public class ChatController {
 	}
 
 	@FXML
+	public void onTest() {
+		tokenJockey.test();
+	}
+
+	@FXML
 	public void onPromptKey(KeyEvent evt) {
 		if (evt.getCode() == KeyCode.ENTER) {
 			int lastMinusOne = txaToSend.getText().length()-2;
@@ -162,6 +168,9 @@ public class ChatController {
 			txaToSend.setStyle("");
 		}
 	}
+
+
+
 
 	@Subscribe
 	public void onTokenStats(TokenStatsEvent evt) {
@@ -188,6 +197,9 @@ public class ChatController {
 		msView.beginTurn(evt.getTurnNumber());
 	}
 
+
+
+
 	private void sendPrompt() {
 		btnSend.setDisable(true);
 		eb.post(new BeginTurnEvent(txaToSend.getText().strip()));
@@ -199,8 +211,6 @@ public class ChatController {
 	private void resetPromptAreaHeight() {
 		txaToSend.setPrefRowCount(1);
 	}
-
-	//////////////////////////////////////////////////////////
 
 	/**
 	 * Marks the prompt as needing a size check and asks to be consulted after the next layout
