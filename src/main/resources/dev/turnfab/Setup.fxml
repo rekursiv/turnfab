@@ -11,19 +11,19 @@
    <children>
       <HBox>
          <children>
-            <Label prefWidth="100.0" text="Setup:">
+            <Label text="Setup:">
                <HBox.margin>
                   <Insets bottom="8.0" left="8.0" right="8.0" top="8.0" />
                </HBox.margin>
             </Label>
-            <ChoiceBox fx:id="chbSetup" prefWidth="150.0">
+            <ChoiceBox fx:id="chbSetup" prefWidth="180.0">
                <HBox.margin>
                   <Insets bottom="4.0" left="4.0" right="4.0" top="4.0" />
                </HBox.margin>
             </ChoiceBox>
             <Button mnemonicParsing="false" onAction="#onSaveSetup" text="Save Setup">
                <HBox.margin>
-                  <Insets bottom="4.0" left="80.0" right="4.0" top="4.0" />
+                  <Insets bottom="4.0" left="20.0" right="4.0" top="4.0" />
                </HBox.margin>
             </Button>
             <CheckBox fx:id="ckbSaveAs" mnemonicParsing="false" onAction="#onSaveAs" text="As:">
@@ -41,24 +41,9 @@
                   <Insets bottom="4.0" left="2.0" right="8.0" top="12.0" />
                </HBox.margin>
             </Label>
-         </children>
-         <VBox.margin>
-            <Insets bottom="4.0" left="4.0" right="4.0" top="4.0" />
-         </VBox.margin>
-      </HBox>
-      <HBox>
-         <VBox.margin>
-            <Insets bottom="4.0" left="4.0" right="4.0" top="4.0" />
-         </VBox.margin>
-         <children>
-            <CheckBox fx:id="ckbAddDate" mnemonicParsing="false" text="Add Date to System Prompt">
-               <HBox.margin>
-                  <Insets bottom="8.0" left="40.0" right="8.0" top="8.0" />
-               </HBox.margin>
-            </CheckBox>
             <CheckBox fx:id="ckbThink" mnemonicParsing="false" onAction="#onCkbThink" text="Enable Thinking">
                <HBox.margin>
-                  <Insets bottom="8.0" left="80.0" right="8.0" top="8.0" />
+                  <Insets bottom="8.0" left="20.0" right="8.0" top="8.0" />
                </HBox.margin>
             </CheckBox>
             <CheckBox fx:id="ckbLogReq" mnemonicParsing="false" text="Log Requests">
@@ -72,11 +57,22 @@
                </HBox.margin>
             </CheckBox>
          </children>
+         <VBox.margin>
+            <Insets bottom="4.0" left="4.0" right="4.0" top="4.0" />
+         </VBox.margin>
       </HBox>
-      <TextArea fx:id="txaSysPrompt" prefRowCount="5" wrapText="true">
-         <font>
-            <Font size="14.0" />
-         </font></TextArea>
+      <TitledPane animated="false" collapsible="false" contentDisplay="RIGHT" graphicTextGap="40.0" text="System Prompt">
+         <content>
+            <TextArea fx:id="txaSysPrompt" prefRowCount="5" wrapText="true">
+               <font>
+                  <Font size="14.0" />
+               </font>
+            </TextArea>
+         </content>
+         <graphic>
+            <CheckBox fx:id="ckbAddDate" mnemonicParsing="false" text="Add Date" />
+         </graphic>
+      </TitledPane>
       <HBox prefHeight="200.0">
          <children>
             <TitledPane animated="false" collapsible="false" prefWidth="130.0" text="MCP Servers" HBox.hgrow="NEVER">
@@ -139,20 +135,30 @@
                   <Insets bottom="4.0" left="4.0" right="4.0" top="4.0" />
                </HBox.margin>
             </Button>
-            <Button mnemonicParsing="false" onAction="#onClearPrompt" text="Clear Prompt">
+            <Button mnemonicParsing="false" onAction="#onClearPrompt" text="Clear User Prompt">
                <HBox.margin>
                   <Insets bottom="4.0" left="80.0" right="4.0" top="4.0" />
                </HBox.margin>
             </Button>
          </children>
       </HBox>
-      <TextArea fx:id="txaTcSummary" editable="false" prefRowCount="5" wrapText="true">
-         <font>
-            <Font size="14.0" />
-         </font></TextArea>
-      <TextArea fx:id="txaUserPrompt" prefRowCount="5" wrapText="true" VBox.vgrow="ALWAYS">
-         <font>
-            <Font size="14.0" />
-         </font></TextArea>
+      <TitledPane animated="false" collapsible="false" text="Tool Context Summary">
+         <content>
+            <TextArea fx:id="txaTcSummary" editable="false" prefRowCount="5" wrapText="true">
+               <font>
+                  <Font size="14.0" />
+               </font>
+            </TextArea>
+         </content>
+      </TitledPane>
+      <TitledPane animated="false" collapsible="false" text="Opening User Prompt" VBox.vgrow="ALWAYS">
+         <content>
+            <TextArea fx:id="txaUserPrompt" prefRowCount="5" wrapText="true">
+               <font>
+                  <Font size="14.0" />
+               </font>
+            </TextArea>
+         </content>
+      </TitledPane>
    </children>
 </VBox>
