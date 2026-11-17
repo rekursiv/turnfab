@@ -2,19 +2,21 @@
 === Sessions ===
 
 on first save, create directory named with date/time
-  subsequent saves overwrite session and md file in same dir
+  subsequent saves overwrite files in same dir
 
 dir contains:
   yaml setup file
-  json session file  (derive from journal??)
+  json session file
   md file
-  (optional HTML file?)
+  optional: html file, json file with "evicted" msgs from journal
 
-tags? subdirs? archive? notes?
+tags? archive? notes?
+
 
 === Setup tab  ===
 
-"Begin Chat" btn:
+
+"Begin Chat" btn: rename "Start New Session"
   should this "reset" the chat back to turn #1 and reset MarkdownView?
     if so, warn user
 

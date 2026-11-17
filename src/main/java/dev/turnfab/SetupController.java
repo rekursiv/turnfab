@@ -108,15 +108,11 @@ public class SetupController {
 
 		setupCfgMgr = new ConfigManager<>(SetupConfig.class, "../turnfab_config/setups/default.yaml", new ObjectMapper(new YAMLFactory()));
 		chbSetup.itemsProperty().setValue(FXCollections.observableArrayList());
-		String setupDir = System.getProperty("user.dir")+"/../turnfab_config/setups/";
-		try (var stream = Files.list(Paths.get(setupDir))) {
-			stream.filter(Files::isRegularFile)
-					.filter(file -> file.getFileName().toString().endsWith(".yaml"))
-					.forEach(file -> chbSetup.getItems().add(file.getFileName().toString()));
-		}
 		chbSetup.valueProperty().addListener(
 				(_, _, newValue) -> onSelectSetup(newValue));
 		chbSetup.getSelectionModel().select("default.yaml");
+
+		loadSetupList();
 		hideMarker();
 	}
 
@@ -132,9 +128,8 @@ public class SetupController {
 		writeGuiToSetup();
 		if (ckbSaveAs.isSelected()) {
 			setupCfgMgr.saveToFile("../turnfab_config/setups/"+txfSaveAs.getText()+".yaml", setupCfg);
-			chbSetup.getItems().add(txfSaveAs.getText()+".yaml");
-
-			// we want the file we just saved to appear in the ChoiceBox,
+			loadSetupList();
+			// we want the file we just saved to appear selected in the ChoiceBox,
 			// but there is no need to actually re-load the file
 			loadSetupArmed = false;
 			chbSetup.getSelectionModel().select(txfSaveAs.getText()+".yaml");
@@ -186,6 +181,16 @@ public class SetupController {
 		} else {
 			tpToolPreview.setText("Tool Preview: "+name);
 			txaToolPreview.setText(toolManager.getToolContextPreview(name));
+		}
+	}
+
+	private void loadSetupList() throws IOException {
+		chbSetup.getItems().clear();
+		String setupDir = System.getProperty("user.dir")+"/../turnfab_config/setups/";
+		try (var stream = Files.list(Paths.get(setupDir))) {
+			stream.filter(Files::isRegularFile)
+					.filter(file -> file.getFileName().toString().endsWith(".yaml"))
+					.forEach(file -> chbSetup.getItems().add(file.getFileName().toString()));
 		}
 	}
 
@@ -397,7 +402,7 @@ public class SetupController {
 
 	private void onSelectSetup(String fileName){
 //		log.info("Setup file selected: "+fileName);
-		if (loadSetupArmed) {
+		if (fileName!=null && loadSetupArmed) {
 			try {
 				// copyInto rather than loadInto: the source instance is built in full before
 				// setupCfg is touched, so a malformed file can't leave it half-updated
