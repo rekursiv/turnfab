@@ -10,7 +10,7 @@ public class TurnfabToolSpecMapper implements BiFunction<McpClient, ToolSpecific
     public ToolSpecification apply(McpClient mc, ToolSpecification original) {
         ToolSpecification.Builder b = original.toBuilder();
 
-        if (!mc.key().equals("tavily")) {  // tavily tools already prefixed
+        if (!mc.key().equals("tavily") && !mc.key().equals("fusion")) {  // these tools already prefixed
             switch (original.name()) {
                 case "turnfab_read_file" -> b.name(mc.key()+"-read_file");
                 case "turnfab_apply_patch" -> b.name(mc.key()+"-apply_patch");
