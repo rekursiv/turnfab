@@ -11,11 +11,11 @@
   },
   "dependencies": {
     "katex": "^0.19.1",
-    "markstream-vue": "^2.0.24"
+    "markstream-vue": "^2.0.29"
   },
   "devDependencies": {
-    "@vitejs/plugin-vue": "^6.0.10",
-    "vite": "^8.3.6",
-    "vue": "^3.5.45"
+    "@vitejs/plugin-vue": "^6.0.11",
+    "vite": "^8.3.8",
+    "vue": "^3.5.46"
   }
 }
