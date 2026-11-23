@@ -42,7 +42,7 @@ public class RootController {
 
 	@Subscribe
 	public void onPrompt(BeginTurnEvent evt) {
-		if (evt.getSystemPrompt()!=null) tabPane.getSelectionModel().select(1);
+		if (evt.getSystemPrompt()!=null) tabPane.getSelectionModel().select(2);
 	}
 
 }

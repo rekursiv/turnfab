@@ -1,8 +1,9 @@
 
 === Sessions ===
 
+select tab on SessionSetupEvent
+
 events:
-  SessionSetupEvent
   SessionLoadMemoryEvent
   SessionLoadHistoryEvent
 
@@ -12,6 +13,9 @@ support subdirs:
     recursive mode to show all??
 
 optional files in session dir: html file, json file with "evicted" msgs from journal
+
+lazy load tabs for Setup, Chat, History
+  need tab management
 
 === Setup tab  ===
 

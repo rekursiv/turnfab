@@ -188,7 +188,8 @@ public class SetupController {
 	public void onSessionSetup(SessionSetupEvent evt) {
         try {
             setupCfgMgr.copyInto(evt.getSetupConfig(), setupCfg);
-			// TODO: update ChoiceBox
+			chbSetup.getItems().add(evt.getName());  //  TODO: add ChoiceBox handling of setup names
+			chbSetup.getSelectionModel().select(evt.getName());
 			writeSetupToGui();
 			toolsLoaded = false;  // TODO: load tools
 			log.info("");
