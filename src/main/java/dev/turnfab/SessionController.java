@@ -1,6 +1,7 @@
 package dev.turnfab;
 
 import com.cathive.fx.guice.FXMLController;
+import com.google.common.eventbus.EventBus;
 import com.google.inject.Inject;
 import javafx.beans.property.SimpleIntegerProperty;
 import javafx.beans.property.SimpleStringProperty;
@@ -18,6 +19,7 @@ public class SessionController {
 
 	@Inject private Logger log;
 	@Inject private SystemConfig sysCfg;
+	@Inject private EventBus eb;
 
 	@FXML private TableView<SessionData> tbvSessions;
 	@FXML private TableColumn<SessionData, String> tbcSessionName;
@@ -25,7 +27,8 @@ public class SessionController {
 	@FXML private TableColumn<SessionData, Integer> tbcTokens;
 	@FXML private TableColumn<SessionData, String> tbcUserPrompt;
 
-	private ConfigManager<SetupConfig> setupCfgMgr = ConfigManager.yaml(SetupConfig.class, null);
+	private final ConfigManager<SetupConfig> setupCfgMgr = ConfigManager.yaml(SetupConfig.class, null);
+	private SessionData selectedSession;
 
 	@FXML
 	private void initialize() {
@@ -36,9 +39,22 @@ public class SessionController {
 		tbcTokens.setCellValueFactory(f -> new SimpleIntegerProperty(f.getValue().getTokens()).asObject());
 		tbcUserPrompt.setCellValueFactory(f -> new SimpleStringProperty(f.getValue().getUserPrompt()));
 
+		tbvSessions.getSelectionModel().selectedItemProperty().addListener(
+				(_, _, newValue) -> onSelect(newValue));
+
 		walkSessions();
 	}
 
+	@FXML
+	public void onSetup() {
+		if (selectedSession != null) {
+			eb.post(new SessionSetupEvent(selectedSession.getName(), selectedSession.getSetupConfig()));
+		}
+	}
+
+	private void onSelect(SessionData sessionData) {
+		selectedSession = sessionData;
+	}
 
 	private void walkSessions() {
         File[] files = Path.of(sysCfg.sessionPath).toFile().listFiles();
@@ -69,6 +85,9 @@ public class SessionController {
 		}
 		public String getUserPrompt() {
 			return setupConfig.userPrompt;
+		}
+		public SetupConfig getSetupConfig() {
+			return setupConfig;
 		}
 	}
 }

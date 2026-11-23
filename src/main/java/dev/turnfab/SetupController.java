@@ -184,6 +184,20 @@ public class SetupController {
 		}
 	}
 
+	@Subscribe
+	public void onSessionSetup(SessionSetupEvent evt) {
+        try {
+            setupCfgMgr.copyInto(evt.getSetupConfig(), setupCfg);
+			// TODO: update ChoiceBox
+			writeSetupToGui();
+			toolsLoaded = false;  // TODO: load tools
+			log.info("");
+
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
 	private void onToolContextSelect(String name) {
 		if (name==null) {
 			tpToolPreview.setText("Tool Preview");
