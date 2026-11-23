@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.*?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<AnchorPane prefHeight="400.0" prefWidth="900.0" xmlns="http://javafx.com/javafx/17.0.12" xmlns:fx="http://javafx.com/fxml/1" fx:controller="dev.turnfab.SessionController">
+   <children>
+      <VBox layoutX="420.0" layoutY="37.0" prefHeight="400.0" prefWidth="600.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
+         <children>
+            <TableView fx:id="tbvSessions" prefHeight="200.0" prefWidth="200.0">
+              <columns>
+                <TableColumn fx:id="tbcSessionName" maxWidth="250.0" minWidth="150.0" prefWidth="200.0" text="Name" />
+                <TableColumn fx:id="tbcTurns" maxWidth="50.0" minWidth="50.0" prefWidth="50.0" text="Turns" />
+                  <TableColumn fx:id="tbcTokens" maxWidth="50.0" minWidth="50.0" prefWidth="50.0" text="Tokens" />
+                  <TableColumn fx:id="tbcUserPrompt" minWidth="300.0" prefWidth="500.0" text="Opening User Prompt" />
+              </columns>
+            </TableView>
+            <HBox prefHeight="100.0" prefWidth="200.0">
+               <children>
+                  <Button mnemonicParsing="false" text="Setup">
+                     <HBox.margin>
+                        <Insets bottom="4.0" left="4.0" right="4.0" top="4.0" />
+                     </HBox.margin>
+                  </Button>
+                  <Button mnemonicParsing="false" text="Continue">
+                     <HBox.margin>
+                        <Insets bottom="4.0" left="4.0" right="4.0" top="4.0" />
+                     </HBox.margin>
+                  </Button>
+               </children>
+            </HBox>
+         </children>
+      </VBox>
+   </children>
+</AnchorPane>

@@ -20,29 +20,19 @@
                             <Insets bottom="4.0" left="4.0" right="4.0" top="4.0" />
                         </HBox.margin>
                     </Button>
-                    <Button mnemonicParsing="false" onAction="#onSaveMd" text="Save MD">
+                    <Button mnemonicParsing="false" onAction="#onCancel" text="Cancel">
                         <HBox.margin>
                             <Insets bottom="4.0" left="40.0" right="4.0" top="4.0" />
+                        </HBox.margin>
+                    </Button>
+                    <Button mnemonicParsing="false" onAction="#onViewMd" text="View Raw Markdown">
+                        <HBox.margin>
+                            <Insets bottom="4.0" left="8.0" right="4.0" top="4.0" />
                         </HBox.margin>
                     </Button>
                     <Button mnemonicParsing="false" onAction="#onSaveSession" text="Save Session">
                         <HBox.margin>
                             <Insets bottom="4.0" left="8.0" right="4.0" top="4.0" />
-                        </HBox.margin>
-                    </Button>
-                    <Button mnemonicParsing="false" onAction="#onLoadMd" text="Load Session">
-                        <HBox.margin>
-                            <Insets bottom="4.0" left="4.0" right="4.0" top="4.0" />
-                        </HBox.margin>
-                    </Button>
-                    <Button mnemonicParsing="false" onAction="#onViewMd" text="View MD">
-                        <HBox.margin>
-                            <Insets bottom="4.0" left="4.0" right="4.0" top="4.0" />
-                        </HBox.margin>
-                    </Button>
-                    <Button mnemonicParsing="false" onAction="#onCancel" text="Cancel">
-                        <HBox.margin>
-                            <Insets bottom="4.0" left="40.0" right="4.0" top="4.0" />
                         </HBox.margin>
                     </Button>
                     <Label fx:id="lblCtxUsage" prefWidth="160.0" text="Token Usage">
@@ -60,6 +50,20 @@
                   <Insets bottom="4.0" left="4.0" right="4.0" top="4.0" />
                </HBox.margin>
             </Button>
+                    <Button mnemonicParsing="false" onAction="#onLoadLegacySession" text="Load Legacy Session">
+                        <HBox.margin>
+                            <Insets bottom="4.0" left="4.0" right="4.0" top="4.0" />
+                        </HBox.margin>
+                    </Button>
+                    <Button mnemonicParsing="false" onAction="#onSaveMd" text="Save MD">
+                        <HBox.margin>
+                            <Insets bottom="4.0" left="4.0" right="4.0" top="4.0" />
+                        </HBox.margin>
+                    </Button>
+            <Button mnemonicParsing="false" onAction="#onSaveLegacySession" text="Save Legacy Session">
+               <HBox.margin>
+                  <Insets bottom="4.0" left="4.0" right="4.0" top="4.0" />
+               </HBox.margin></Button>
                 </children>
             </HBox>
         </children>

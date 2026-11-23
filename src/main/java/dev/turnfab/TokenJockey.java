@@ -19,6 +19,9 @@ import dev.langchain4j.service.AiServices;
 import dev.langchain4j.service.TokenStream;
 import javafx.application.Platform;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Level;
@@ -153,6 +156,7 @@ public class TokenJockey {
         if (eb != null) {
             eb.post(new MarkstreamTurnEvent(turnNumber));
         }
+        setupCfg.numTurns = turnNumber;
 
         sendStream("\n\n## ==Turn "+turnNumber+"==\n");
         if (evt.getUserPromptSummary()!=null && !evt.getUserPromptSummary().isBlank()) sendStream(evt.getUserPromptSummary());
@@ -276,6 +280,8 @@ public class TokenJockey {
                             "   Tokens Out: "+response.metadata().tokenUsage().outputTokenCount()+
                             "   Total: "+response.metadata().tokenUsage().totalTokenCount()+"\n");
                     flushStream(true);
+                    sendStats();
+                    setupCfg.numTokens = inputTokens + outputTokens;
                 })
                 .onError(error -> {
                     if (subSection == Section.TOOL_CALL) {
@@ -369,14 +375,32 @@ public class TokenJockey {
         }
     }
 
+    public void loadSession() {
+        // TODO
+    }
+
+    public void saveChatMemory(Path path) throws IOException {
+        if (chatMemory == null) {
+            log.warning("chatMemory is NULL");
+            return;
+        }
+        String prettyJson;
+        String messagesJson = ChatMessageSerializer.messagesToJson(chatMemory.messages());
+        ObjectMapper JSON = new ObjectMapper();
+        prettyJson = JSON.writerWithDefaultPrettyPrinter().writeValueAsString(JSON.readTree(messagesJson));
+        if (prettyJson != null) {
+            Files.writeString(path, prettyJson);
+        }
+    }
+
     /**
      * Everything that has to come back for this session to continue where it stopped: the window, the
      * turn counter, the system prompt. The markdown half of a session file is the caller's, since it is
      * the view layer that has been collecting it.
      */
-    public SessionFile.Session currentSession(String markdown) {
+    public SessionFileLegacy.Session currentSessionLegacy(String markdown) {
         ensureMemory();
-        return new SessionFile.Session(turnNumber, modelCfg.name, null, systemPrompt, chatMemory.messages(), markdown,
+        return new SessionFileLegacy.Session(turnNumber, modelCfg.name, null, systemPrompt, chatMemory.messages(), markdown,
                 setupCfg.enableThinking, toolManager.currentSetup());
     }
 
@@ -388,7 +412,7 @@ public class TokenJockey {
      * Loading is meant to happen between turns: a turn already streaming would write over the restored
      * memory as its tool rounds land.
      */
-    public void loadSession(SessionFile.Session snap) {
+    public void loadSessionLegacy(SessionFileLegacy.Session snap) {
         ensureMemory();
 
         restoreTools(snap.tools());
@@ -435,7 +459,7 @@ public class TokenJockey {
      * its own: a server that is down now is not a reason to drop a session whose conversation is intact.
      * Whatever did connect is what the next turn gets.
      */
-    private void restoreTools(SessionFile.ToolSetup tools) {
+    private void restoreTools(SessionFileLegacy.ToolSetup tools) {
         if (tools == null) return;
         try {
             List<String> live = toolManager.applySetup(tools);

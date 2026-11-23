@@ -1,26 +1,17 @@
 
 === Sessions ===
 
-on first save, create directory named with date/time
-  subsequent saves: update setup.yaml, backup other
-
-dir contains:
-  yaml setup file
-  json session file
-  md file
-  optional: html file, json file with "evicted" msgs from journal
+events:
+  SessionSetupEvent
+  SessionLoadMemoryEvent
+  SessionLoadHistoryEvent
 
 support subdirs:
   any dir that starts with . is skipped in session list scan
   dirs starting with . are scanned and put in ChoiceBox
     recursive mode to show all??
 
-setup file: add to SetupConfig
-  date/time
-  cur turn #
-  data version
-  # tokens?
-  notes?
+optional files in session dir: html file, json file with "evicted" msgs from journal
 
 === Setup tab  ===
 

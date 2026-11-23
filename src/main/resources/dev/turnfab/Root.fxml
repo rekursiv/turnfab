@@ -11,6 +11,11 @@
             <children>
                 <TabPane fx:id="tabPane" tabClosingPolicy="UNAVAILABLE" VBox.vgrow="ALWAYS">
                     <tabs>
+                        <Tab closable="false" text="Sessions">
+                            <content>
+                                <fx:include source="Session.fxml"/>
+                            </content>
+                        </Tab>
                         <Tab closable="false" text="Setup">
                             <content>
                                 <fx:include source="Setup.fxml"/>

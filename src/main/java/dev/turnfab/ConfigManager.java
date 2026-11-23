@@ -55,7 +55,7 @@ public class ConfigManager<T> {
 		if (mapper==null) mapper = new ObjectMapper();
 		ConfigBase config = createConfig();
 		
-		if (!config.cfgUseDefaults) {
+		if (!config.cfgUseDefaults && defaultFileName!=null) {
 		
 			if (Files.exists(buildPath(defaultFileName))) {
 				try {

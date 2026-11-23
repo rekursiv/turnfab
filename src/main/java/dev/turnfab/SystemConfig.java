@@ -11,5 +11,6 @@ public class SystemConfig extends ConfigBase {
 	public boolean logToConsole=true;
 	public boolean logToFile=false;
 
+	public String sessionPath = "../turnfab_sessions/";
 
 }

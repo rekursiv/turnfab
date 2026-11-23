@@ -18,8 +18,7 @@ The UI controllers never call the model directly. Everything flows through a Goo
 controllers publish, `TokenJockey` consumes and drives a LangChain4j `AiServices` streaming chat
 against an OpenAI-compatible endpoint, and streams rendered markdown back down the bus to the
 view. If you are tracing a request, follow the events, not the imports. Config lives in
-`../turnfab_config/` (model, MCP servers, tool contexts, setups, system prompts) and saved
-sessions are saved/restored through `SessionFile`.
+`../turnfab_config/` (model, MCP servers, tool contexts, setups, system prompts)
 
 ## The two dependencies — and why they behave differently
 

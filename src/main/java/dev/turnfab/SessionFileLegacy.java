@@ -38,7 +38,7 @@ import java.util.Optional;
  *     leaving behind a file that loads back as something else.</li>
  * </ul>
  */
-public class SessionFile {
+public class SessionFileLegacy {
 
 	/** 1: memory, turn, prompt. 2: tool setup and the thinking flag. */
 	public static final int SCHEMA_VERSION = 2;
@@ -91,7 +91,7 @@ public class SessionFile {
 		}
 	}
 
-	private SessionFile() {}
+	private SessionFileLegacy() {}
 
 	/** Writes the session file, then verifies it: a session file that lies is worse than no session file. */
 	public static void save(Path file, Session snap) throws IOException {

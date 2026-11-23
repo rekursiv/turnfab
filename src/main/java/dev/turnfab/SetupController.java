@@ -5,6 +5,7 @@ import com.cathive.fx.guice.GuiceFXMLLoader;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import com.google.common.eventbus.EventBus;
+import com.google.common.eventbus.Subscribe;
 import com.google.inject.Inject;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -45,6 +46,7 @@ public class SetupController {
 
 	@Inject	private Logger log;
 	@Inject private GuiceFXMLLoader fxmlLoader;
+	@Inject private SystemConfig sysCfg;
 	@Inject private SetupConfig setupCfg;
 	@Inject private EventBus eb;
 	@Inject private ToolManager toolManager;
@@ -172,6 +174,14 @@ public class SetupController {
 	@FXML
 	public void onClearPrompt() {
 		txaUserPrompt.clear();
+	}
+
+	@Subscribe
+	public void onSessionSave(SessionSaveEvent evt) throws Exception {
+		if (evt.getSessionName() != null)	{
+			if (evt.isFirstSave()) setupCfg.firstSavedAt = evt.getSessionName();
+			setupCfgMgr.saveToFile(sysCfg.sessionPath+evt.getSessionName()+"/setup.yaml", setupCfg);
+		}
 	}
 
 	private void onToolContextSelect(String name) {

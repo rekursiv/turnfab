@@ -203,8 +203,8 @@ public class ToolManager {
      * connected right now. The two can disagree, and both halves matter -- the lists are what a session
      * file has to restore, the connected keys are what the model could actually call.
      */
-    public SessionFile.ToolSetup currentSetup() {
-        return new SessionFile.ToolSetup(
+    public SessionFileLegacy.ToolSetup currentSetup() {
+        return new SessionFileLegacy.ToolSetup(
                 (setupCfg.mcpServers == null) ? List.of() : List.copyOf(setupCfg.mcpServers),
                 (setupCfg.toolContext == null) ? List.of() : List.copyOf(setupCfg.toolContext),
                 toolProvider.getMcpClientKeys());
@@ -216,7 +216,7 @@ public class ToolManager {
      *
      * @throws Exception if any server refuses to come up, exactly as "Load Tools" would
      */
-    public List<String> applySetup(SessionFile.ToolSetup setup) throws Exception {
+    public List<String> applySetup(SessionFileLegacy.ToolSetup setup) throws Exception {
         setupCfg.mcpServers = new ArrayList<>(setup.mcpServers());
         setupCfg.toolContext = new ArrayList<>(setup.toolContext());
         enabledNames = null;

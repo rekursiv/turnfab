@@ -22,5 +22,8 @@ public class SetupConfig extends ConfigBase {
 
 	public String userPrompt = null;
 
+	public String firstSavedAt = null;
+	public int numTurns = 0;
+	public int numTokens = 0;
 
 }
