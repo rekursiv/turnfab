@@ -41,8 +41,30 @@ public class RootController {
 	}
 
 	@Subscribe
-	public void onPrompt(BeginTurnEvent evt) {
-		if (evt.getSystemPrompt()!=null) tabPane.getSelectionModel().select(2);
+	public void onSessionSetup(SessionSetupEvent evt) {
+		if (!evt.isLoadTools()) tabPane.getSelectionModel().select(1);
+	}
+
+	@Subscribe
+	public void onSessionLoad(SessionLoadEvent evt) {
+		String title;
+		if (evt.getTurns()==0) title = "History: ";
+		else title = "Chat: ";
+		title += evt.getName();
+		tabPane.getTabs().get(2).setText(title);
+		tabPane.getSelectionModel().select(2);
+	}
+
+	@Subscribe
+	public void onBeginTurn(BeginTurnEvent evt) {
+		if (evt.getUserPromptSummary()!=null) tabPane.getSelectionModel().select(2);
+	}
+
+	@Subscribe
+	public void onSessionSave(SessionSaveEvent evt) {
+		if (evt.isFirstSave() && evt.getSessionName() != null) {
+			tabPane.getTabs().get(2).setText("Chat: " + evt.getSessionName());
+		}
 	}
 
 }

@@ -19,6 +19,7 @@ import dev.langchain4j.service.AiServices;
 import dev.langchain4j.service.TokenStream;
 import javafx.application.Platform;
 
+import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -83,8 +84,8 @@ public class TokenJockey {
     }
 
     /**
-     * The window has to exist before anything reads or writes it, and either {@link #beginTurn} or
-     * {@link #loadSession} can be the first thing that runs after startup, so both of them call this.
+     * The window has to exist before anything reads or writes it, and either {@link #onBeginTurn} or
+     * {@link #loadChatMemory} can be the first thing that runs after startup, so both of them call this.
      */
     private void ensureMemory() {
         if (chatMemory != null) return;
@@ -132,16 +133,16 @@ public class TokenJockey {
         armCancel = true;
     }
 
-    @Subscribe
-    public void beginTurn(BeginTurnEvent evt) {
 
+    @Subscribe
+    public void onSystemPrompt(SystemPromptEvent evt) {
+        if (evt.getSystemPrompt()==null || evt.getSystemPrompt().isBlank()) systemPrompt = "blank"; // text cannot be null or blank
+        else systemPrompt = evt.getSystemPrompt();
+    }
+
+    @Subscribe
+    public void onBeginTurn(BeginTurnEvent evt) {
         ++turnNumber;
-        if (turnNumber==1) {  // system prompt stays the same, ensuring prefix cache hits
-            if (evt.getSystemPrompt()==null || evt.getSystemPrompt().isBlank()) systemPrompt = "blank"; // text cannot be null or blank
-            else systemPrompt = evt.getSystemPrompt();
-            sendStream("### ==System Prompt:==\n");
-            sendStream(systemPrompt);
-        }
 
         if (bot==null) {
             buildBot();
@@ -276,9 +277,9 @@ public class TokenJockey {
                     currentToolIndex = -1;
 //					log.info("'"+response.aiMessage().text()+"'");
 //					log.info("finishReason="+response.metadata().finishReason()+",  "+response.metadata().tokenUsage());
-                    sendStream("\n\n- Turn complete. Tokens In: "+response.metadata().tokenUsage().inputTokenCount()+
-                            "   Tokens Out: "+response.metadata().tokenUsage().outputTokenCount()+
-                            "   Total: "+response.metadata().tokenUsage().totalTokenCount()+"\n");
+//                    sendStream("\n\n- Turn complete. Tokens In: "+response.metadata().tokenUsage().inputTokenCount()+
+//                            "   Tokens Out: "+response.metadata().tokenUsage().outputTokenCount()+
+//                            "   Total: "+response.metadata().tokenUsage().totalTokenCount()+"\n");
                     flushStream(true);
                     sendStats();
                     setupCfg.numTokens = inputTokens + outputTokens;
@@ -375,8 +376,41 @@ public class TokenJockey {
         }
     }
 
-    public void loadSession() {
-        // TODO
+    public void loadChatMemory(File memFile, int turnNum) throws IOException {
+
+        String jsonMem = Files.readString(memFile.toPath());
+
+        List<ChatMessage> messages;
+        try {
+            messages = ChatMessageDeserializer.messagesFromJson(jsonMem);
+        } catch (Exception unreadable) {
+            throw new IOException("Could not decode the chat memory in " + memFile, unreadable);
+        }
+
+        List<ChatMessage> restored = trimDanglingToolRequests(messages);
+        int dropped = messages.size() - restored.size();
+        if (dropped > 0) {
+            log.warning("Dropped " + dropped + " unfinished tool-call message(s) from the loaded session's tail.");
+        }
+
+        ensureMemory();
+        chatMemory.reset();
+        // Turn number moves first, so the journal tags the restored entries with the turn they loaded on.
+        turnNumber = turnNum;
+        chatMemory.set(restored);
+
+        int inWindow = chatMemory.messages().size();
+        if (inWindow < restored.size()) {
+            log.warning("Window holds " + calcMaxTokens() + " tokens: evicted "
+                    + (restored.size() - inWindow) + " of the loaded message(s) on the way in.");
+        }
+
+        rootSection = Section.NONE;
+        subSection = Section.NONE;
+        currentToolIndex = -1;
+        detailsOpen = false;
+
+        log.info("Session loaded: " + inWindow + " message(s) in window, next turn " + (turnNumber + 1));
     }
 
     public void saveChatMemory(Path path) throws IOException {

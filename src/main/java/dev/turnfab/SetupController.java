@@ -166,7 +166,8 @@ public class SetupController {
 			toolsLoaded = loadTools();
 		}
 		if (toolsLoaded) {
-			eb.post(new BeginTurnEvent(getSystemPrompt(), toolManager.getPrompt()+txaUserPrompt.getText(),
+			eb.post(new SystemPromptEvent(getSystemPrompt()));
+			eb.post(new BeginTurnEvent(toolManager.getPrompt()+txaUserPrompt.getText(),
 					toolManager.getPromptSummary()+"\n"+txaUserPrompt.getText()));
 		}
 	}
@@ -189,11 +190,15 @@ public class SetupController {
         try {
             setupCfgMgr.copyInto(evt.getSetupConfig(), setupCfg);
 			chbSetup.getItems().add(evt.getName());  //  TODO: add ChoiceBox handling of setup names
+			loadSetupArmed = false;
 			chbSetup.getSelectionModel().select(evt.getName());
+			loadSetupArmed = true;
 			writeSetupToGui();
-			toolsLoaded = false;  // TODO: load tools
-			log.info("");
-
+			if (evt.isLoadTools()) {
+				toolsLoaded = loadTools();  // TODO: warn user if returns false
+				eb.post(new SystemPromptEvent(getSystemPrompt()));
+			}
+			else toolsLoaded = false;
         } catch (Exception e) {
             throw new RuntimeException(e);
         }

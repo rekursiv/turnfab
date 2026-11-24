@@ -157,8 +157,24 @@ public class ChatController {
 		msView.beginTurn(evt.getTurnNumber());
 	}
 
-
-
+	@Subscribe
+	public void onSessionLoad(SessionLoadEvent evt) {
+		sessionName = evt.getName();
+		File mdFile = new File(evt.getPath()+"/"+evt.getName(), "history.md");
+        try {
+            showMarkdown(Files.readString(mdFile.toPath()), evt.getTurns()+1);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+		if (evt.getTurns() > 0) {
+			File memFile = new File(evt.getPath()+"/"+evt.getName(), "memory.json");
+            try {
+                tokenJockey.loadChatMemory(memFile, evt.getTurns());
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        }
+    }
 
 	private void sendPrompt() {
 		btnSend.setDisable(true);
@@ -289,7 +305,7 @@ public class ChatController {
 			tokenJockey.loadSessionLegacy(loaded);
 			showMarkdown(loaded.markdown(), loaded.turnNumber() + 1);
 		} else {
-			showMarkdown(Files.readString(selectedFile.toPath()), Integer.MAX_VALUE);
+			showMarkdown(Files.readString(selectedFile.toPath()), 0);
 		}
 	}
 
@@ -300,7 +316,8 @@ public class ChatController {
 	 */
 	private void showMarkdown(String content, int nextLiveTurn) {
 		msView.reset();
-		msView.loadSession(content, nextLiveTurn);
+		if (nextLiveTurn == 0) msView.loadSession(content, Integer.MAX_VALUE);
+		else msView.loadSession(content, nextLiveTurn);
 		mdRaw = new StringBuilder(content);
 	}
 

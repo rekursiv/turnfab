@@ -13,6 +13,7 @@ import javafx.scene.control.TextArea;
 import java.io.File;
 import java.nio.file.Path;
 import java.util.logging.Logger;
+import java.util.regex.Pattern;
 
 @FXMLController
 public class SessionController {
@@ -46,9 +47,24 @@ public class SessionController {
 	}
 
 	@FXML
+	public void onHistory() {
+		if (selectedSession != null) {
+			eb.post(new SessionLoadEvent(selectedSession.getName(), sysCfg.sessionPath, 0));
+		}
+	}
+
+	@FXML
 	public void onSetup() {
 		if (selectedSession != null) {
-			eb.post(new SessionSetupEvent(selectedSession.getName(), selectedSession.getSetupConfig()));
+			eb.post(new SessionSetupEvent(selectedSession.getName(), selectedSession.getSetupConfig(), false));
+		}
+	}
+
+	@FXML
+	public void onContinue() {
+		if (selectedSession != null) {
+			eb.post(new SessionSetupEvent(selectedSession.getName(), selectedSession.getSetupConfig(), true));
+			eb.post(new SessionLoadEvent(selectedSession.getName(), sysCfg.sessionPath, selectedSession.getTurns()));
 		}
 	}
 
@@ -84,10 +100,11 @@ public class SessionController {
 			return setupConfig.numTokens;
 		}
 		public String getUserPrompt() {
-			return setupConfig.userPrompt;
+			return FLATTEN.matcher(setupConfig.userPrompt==null?"":setupConfig.userPrompt).replaceAll(" ").trim();
 		}
 		public SetupConfig getSetupConfig() {
 			return setupConfig;
 		}
+		private static final Pattern FLATTEN = Pattern.compile("\\s*\\R\\s*");
 	}
 }

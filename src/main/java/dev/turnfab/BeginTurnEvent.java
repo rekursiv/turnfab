@@ -1,23 +1,18 @@
 package dev.turnfab;
 
 public class BeginTurnEvent {
-    private String systemPrompt;
     private String userPrompt;
     private String userPromptSummary;
 
-    BeginTurnEvent(String userPrompt) {
-        this(null, userPrompt, null);
+    public BeginTurnEvent(String userPrompt) {
+        this(userPrompt, null);
     }
 
-    BeginTurnEvent(String systemPrompt, String userPrompt, String userPromptSummary) {
-        this.systemPrompt = systemPrompt;
+    public BeginTurnEvent(String userPrompt, String userPromptSummary) {
         this.userPrompt = userPrompt;
         this.userPromptSummary = userPromptSummary;
     }
 
-    public String getSystemPrompt() {
-        return systemPrompt;
-    }
     public String getUserPrompt() {
         return userPrompt;
     }

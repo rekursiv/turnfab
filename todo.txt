@@ -1,12 +1,6 @@
 
 === Sessions ===
 
-select tab on SessionSetupEvent
-
-events:
-  SessionLoadMemoryEvent
-  SessionLoadHistoryEvent
-
 support subdirs:
   any dir that starts with . is skipped in session list scan
   dirs starting with . are scanned and put in ChoiceBox
@@ -27,10 +21,6 @@ lazy load tabs for Setup, Chat, History
 changing the tool setup requires clicking "Load Tools" again to activate
   show this in GUI somehow
   load tools -> update tools (many names need changing...)
-
-work out how to handle loading sessions vs. loading MD
-  sometimes it would be useful to load MD file into separate tab (move Load MD btn from Chat tab to Setup tab)
-  when loading a session, should the old chat be cleared from MarkdownView?
 
 ToolContextManager promptSummary
   report tokens/percent instead of # chars
