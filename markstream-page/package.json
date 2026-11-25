@@ -11,7 +11,7 @@
   },
   "dependencies": {
     "katex": "^0.19.1",
-    "markstream-vue": "^2.0.29"
+    "markstream-vue": "^2.0.32"
   },
   "devDependencies": {
     "@vitejs/plugin-vue": "^6.0.11",

@@ -1,6 +1,8 @@
 
 === Sessions ===
 
+add session to list on save
+
 support subdirs:
   any dir that starts with . is skipped in session list scan
   dirs starting with . are scanned and put in ChoiceBox
